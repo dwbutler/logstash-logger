@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe LogStashLogger do
-  subject { LogStashLogger.new('0.0.0.0', port)}
+  subject { LogStashLogger.new('localhost', port)}
   let(:port) { 5228 }
   let(:server) { TCPServer.new(port) }
   
