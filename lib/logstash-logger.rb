@@ -1,7 +1,10 @@
-require "logstash-logger/version"
+require 'logstash-logger/version'
 
-module Logstash
-  module Logger
-    # Your code goes here...
-  end
-end
+require 'thread'
+require 'socket'
+require 'logstash-event'
+
+require 'logstash-logger/tcp_client'
+require 'logstash-logger/logger'
+require 'logstash-logger/version'
+
