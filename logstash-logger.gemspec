@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'logstash-logger/version'
 
 Gem::Specification.new do |gem|
-  gem.name          = "LogStashLogger"
+  gem.name          = "logstash-logger"
   gem.version       = LogStashLogger::VERSION
   gem.authors       = ["David Butler"]
   gem.email         = ["dwbutler@ucla.edu"]
