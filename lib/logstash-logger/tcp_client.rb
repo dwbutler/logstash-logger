@@ -11,7 +11,7 @@ class LogStashLogger::TCPClient
       
       @socket.write("#{event.to_hash.to_json}\n")
     rescue => e
-      warn e.message
+      warn "LogStashLogger::TCPClient - #{e.class} - #{e.message}"
       @socket && @socket.close rescue nil
       @socket = nil
     end
