@@ -59,7 +59,6 @@ class LogStashLogger < ::Logger
     #event.type = progname
     if event.source == 'unknown'
       event["@source"] = HOST
-      event["@source_host"] = HOST
     end
     
     event
