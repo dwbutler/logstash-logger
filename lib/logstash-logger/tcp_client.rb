@@ -2,7 +2,6 @@ class LogStashLogger::TCPClient
   def initialize(host, port)
     @host = host
     @port = port
-    connect
   end
   
   def write(event)
