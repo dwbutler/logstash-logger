@@ -3,6 +3,7 @@ class LogStashLogger < ::Logger
   attr_reader :client
   
   LOGSTASH_EVENT_FIELDS = %w(@timestamp @tags @type @source @fields @message).freeze
+  HOST = Socket.gethostname
   
   def initialize(host, port)
     @client = ::LogStashLogger::TCPClient.new(host, port)
@@ -36,11 +37,12 @@ class LogStashLogger < ::Logger
     
     event = case data
     when LogStash::Event
-      data
+      data.clone
     when Hash
       event_data = {
         "@tags" => [],
         "@fields" => {},
+        "@timestamp" => time
       }
       LOGSTASH_EVENT_FIELDS.each do |field_name|
         if field_data = data.delete(field_name)
@@ -50,13 +52,12 @@ class LogStashLogger < ::Logger
       event_data["@fields"].merge!(data)
       LogStash::Event.new(event_data)
     when String
-      LogStash::Event.new("@message" => data)
+      LogStash::Event.new("@message" => data, "@timestamp" => time)
     end
     
-    event.source_host = Socket.gethostname
-    event['severity'] = severity
-    event.type = progname
-    event.timestamp = time
+    event['severity'] ||= severity
+    #event.type = progname
+    event.source = HOST if event.source == 'unknown'
     
     event
   end
