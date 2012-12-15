@@ -57,7 +57,10 @@ class LogStashLogger < ::Logger
     
     event['severity'] ||= severity
     #event.type = progname
-    event.source = HOST if event.source == 'unknown'
+    if event.source == 'unknown'
+      event["@source"] = HOST
+      event["@source_host"] = HOST
+    end
     
     event
   end
