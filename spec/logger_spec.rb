@@ -16,11 +16,20 @@ describe LogStashLogger do
     event['severity'] = 'INFO'
     event
   end
+  
+  def logdev
+    subject.instance_variable_get(:@logdev)
+  end
+  
+  it 'should use TCPClient as the log device' do
+    logdev.should be_a Logger::LogDevice
+    logdev.instance_variable_get(:@dev).should be_a LogStashLogger::TCPClient
+  end
 
   it 'should take a string message and write a logstash event' do
     message = 'test'
   
-    subject.client.should_receive(:write) do |event|
+    logdev.should_receive(:write) do |event|
       event.should be_a LogStash::Event
       event.source.should eql(host)
       event.message.should eql(message)
@@ -31,7 +40,7 @@ describe LogStashLogger do
   end
   
   it 'should take a logstash-formatted json string and write out a logstash event' do
-    subject.client.should_receive(:write) do |event|
+    logdev.should_receive(:write) do |event|
       event.should be_a LogStash::Event
       event.message.should eql(logstash_event.message)
       event.source.should eql(host)
@@ -41,7 +50,7 @@ describe LogStashLogger do
   end
   
   it 'should take a LogStash::Event and write it out' do
-    subject.client.should_receive(:write) do |event|
+    logdev.should_receive(:write) do |event|
       event.should be_a LogStash::Event
       event.message.should eql(logstash_event.message)
       event['severity'].should eql(logstash_event['severity'])
@@ -58,7 +67,7 @@ describe LogStashLogger do
       'severity' => 'INFO'
     }
     
-    subject.client.should_receive(:write) do |event|
+    logdev.should_receive(:write) do |event|
       event.should be_a LogStash::Event
       event.message.should eql('test')
       event['severity'].should eql('INFO')

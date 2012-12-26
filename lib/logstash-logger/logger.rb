@@ -6,8 +6,7 @@ class LogStashLogger < ::Logger
   HOST = Socket.gethostname
   
   def initialize(host, port)
-    @client = ::LogStashLogger::TCPClient.new(host, port)
-    super
+    super(::LogStashLogger::TCPClient.new(host, port))
   end
   
   def add(severity, message = nil, progname = nil, &block)
@@ -24,7 +23,7 @@ class LogStashLogger < ::Logger
         progname = @progname
       end
     end
-    @client.write(
+    @logdev.write(
       format_message(format_severity(severity), Time.now, progname, message))
     true
   end
