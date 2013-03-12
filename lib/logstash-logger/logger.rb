@@ -24,7 +24,7 @@ class LogStashLogger < ::Logger
       end
     end
     @logdev.write(
-      format_message(format_severity(severity), Time.now, progname, message))
+      format_message(format_severity(severity), LogStash::Time.now, progname, message))
     true
   end
   
