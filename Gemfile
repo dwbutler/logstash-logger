@@ -6,6 +6,6 @@ gemspec
 gem 'json', :platform => :ruby_18
 
 group :development do
-  gem 'ruby-debug', :platform => :ruby_18
-  gem 'debugger', :platform => :ruby_19
+  #gem 'ruby-debug', :platform => :ruby_18
+  #gem 'debugger', :platforms => [:ruby_19, :ruby_20]
 end

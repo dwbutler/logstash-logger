@@ -56,7 +56,8 @@ Future versions of these gems could potentially have deeper integration with Log
 Verified to work with:
 
 * Ruby 1.9.3
-* JRuby 1.7.1 (1.9 mode)
+* Ruby 2.0.0
+* JRuby 1.7+ (1.9 mode)
 
 Ruby 1.8.7 is not supported because LogStash::Event is not compatible with Ruby 1.8.7. This might change in the future.
 
