@@ -6,7 +6,7 @@ writing to a file or syslog since logstash can receive the structured data direc
 
 ## Features
 
-* Writes directly to logstash over a TCP connection.
+* Writes directly to logstash over a UDP or TCP connection.
 * Always writes in logstash JSON format.
 * Logger can take a string message, a hash, a LogStash::Event, or a logstash-formatted json string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
@@ -25,14 +25,23 @@ Or install it yourself as:
 
     $ gem install logstash-logger
 
-## Usage
+## Basic Usage
 
-First set up a logstash agent to receive input over a TCP port.
+First set up a logstash agent to receive input over a UDP or TCP port.
+Then in ruby, create a LogStashLogger that writes to that port.
 
 ```ruby
+require 'logstash-logger'
+
+# Defaults to UDP
 logger = LogStashLogger.new('localhost', 5228)
 logger.info 'test'
-# Logs {"@source":"server-host-name","@tags":[],"@fields":{"severity":"INFO"},"@message":"test","@timestamp":"2012-12-15T00:48:29+00:00"}
+# Writes the following to UDP port 5228:
+# {"@source":"server-host-name","@tags":[],"@fields":{"severity":"INFO"},"@message":"test","@timestamp":"2013-04-08T18:56:23.767273+00:00"}
+
+# Specify UDP or TCP explicitly
+udp_logger = LogStashLogger.new('localhost', 5228, :udp)
+tcp_logger = LogStashLogger.new('localhost', 5229, :tcp)
 ```
 
 ## Rails integration
@@ -49,7 +58,15 @@ To get Rails to nicely output its logs in structured logstash format, try one of
 * [yarder](https://github.com/rurounijones/yarder)
 
 Currently these gems output a JSON string, which LogStashLogger then parses.
-Future versions of these gems could potentially have deeper integration with LogStashLogger.
+Future versions of these gems could potentially have deeper integration with LogStashLogger (i.e. by writing LogStash::Event objects).
+
+## UDP vs TCP
+Should you write to a UDP or TCP listener? It depends on your specific needs, but most applications should use the default (UDP).
+
+* UDP is faster because it's asynchronous (fire-and_forget). However, this means that log messages could get dropped. This is okay for most applications.
+* TCP verifies that every message has been received via two-way communication . This could slow your app down to a crawl if the TCP listener is under heavy load.
+
+For a more detailed discussion of UDP vs TCP, I recommend reading this article: [UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
 
 ## Ruby compatibility
 
@@ -61,7 +78,18 @@ Verified to work with:
 
 Ruby 1.8.7 is not supported because LogStash::Event is not compatible with Ruby 1.8.7. This might change in the future.
 
-Rubinius might work, but I haven't been able to test it.
+The specs don't pass in Rubinius yet, but the logger does work.
+
+## Breaking change in version 0.3+
+Earlier versions of this gem (<= 0.2.1) only implemented a TCP connection. Newer versions (>= 0.3) also implement UDP, and use that as the new default.
+Please be aware if you are using the default constructor and still require TCP, you should add an additional argument:
+
+```ruby
+# Now defaults to UDP instead of TCP
+logger = LogStashLogger.new('localhost', 5228)
+# Explicitly specify TCP instead of UDP
+logger = LogStashLogger.new('localhost', 5228, :tcp)
+```
 
 ## Contributing
 
