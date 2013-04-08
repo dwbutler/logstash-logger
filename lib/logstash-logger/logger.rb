@@ -3,10 +3,10 @@ class LogStashLogger < ::Logger
   attr_reader :client
   
   LOGSTASH_EVENT_FIELDS = %w(@timestamp @tags @type @source @fields @message).freeze
-  HOST = Socket.gethostname
+  HOST = ::Socket.gethostname
   
-  def initialize(host, port)
-    super(::LogStashLogger::TCPClient.new(host, port))
+  def initialize(host, port, socket_type=:udp)
+    super(::LogStashLogger::Socket.new(host, port, socket_type))
   end
   
   def add(severity, message = nil, progname = nil, &block)
