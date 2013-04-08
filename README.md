@@ -63,7 +63,7 @@ Future versions of these gems could potentially have deeper integration with Log
 ## UDP vs TCP
 Should you write to a UDP or TCP listener? It depends on your specific needs, but most applications should use the default (UDP).
 
-* UDP is faster because it's asynchronous (fire-and_forget). However, this means that log messages could get dropped. This is okay for most applications.
+* UDP is faster because it's asynchronous (fire-and-forget). However, this means that log messages could get dropped. This is okay for most applications.
 * TCP verifies that every message has been received via two-way communication . This could slow your app down to a crawl if the TCP listener is under heavy load.
 
 For a more detailed discussion of UDP vs TCP, I recommend reading this article: [UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
