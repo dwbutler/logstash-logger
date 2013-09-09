@@ -72,15 +72,21 @@ For a more detailed discussion of UDP vs TCP, I recommend reading this article: 
 
 Verified to work with:
 
-* Ruby 1.9.3
-* Ruby 2.0.0
+* MRI Ruby 1.9.3
+* MRI Ruby 2.0.0
 * JRuby 1.7+ (1.9 mode)
 
-Ruby 1.8.7 is not supported because LogStash::Event is not compatible with Ruby 1.8.7. This might change in the future.
+Ruby 1.8.7 is not supported because LogStash::Event is not compatible with Ruby 1.8.7. This will probably not change.
 
 The specs don't pass in Rubinius yet, but the logger does work.
 
-## Breaking change in version 0.3+
+## Breaking changes
+
+### Version 0.4+
+Logstash::Event decided to go ahead and break the existing JSON format starting in version 1.2+. If you're using this version, you'll need to install
+LogStashLogger version 0.4+. This is not backwards compatible with the old LogStash::Event v1.1.5.
+
+### Version 0.3+
 Earlier versions of this gem (<= 0.2.1) only implemented a TCP connection. Newer versions (>= 0.3) also implement UDP, and use that as the new default.
 Please be aware if you are using the default constructor and still require TCP, you should add an additional argument:
 

@@ -32,7 +32,7 @@ describe LogStashLogger do
   # The logstash event to log
   let(:logstash_event) do
     LogStash::Event.new.tap do |event|
-      event.message = 'test'
+      event['message'] = 'test'
       event['severity'] = 'INFO'
     end
   end
@@ -72,31 +72,31 @@ describe LogStashLogger do
     logdev.should_receive(:write).and_call_original do |event|
       event.should be_a LogStash::Event
       event.source.should eql(hostname)
-      event.message.should eql(message)
+      event['message'].should eql(message)
       event['severity'].should eql('INFO')
     end
 
     logger.info(message)
     
-    listener_event.message.should == message
+    listener_event['message'].should == message
   end
   
   it 'takes a logstash-formatted json string as input and writes out a logstash event' do
     logdev.should_receive(:write).and_call_original do |event|
       event.should be_a LogStash::Event
-      event.message.should eql(logstash_event.message)
+      event['message'].should eql(logstash_event['message'])
       event.source.should eql(hostname)
     end
 
     logger.info(logstash_event.to_json)
     
-    listener_event.message.should == logstash_event.message
+    listener_event['message'].should == logstash_event['message']
   end
   
   it 'takes a LogStash::Event as input and writes it out intact' do
     logdev.should_receive(:write).and_call_original do |event|
       event.should be_a LogStash::Event
-      event.message.should eql(logstash_event.message)
+      event['message'].should eql(logstash_event['message'])
       event['severity'].should eql(logstash_event['severity'])
       event.timestamp.should eql(logstash_event.timestamp)
       event.source.should eql(hostname)
@@ -104,26 +104,26 @@ describe LogStashLogger do
     
     logger.warn(logstash_event)
     
-    listener_event.message.should == logstash_event.message
+    listener_event['message'].should == logstash_event['message']
     listener_event['severity'].should == logstash_event['severity']
   end
   
   it 'takes a data hash as input and writes out a logstash event' do
     data = {
-      "@message" => 'test',
+      "message" => 'test',
       'severity' => 'INFO'
     }
     
     logdev.should_receive(:write).and_call_original do |event|
       event.should be_a LogStash::Event
-      event.message.should eql('test')
+      event['message'].should eql('test')
       event['severity'].should eql('INFO')
       event.source.should eql(hostname)
     end
 
     logger.info(data.dup)
     
-    listener_event.message.should == data["@message"]
+    listener_event['message'].should == data["message"]
     listener_event['severity'].should == data['severity']
   end
   
