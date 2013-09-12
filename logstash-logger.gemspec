@@ -11,6 +11,7 @@ Gem::Specification.new do |gem|
   gem.description   = %q{Ruby logger that writes directly to LogStash}
   gem.summary       = %q{LogStash Logger for ruby}
   gem.homepage      = "http://github.com/dwbutler/logstash-logger"
+  gem.license       = "MIT"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
