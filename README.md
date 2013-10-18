@@ -44,6 +44,20 @@ udp_logger = LogStashLogger.new('localhost', 5228, :udp)
 tcp_logger = LogStashLogger.new('localhost', 5229, :tcp)
 ```
 
+## Logstash configuration
+
+To configure Logstash to correctly parse the event, you can create a JSON filter to point to the *message* portion:
+
+```ruby
+filter {
+  json {
+    source => "message"
+  }
+}
+```
+
+For more information on Filtering, check out the official Logstash docs.
+
 ## Rails integration
 
 Add the following to your config/environments/production.rb:
