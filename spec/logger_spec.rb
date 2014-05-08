@@ -62,50 +62,50 @@ describe LogStashLogger do
   #let(:socket) { @socket }
   
   it 'uses a LogStashLogger::Socket as the log device' do
-    logdev.should be_a Logger::LogDevice
-    logdev.instance_variable_get(:@dev).should be_a LogStashLogger::Socket
+    expect(logdev).to be_a Logger::LogDevice
+    expect(logdev.instance_variable_get(:@dev)).to be_a LogStashLogger::Socket
   end
 
   it 'takes a string message as input and writes a logstash event' do
     message = 'test'
 
-    logdev.should_receive(:write).and_call_original do |event|
-      event.should be_a LogStash::Event
-      event.source.should eql(hostname)
-      event['message'].should eql(message)
-      event['severity'].should eql('INFO')
+    expect(logdev).to receive(:write).and_call_original do |event|
+      expect(event).to be_a LogStash::Event
+      expect(event.source).to eql(hostname)
+      expect(event['message']).to eql(message)
+      expect(event['severity']).to eql('INFO')
     end
 
     logger.info(message)
     
-    listener_event['message'].should == message
+    expect(listener_event['message']).to eq(message)
   end
   
   it 'takes a logstash-formatted json string as input and writes out a logstash event' do
-    logdev.should_receive(:write).and_call_original do |event|
-      event.should be_a LogStash::Event
-      event['message'].should eql(logstash_event['message'])
-      event.source.should eql(hostname)
+    expect(logdev).to receive(:write).and_call_original do |event|
+      expect(event).to be_a LogStash::Event
+      expect(event['message']).to eql(logstash_event['message'])
+      expect(event.source).to eql(hostname)
     end
 
     logger.info(logstash_event.to_json)
     
-    listener_event['message'].should == logstash_event['message']
+    expect(listener_event['message']).to eq(logstash_event['message'])
   end
   
   it 'takes a LogStash::Event as input and writes it out intact' do
-    logdev.should_receive(:write).and_call_original do |event|
-      event.should be_a LogStash::Event
-      event['message'].should eql(logstash_event['message'])
-      event['severity'].should eql(logstash_event['severity'])
-      event.timestamp.should eql(logstash_event.timestamp)
-      event.source.should eql(hostname)
+    expect(logdev).to receive(:write).and_call_original do |event|
+      expect(event).to be_a LogStash::Event
+      expect(event['message']).to eql(logstash_event['message'])
+      expect(event['severity']).to eql(logstash_event['severity'])
+      expect(event.timestamp).to eql(logstash_event.timestamp)
+      expect(event.source).to eql(hostname)
     end
     
     logger.warn(logstash_event)
     
-    listener_event['message'].should == logstash_event['message']
-    listener_event['severity'].should == logstash_event['severity']
+    expect(listener_event['message']).to eq(logstash_event['message'])
+    expect(listener_event['severity']).to eq(logstash_event['severity'])
   end
   
   it 'takes a data hash as input and writes out a logstash event' do
@@ -114,17 +114,17 @@ describe LogStashLogger do
       'severity' => 'INFO'
     }
     
-    logdev.should_receive(:write).and_call_original do |event|
-      event.should be_a LogStash::Event
-      event['message'].should eql('test')
-      event['severity'].should eql('INFO')
-      event.source.should eql(hostname)
+    expect(logdev).to receive(:write).and_call_original do |event|
+      expect(event).to be_a LogStash::Event
+      expect(event['message']).to eql('test')
+      expect(event['severity']).to eql('INFO')
+      expect(event.source).to eql(hostname)
     end
 
     logger.info(data.dup)
     
-    listener_event['message'].should == data["message"]
-    listener_event['severity'].should == data['severity']
+    expect(listener_event['message']).to eq(data["message"])
+    expect(listener_event['severity']).to eq(data['severity'])
   end
   
 end
