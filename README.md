@@ -63,7 +63,9 @@ For more information on Filtering, check out the official Logstash docs.
 Add the following to your config/environments/production.rb:
 
 ```ruby
-config.logger = ActiveSupport::TaggedLogging.new(LogStashLogger.new('localhost', 5228))
+logger = LogStashLogger.new('localhost', 5228)
+logger.level = Logger::INFO # default is Logger::DEBUG
+config.logger = ActiveSupport::TaggedLogging.new(logger)
 ```
 
 To get Rails to nicely output its logs in structured logstash format, try one of the following gems:
