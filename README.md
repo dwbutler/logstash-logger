@@ -1,4 +1,5 @@
-# LogStashLogger [![Build Status](https://travis-ci.org/dwbutler/logstash-logger.png?branch=master)](https://travis-ci.org/dwbutler/logstash-logger)
+# LogStashLogger
+[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.png?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger.png)](https://codeclimate.com/github/dwbutler/logstash-logger)
 
 This gem implements a subclass of Ruby's Logger class that logs directly to [logstash](http://logstash.net).
 It writes to a logstash listener over a UDP (default) or TCP connection, in logstash JSON format. This is an improvement over
