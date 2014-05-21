@@ -1,7 +1,5 @@
 class LogStashLogger < ::Logger
   
-  attr_reader :client
-  
   LOGSTASH_EVENT_FIELDS = %w(@timestamp @tags @type @source @fields message).freeze
   HOST = ::Socket.gethostname
   
