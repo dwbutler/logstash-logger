@@ -27,7 +27,7 @@ class LogStashLogger < ::Logger
   
   def format_message(severity, time, progname, message)
     data = message
-    if data.is_a?(String) && data[0] == '{'
+    if data.is_a?(String) && data.start_with?('{')
       data = (JSON.parse(message) rescue nil) || message
     end
     
