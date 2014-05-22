@@ -57,18 +57,6 @@ input {
 }
 ```
 
-You can also create a JSON filter to point to the *message* portion:
-
-```ruby
-filter {
-  json {
-    source => "message"
-  }
-}
-```
-
-For more information on Codecs and Filtering, check out the official Logstash docs.
-
 ## Rails integration
 
 Add the following to your config/environments/production.rb:
