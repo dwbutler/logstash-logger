@@ -1,6 +1,5 @@
 class LogStashLogger < ::Logger
   
-  LOGSTASH_EVENT_FIELDS = %w(@timestamp @tags @type @source @fields message).freeze
   HOST = ::Socket.gethostname
   
   def initialize(host, port, socket_type=:udp)
@@ -36,17 +35,7 @@ class LogStashLogger < ::Logger
     when LogStash::Event
       data.clone
     when Hash
-      event_data = {
-        "@tags" => [],
-        "@fields" => {},
-        "@timestamp" => time
-      }
-      LOGSTASH_EVENT_FIELDS.each do |field_name|
-        if field_data = data.delete(field_name)
-          event_data[field_name] = field_data
-        end
-      end
-      event_data["@fields"].merge!(data)
+      event_data = data.merge("@timestamp" => time)
       LogStash::Event.new(event_data)
     when String
       LogStash::Event.new("message" => data, "@timestamp" => time)
@@ -54,6 +43,8 @@ class LogStashLogger < ::Logger
     
     event['severity'] ||= severity
     #event.type = progname
+
+    event['source'] ||= HOST
     if event['source'] == 'unknown'
       event['source'] = HOST
     end
