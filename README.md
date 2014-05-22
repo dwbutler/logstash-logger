@@ -29,20 +29,33 @@ Or install it yourself as:
 ## Basic Usage
 
 First set up a logstash agent to receive input over a UDP or TCP port.
-Then in ruby, create a LogStashLogger that writes to that port.
+Then in ruby, create a `LogStashLogger` that writes to that port.
+
+The logger accepts a string message, a JSON string, a hash, or a `LogStash::Event`.
 
 ```ruby
 require 'logstash-logger'
 
 # Defaults to UDP
 logger = LogStashLogger.new('localhost', 5228)
-logger.info 'test'
-# Writes the following to UDP port 5228:
-# {"@source":"server-host-name","@tags":[],"@fields":{"severity":"INFO"},"@message":"test","@timestamp":"2013-04-08T18:56:23.767273+00:00"}
 
 # Specify UDP or TCP explicitly
 udp_logger = LogStashLogger.new('localhost', 5228, :udp)
 tcp_logger = LogStashLogger.new('localhost', 5229, :tcp)
+
+# The following messages are written to UDP port 5228:
+
+logger.info 'test'
+# {"message":"test","@timestamp":"2014-05-22T09:37:19.204-07:00","@version":"1","severity":"INFO","source":"[server-hostname]"}
+
+logger.error '{"message": "error"}'
+# {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","source":"[server-hostname]"}
+
+logger.debug message: 'test', foo: 'bar'
+# {"message":"test","foo":"bar","@timestamp":"2014-05-22T09:43:24.004-07:00","@version":"1","severity":"DEBUG","source":"[server-hostname]"}
+
+logger.warn LogStash::Event.new(message: 'test', foo: 'bar')
+# {"message":"test","foo":"bar","@timestamp":"2014-05-22T16:44:37.364Z","@version":"1","severity":"WARN","source":"[server-hostname]"}
 ```
 
 ## Logstash configuration
