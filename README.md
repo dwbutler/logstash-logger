@@ -47,12 +47,15 @@ tcp_logger = LogStashLogger.new('localhost', 5229, :tcp)
 
 ## Logstash configuration
 
-To configure Logstash to correctly parse the event, you will need to use the `json_lines` codec:
+In order for Logstash to correctly receive and parse the event, you will need to
+configure and run a UDP listener that uses the `json_lines` codec:
 
 ```ruby
 input {
   udp {
-   codec => json_lines
+    host => "0.0.0.0"
+    port => 5228
+    codec => json_lines
   }
 }
 ```
