@@ -46,16 +46,20 @@ tcp_logger = LogStashLogger.new('localhost', 5229, :tcp)
 # The following messages are written to UDP port 5228:
 
 logger.info 'test'
-# {"message":"test","@timestamp":"2014-05-22T09:37:19.204-07:00","@version":"1","severity":"INFO","source":"[server-hostname]"}
+# {"message":"test","@timestamp":"2014-05-22T09:37:19.204-07:00","@version":"1","severity":"INFO","source":"[hostname]"}
 
 logger.error '{"message": "error"}'
-# {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","source":"[server-hostname]"}
+# {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","source":"[hostname]"}
 
 logger.debug message: 'test', foo: 'bar'
-# {"message":"test","foo":"bar","@timestamp":"2014-05-22T09:43:24.004-07:00","@version":"1","severity":"DEBUG","source":"[server-hostname]"}
+# {"message":"test","foo":"bar","@timestamp":"2014-05-22T09:43:24.004-07:00","@version":"1","severity":"DEBUG","source":"[hostname]"}
 
 logger.warn LogStash::Event.new(message: 'test', foo: 'bar')
-# {"message":"test","foo":"bar","@timestamp":"2014-05-22T16:44:37.364Z","@version":"1","severity":"WARN","source":"[server-hostname]"}
+# {"message":"test","foo":"bar","@timestamp":"2014-05-22T16:44:37.364Z","@version":"1","severity":"WARN","source":"[hostname]"}
+
+# Tagged logging
+logger.tagged('foo') { logger.fatal('bar') }
+# {"message":"bar","@timestamp":"2014-05-26T20:35:14.685-07:00","@version":"1","severity":"FATAL","source":"[hostname]","tags":["foo"]}
 ```
 
 ## Logstash configuration
@@ -75,12 +79,20 @@ input {
 
 ## Rails integration
 
-Add the following to your config/environments/production.rb:
+Add the following to your `config/environments/production.rb`:
 
 ```ruby
-logger = LogStashLogger.new('localhost', 5228)
-logger.level = Logger::INFO # default is Logger::DEBUG
-config.logger = ActiveSupport::TaggedLogging.new(logger)
+# Optional, defaults to 'localhost'
+config.logstash.host = 'localhost'
+
+# Required
+config.logstash.port = 5228
+
+# Optional, defaults to :udp. Possible values are :udp or :tcp
+config.logstash.type = :udp
+
+# Optional, Rails sets the default to :info
+config.log_level = :debug
 ```
 
 To get Rails to nicely output its logs in structured logstash format, try one of the following gems:
@@ -103,22 +115,23 @@ For a more detailed discussion of UDP vs TCP, I recommend reading this article: 
 
 Verified to work with:
 
-* MRI Ruby 1.9.3
-* MRI Ruby 2.0.0
-* JRuby 1.7+ (1.9 mode)
+* MRI Ruby 1.9.3, 2.0+, 2.1+
+* JRuby 1.7+
 
-Ruby 1.8.7 is not supported because LogStash::Event is not compatible with Ruby 1.8.7. This will probably not change.
+Ruby 1.8.7 is not supported because `LogStash::Event` is not compatible with Ruby 1.8.7. This will probably not change.
 
 The specs don't pass in Rubinius yet, but the logger does work.
 
 ## Breaking changes
 
 ### Version 0.4+
-Logstash::Event decided to go ahead and break the existing JSON format starting in version 1.2+. If you're using this version, you'll need to install
-LogStashLogger version 0.4+. This is not backwards compatible with the old LogStash::Event v1.1.5.
+`LogStash::Event` uses the v1 format starting version 1.2+. If you're using the v1, you'll need to install
+LogStashLogger version 0.4+. This is not backwards compatible with the old `LogStash::Event` v1.1.5, which uses
+the v0 format.
 
 ### Version 0.3+
-Earlier versions of this gem (<= 0.2.1) only implemented a TCP connection. Newer versions (>= 0.3) also implement UDP, and use that as the new default.
+Earlier versions of this gem (<= 0.2.1) only implemented a TCP connection.
+Newer versions (>= 0.3) also implement UDP, and use that as the new default.
 Please be aware if you are using the default constructor and still require TCP, you should add an additional argument:
 
 ```ruby

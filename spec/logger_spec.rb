@@ -1,12 +1,10 @@
-require 'spec_helper'
+require 'logstash-logger'
 
 describe LogStashLogger do
   include_context 'logger'
 
-  before(:all) { puts "Testing with #{socket_type.to_s.upcase} socket type" }
-
   let! :listener do
-    case socket_type
+    case connection_type
     when :tcp
       TCPServer.new(port)
     when :udp
@@ -27,7 +25,7 @@ describe LogStashLogger do
   
   # The raw input received by the logstash listener
   let :listener_input do
-    case socket_type
+    case connection_type
     when :tcp then tcp_client.readline
     when :udp then listener.recvfrom(8192)[0]
     end
@@ -49,9 +47,9 @@ describe LogStashLogger do
   # The socket that the logger is writing to
   #let(:socket) { @socket }
   
-  it 'uses a LogStashLogger::Socket as the log device' do
+  it 'uses a LogStashLogger::Connection as the log device' do
     expect(logdev).to be_a Logger::LogDevice
-    expect(logdev.instance_variable_get(:@dev)).to be_a LogStashLogger::Socket
+    expect(logdev.instance_variable_get(:@dev)).to be_a LogStash::Connection
   end
 
   it 'takes a string message as input and writes a logstash event' do

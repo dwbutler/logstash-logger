@@ -9,13 +9,13 @@ end
 
 desc "Run specs with TCP socket"
 RSpec::Core::RakeTask.new("spec:tcp") do |t|
-  ENV['SOCKET_TYPE'] = 'tcp'
+  ENV['TYPE'] = 'tcp'
   t.verbose = false
 end
 
 desc "Run specs with UDP socket"
 RSpec::Core::RakeTask.new("spec:udp") do |t|
-  ENV['SOCKET_TYPE'] = 'udp'
+  ENV['TYPE'] = 'udp'
   t.verbose = false
 end
 
