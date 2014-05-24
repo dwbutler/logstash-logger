@@ -10,7 +10,7 @@ class LogStashLogger::Socket
     begin
       connect unless @socket
       
-      @socket.write("#{event.to_hash.to_json}\n")
+      @socket.write("#{event.to_json}\n")
     rescue => e
       warn "#{self.class} - #{e.class} - #{e.message}"
       close

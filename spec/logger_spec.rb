@@ -1,22 +1,10 @@
 require 'spec_helper'
 
 describe LogStashLogger do
-  # The type of socket we're testing
-  def socket_type
-    @socket_type ||= (ENV['SOCKET_TYPE'] || 'UDP').to_s.downcase.to_sym
-  end
-  
+  include_context 'logger'
+
   before(:all) { puts "Testing with #{socket_type.to_s.upcase} socket type" }
-  
-  let(:host) { '0.0.0.0' }
-  let(:hostname) { Socket.gethostname }
-  let(:port) { 5228 }
-  
-  # The logstash logger
-  let(:logger) { LogStashLogger.new(host, port, socket_type) }
-  # The log device that the logger writes to
-  let(:logdev) { logger.instance_variable_get(:@logdev) }
-  
+
   let! :listener do
     case socket_type
     when :tcp
