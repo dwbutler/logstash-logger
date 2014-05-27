@@ -18,7 +18,7 @@ module LogStash
     def flush
       return unless connected?
       with_connection do
-        #@socket.flush
+        @socket.flush
       end
     end
 
