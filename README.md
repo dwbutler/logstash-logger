@@ -124,6 +124,9 @@ The specs don't pass in Rubinius yet, but the logger does work.
 
 ## Breaking changes
 
+### Version 0.5+ (Unreleased)
+The `source` key has been replaced with `host` to better match the latest logstash.
+
 ### Version 0.4+
 `LogStash::Event` uses the v1 format starting version 1.2+. If you're using the v1, you'll need to install
 LogStashLogger version 0.4+. This is not backwards compatible with the old `LogStash::Event` v1.1.5, which uses
