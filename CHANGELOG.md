@@ -4,6 +4,7 @@ and outputs to the `tags` key.
 - Support for Rails configuration.
 - Changed `source` to `host` to match what the latest logstash expects.
 - Output event timestamp consistently even if `Time#to_json` is overridden.
+- Refactoring.
 
 ## 0.4.1
 - Fixed support for `LogStash::Event` v1 format when logging a hash. Extra data
