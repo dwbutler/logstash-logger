@@ -46,20 +46,20 @@ tcp_logger = LogStashLogger.new('localhost', 5229, :tcp)
 # The following messages are written to UDP port 5228:
 
 logger.info 'test'
-# {"message":"test","@timestamp":"2014-05-22T09:37:19.204-07:00","@version":"1","severity":"INFO","source":"[hostname]"}
+# {"message":"test","@timestamp":"2014-05-22T09:37:19.204-07:00","@version":"1","severity":"INFO","host":"[hostname]"}
 
 logger.error '{"message": "error"}'
-# {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","source":"[hostname]"}
+# {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","host":"[hostname]"}
 
 logger.debug message: 'test', foo: 'bar'
-# {"message":"test","foo":"bar","@timestamp":"2014-05-22T09:43:24.004-07:00","@version":"1","severity":"DEBUG","source":"[hostname]"}
+# {"message":"test","foo":"bar","@timestamp":"2014-05-22T09:43:24.004-07:00","@version":"1","severity":"DEBUG","host":"[hostname]"}
 
 logger.warn LogStash::Event.new(message: 'test', foo: 'bar')
-# {"message":"test","foo":"bar","@timestamp":"2014-05-22T16:44:37.364Z","@version":"1","severity":"WARN","source":"[hostname]"}
+# {"message":"test","foo":"bar","@timestamp":"2014-05-22T16:44:37.364Z","@version":"1","severity":"WARN","host":"[hostname]"}
 
 # Tagged logging
 logger.tagged('foo') { logger.fatal('bar') }
-# {"message":"bar","@timestamp":"2014-05-26T20:35:14.685-07:00","@version":"1","severity":"FATAL","source":"[hostname]","tags":["foo"]}
+# {"message":"bar","@timestamp":"2014-05-26T20:35:14.685-07:00","@version":"1","severity":"FATAL","host":"[hostname]","tags":["foo"]}
 ```
 
 ## Logstash configuration

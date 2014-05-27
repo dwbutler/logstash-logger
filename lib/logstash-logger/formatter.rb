@@ -32,10 +32,7 @@ class LogStashLogger < ::Logger
       event['severity'] ||= severity
       #event.type = progname
 
-      event['source'] ||= HOST
-      if event['source'] == 'unknown'
-        event['source'] = HOST
-      end
+      event['host'] ||= HOST
 
       current_tags.each do |tag|
         event.tag(tag)

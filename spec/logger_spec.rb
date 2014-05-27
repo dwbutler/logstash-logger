@@ -57,7 +57,7 @@ describe LogStashLogger do
 
     expect(logdev).to receive(:write).and_call_original do |event|
       expect(event).to be_a LogStash::Event
-      expect(event.source).to eql(hostname)
+      expect(event.host).to eql(hostname)
       expect(event['message']).to eql(message)
       expect(event['severity']).to eql('INFO')
     end
@@ -65,20 +65,20 @@ describe LogStashLogger do
     logger.info(message)
     
     expect(listener_event['message']).to eq(message)
-    expect(listener_event['source']).to eq(hostname)
+    expect(listener_event['host']).to eq(hostname)
   end
   
   it 'takes a logstash-formatted json string as input and writes out a logstash event' do
     expect(logdev).to receive(:write).and_call_original do |event|
       expect(event).to be_a LogStash::Event
       expect(event['message']).to eql(logstash_event['message'])
-      expect(event.source).to eql(hostname)
+      expect(event.host).to eql(hostname)
     end
 
     logger.info(logstash_event.to_json)
     
     expect(listener_event['message']).to eq(logstash_event['message'])
-    expect(listener_event['source']).to eq(hostname)
+    expect(listener_event['host']).to eq(hostname)
   end
   
   it 'takes a LogStash::Event as input and writes it out intact' do
@@ -87,14 +87,14 @@ describe LogStashLogger do
       expect(event['message']).to eql(logstash_event['message'])
       expect(event['severity']).to eql(logstash_event['severity'])
       expect(event.timestamp).to eql(logstash_event.timestamp)
-      expect(event.source).to eql(hostname)
+      expect(event.host).to eql(hostname)
     end
     
     logger.warn(logstash_event)
     
     expect(listener_event['message']).to eq(logstash_event['message'])
     expect(listener_event['severity']).to eq(logstash_event['severity'])
-    expect(listener_event['source']).to eq(hostname)
+    expect(listener_event['host']).to eq(hostname)
   end
   
   it 'takes a data hash as input and writes out a logstash event' do
@@ -109,7 +109,7 @@ describe LogStashLogger do
       expect(event['message']).to eql('test')
       expect(event['severity']).to eql('INFO')
       expect(event['foo']).to eql('bar')
-      expect(event.source).to eql(hostname)
+      expect(event.host).to eql(hostname)
     end
 
     logger.info(data.dup)
@@ -117,7 +117,7 @@ describe LogStashLogger do
     expect(listener_event['message']).to eq(data["message"])
     expect(listener_event['severity']).to eq(data['severity'])
     expect(listener_event['foo']).to eq(data['foo'])
-    expect(listener_event['source']).to eq(hostname)
+    expect(listener_event['host']).to eq(hostname)
     expect(listener_event['@timestamp']).to_not be_nil
   end
   
