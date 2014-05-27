@@ -19,7 +19,11 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   
   gem.add_runtime_dependency 'logstash-event', '~> 1.2'
+
+  gem.add_development_dependency 'rails'
   gem.add_development_dependency 'rspec'
   gem.add_development_dependency 'rake'
+  gem.add_development_dependency 'pry'
   gem.add_development_dependency 'wwtd'
+  gem.add_development_dependency 'appraisal'
 end

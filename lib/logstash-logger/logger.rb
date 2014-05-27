@@ -1,54 +1,19 @@
-class LogStashLogger < ::Logger
-  
-  HOST = ::Socket.gethostname
-  
-  def initialize(host, port, socket_type=:udp)
-    super(::LogStashLogger::Socket.new(host, port, socket_type))
-  end
-  
-  def add(severity, message = nil, progname = nil, &block)
-    severity ||= UNKNOWN
-    if severity < @level
-      return true
-    end
-    progname ||= @progname
-    if message.nil?
-      if block_given?
-        message = yield
-      else
-        message = progname
-        progname = @progname
-      end
-    end
-    @logdev.write(
-      format_message(format_severity(severity), Time.now, progname, message))
-    true
-  end
-  
-  def format_message(severity, time, progname, message)
-    data = message
-    if data.is_a?(String) && data.start_with?('{')
-      data = (JSON.parse(message) rescue nil) || message
-    end
-    
-    event = case data
-    when LogStash::Event
-      data.clone
-    when Hash
-      event_data = data.merge("@timestamp" => time)
-      LogStash::Event.new(event_data)
-    when String
-      LogStash::Event.new("message" => data, "@timestamp" => time)
-    end
-    
-    event['severity'] ||= severity
-    #event.type = progname
+require 'logger'
 
-    event['source'] ||= HOST
-    if event['source'] == 'unknown'
-      event['source'] = HOST
-    end
-    
-    event
+class LogStashLogger < ::Logger
+  DEFAULT_CONNECTION_TYPE = :udp
+
+  attr_reader :connection
+
+  def initialize(host, port, type = DEFAULT_CONNECTION_TYPE)
+    @connection = ::LogStash::Connection.new(host, port, type)
+    super(@connection)
+    self.formatter = Formatter.new
   end
+
+  def flush
+    !!@connection.flush
+  end
+
+  include ::LogStash::TaggedLogging
 end
