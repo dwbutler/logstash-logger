@@ -1,5 +1,6 @@
 require 'logger'
 require 'socket'
+require 'time'
 
 class LogStashLogger < ::Logger
   HOST = ::Socket.gethostname
