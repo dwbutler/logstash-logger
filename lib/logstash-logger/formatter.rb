@@ -8,7 +8,7 @@ class LogStashLogger < ::Logger
     include ::LogStash::TaggedLogging::Formatter
 
     def call(severity, time, progname, message)
-      build_event(message, severity, time)
+      build_event(message, severity, time).to_s  + "\n"
     end
 
     protected
@@ -37,12 +37,14 @@ class LogStashLogger < ::Logger
         event['source'] = HOST
       end
 
+      event['host'] ||= HOST
+
       current_tags.each do |tag|
         event.tag(tag)
       end
 
       # In case Time#to_json has been overridden
-      event.timestamp = event.timestamp.iso8601(3)
+#     event.timestamp = event.timestamp.iso8601(3)
 
       event
     end
