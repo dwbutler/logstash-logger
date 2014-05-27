@@ -42,7 +42,9 @@ class LogStashLogger < ::Logger
       end
 
       # In case Time#to_json has been overridden
-      event.timestamp = event.timestamp.iso8601(3)
+      if event.timestamp.is_a?(Time)
+        event.timestamp = event.timestamp.iso8601(3)
+      end
 
       event
     end

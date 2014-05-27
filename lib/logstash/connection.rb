@@ -11,7 +11,7 @@ module LogStash
 
     def write(event)
       with_connection do
-        @socket.puts event.to_json
+        @socket.write "#{event.to_json}\n"
       end
     end
 
