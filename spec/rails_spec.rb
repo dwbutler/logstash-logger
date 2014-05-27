@@ -14,7 +14,7 @@ end
 Test::Application.initialize!
 
 describe LogStashLogger do
-  describe "Rails integration" do
+  describe "Rails integration", Test::Application do
     let(:app) { Rails.application }
     let(:config) { app.config }
 
@@ -28,6 +28,11 @@ describe LogStashLogger do
     end
 
     describe '#setup' do
+      before do
+        app.config.logstash.port = PORT
+        LogStashLogger.setup(app)
+      end
+
       it "defaults logstash host to localhost" do
         expect(config.logstash.host).to eq("localhost")
       end
@@ -37,7 +42,11 @@ describe LogStashLogger do
       end
 
       context "when logstash is not configured" do
-        let(:app) { ::Test::Application.new }
+        before do
+          app.config.logstash.clear
+          app.config.logger = nil
+          LogStashLogger.setup(app)
+        end
 
         it "does not configure anything" do
           expect(app.config.logger).to be_nil
@@ -45,10 +54,8 @@ describe LogStashLogger do
       end
 
       context "when port is not specified" do
-        let(:app) { ::Test::Application.new }
-
-        before do
-          app.config.logstash = ActiveSupport::OrderedOptions.new
+        before(:each) do
+          app.config.logstash.clear
           app.config.logstash.host = 'localhost'
         end
 
