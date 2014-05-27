@@ -8,7 +8,7 @@ rvm:
   - jruby-19mode
   - rbx
 gemfile:
-  - gemfiles/rails_3_2.gemfile
+  - gemfiles/rails_3.2.gemfile
   - gemfiles/rails_4.0.gemfile
   - gemfiles/rails_4.1.gemfile
 matrix:
