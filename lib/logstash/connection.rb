@@ -9,9 +9,9 @@ module LogStash
       @socket = nil
     end
 
-    def write(event)
+    def write(message)
       with_connection do
-        @socket.write "#{event.to_json}\n"
+        @socket.write message
       end
     end
 

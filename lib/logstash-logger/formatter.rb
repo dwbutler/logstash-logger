@@ -9,7 +9,8 @@ class LogStashLogger < ::Logger
     include ::LogStash::TaggedLogging::Formatter
 
     def call(severity, time, progname, message)
-      build_event(message, severity, time)
+      event = build_event(message, severity, time)
+      "#{event.to_json}\n"
     end
 
     protected
