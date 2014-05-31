@@ -2,10 +2,15 @@ require 'socket'
 
 module LogStash
   class Connection
-    def initialize(host, port, type = :udp)
-      @host = host
-      @port = port
-      @type = type
+    DEFAULT_HOST = '0.0.0.0'
+    DEFAULT_TYPE = :udp
+
+    attr_reader :host, :port, :type
+
+    def initialize(opts)
+      @host = opts[:host] || DEFAULT_HOST
+      @port = opts[:port] || fail(ArgumentError, "Port is required")
+      @type = opts[:type] || DEFAULT_TYPE
       @socket = nil
     end
 

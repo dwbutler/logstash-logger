@@ -23,7 +23,9 @@ RSpec.shared_context 'logger' do
   let(:port) { PORT }
 
   # The logstash logger
-  let(:logger) { LogStashLogger.new(host, port, connection_type) }
+  let(:logger) { LogStashLogger.new(host: host, port: port, type: connection_type) }
   # The log device that the logger writes to
   let(:logdev) { logger.instance_variable_get(:@logdev) }
+
+  let(:connection) { LogStash::Connection.new(port: port)}
 end

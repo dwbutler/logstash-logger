@@ -5,13 +5,14 @@ class LogStashLogger < ::Logger
     return unless app.config.logstash.present?
 
     fail ArgumentError, "Port is required" unless app.config.logstash.port
-    app.config.logstash.host ||= "localhost"
-    app.config.logstash.type ||= DEFAULT_CONNECTION_TYPE
 
-    logger = LogStashLogger.new \
-      app.config.logstash.host,
-      app.config.logstash.port,
-      app.config.logstash.type
+    logger_options = {
+      host: app.config.logstash.host,
+      port: app.config.logstash.port,
+      type: app.config.logstash.type
+    }
+
+    logger = LogStashLogger.new(logger_options)
 
     logger.level = ::Logger.const_get(app.config.log_level.to_s.upcase)
 

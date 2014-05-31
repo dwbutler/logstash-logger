@@ -33,14 +33,6 @@ describe LogStashLogger do
         LogStashLogger.setup(app)
       end
 
-      it "defaults logstash host to localhost" do
-        expect(config.logstash.host).to eq("localhost")
-      end
-
-      it "defaults logstash type to :udp" do
-        expect(config.logstash.type).to eq(:udp)
-      end
-
       context "when logstash is not configured" do
         before do
           app.config.logstash.clear

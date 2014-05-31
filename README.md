@@ -36,12 +36,12 @@ The logger accepts a string message, a JSON string, a hash, or a `LogStash::Even
 ```ruby
 require 'logstash-logger'
 
-# Defaults to UDP
-logger = LogStashLogger.new('localhost', 5228)
+# Defaults to UDP on 0.0.0.0
+logger = LogStashLogger.new(port: 5228)
 
-# Specify UDP or TCP explicitly
-udp_logger = LogStashLogger.new('localhost', 5228, :udp)
-tcp_logger = LogStashLogger.new('localhost', 5229, :tcp)
+# Specify host and type (UDP or TCP) explicitly
+udp_logger = LogStashLogger.new(host: 'localhost', port: 5228, type: :udp)
+tcp_logger = LogStashLogger.new(host: 'localhost', port: 5229, type: :tcp)
 
 # The following messages are written to UDP port 5228:
 
@@ -125,7 +125,7 @@ The specs don't pass in Rubinius yet, but the logger does work.
 ## Breaking changes
 
 ### Version 0.5+ (Unreleased)
-The `source` key has been replaced with `host` to better match the latest logstash.
+ * The `source` event key has been replaced with `host` to better match the latest logstash.
 
 ### Version 0.4+
 `LogStash::Event` uses the v1 format starting version 1.2+. If you're using the v1, you'll need to install
