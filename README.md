@@ -111,6 +111,33 @@ Should you write to a UDP or TCP listener? It depends on your specific needs, bu
 
 For a more detailed discussion of UDP vs TCP, I recommend reading this article: [UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
 
+## SSL
+
+If you are using TCP then there is the option of adding an SSL certificate to the options hash on initialize.
+
+```ruby
+LogStashLogger.new(:port => 5228, :type => :tcp, :ssl_certificate => "/path/to/certificate.crt")
+```
+
+The SSL certificate and key can be generated using
+
+    openssl req -x509 -batch -nodes -newkey rsa:2048 -keyout logstash.key -out logstash.crt
+
+The following Logstash configuration is required for SSL:
+
+```ruby
+input {
+  tcp {
+    host => "0.0.0.0"
+    port => 5228
+    codec => json_lines
+    ssl_enable => true
+    ssl_cert => "/path/to/certificate.crt"
+    ssl_key => "/path/to/key.key"
+  }
+}
+```
+
 ## Ruby compatibility
 
 Verified to work with:
