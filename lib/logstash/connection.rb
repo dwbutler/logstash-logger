@@ -9,7 +9,7 @@ module LogStash
 
     def initialize(opts)
       @host = opts[:host] || DEFAULT_HOST
-      @port = opts[:port] || fail(ArgumentError, "Port is required")
+      @port = opts[:port] || fail(ArgumentError, "Port is required") unless opts[:type] == :stdout
       @type = opts[:type] || DEFAULT_TYPE
       @socket = nil
     end
@@ -46,6 +46,7 @@ module LogStash
         case @type
         when :udp then UDPSocket.new.tap {|socket| socket.connect(@host, @port)}
         when :tcp then TCPSocket.new(@host, @port)
+        when :stdout then $stdout
         else fail ArgumentError, 'Invalid connection type'
         end
     end
