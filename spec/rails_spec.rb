@@ -14,7 +14,7 @@ end
 Test::Application.initialize!
 
 describe LogStashLogger do
-  describe "Rails integration", Test::Application do
+  describe "Rails integration" do
     let(:app) { Rails.application }
     let(:config) { app.config }
 
@@ -23,7 +23,10 @@ describe LogStashLogger do
         subject { Rails.logger }
 
         it { should be_a LogStashLogger }
-        its(:level) { should eq(::Logger::INFO) }
+
+        it "defaults level to config.log_level" do
+          expect(subject.level).to eq(::Logger::INFO)
+        end
       end
     end
 
