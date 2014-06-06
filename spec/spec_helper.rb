@@ -6,6 +6,10 @@ RSpec.configure do |config|
   config.before(:suite) do
     puts "Testing with #{CONNECTION_TYPE.to_s.upcase} socket type"
   end
+
+  config.expect_with :rspec do |c|
+    c.syntax = :expect
+  end
 end
 
 HOST = ENV['HOST'] || '0.0.0.0'
