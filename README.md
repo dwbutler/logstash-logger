@@ -42,6 +42,7 @@ logger = LogStashLogger.new(port: 5228)
 # Specify host and type (UDP or TCP) explicitly
 udp_logger = LogStashLogger.new(host: 'localhost', port: 5228, type: :udp)
 tcp_logger = LogStashLogger.new(host: 'localhost', port: 5229, type: :tcp)
+stdout_logger = LogStashLogger.new(type: :stdout)
 
 # The following messages are written to UDP port 5228:
 
