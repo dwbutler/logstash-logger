@@ -47,17 +47,6 @@ describe LogStashLogger do
           expect(app.config.logger).to be_nil
         end
       end
-
-      context "when port is not specified" do
-        before(:each) do
-          app.config.logstash.clear
-          app.config.logstash.host = 'localhost'
-        end
-
-        it "raises an exception" do
-          expect { LogStashLogger.setup(app) }.to raise_error(ArgumentError)
-        end
-      end
     end
   end
 end

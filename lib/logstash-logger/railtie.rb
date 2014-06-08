@@ -4,13 +4,7 @@ class LogStashLogger < ::Logger
   def self.setup(app)
     return unless app.config.logstash.present?
 
-    fail ArgumentError, "Port is required" unless app.config.logstash.port
-
-    logger_options = {
-      host: app.config.logstash.host,
-      port: app.config.logstash.port,
-      type: app.config.logstash.type
-    }
+    logger_options = app.config.logstash
 
     logger = LogStashLogger.new(logger_options)
 

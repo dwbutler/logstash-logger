@@ -8,10 +8,15 @@ module LogStash
     attr_reader :host, :port, :type, :ssl_certificate
 
     def initialize(opts)
-      @host = opts[:host] || DEFAULT_HOST
-      @port = opts[:port] || fail(ArgumentError, "Port is required") unless opts[:type] == :stdout
       @type = opts[:type] || DEFAULT_TYPE
+
+      if [:udp, :tcp].include?(type)
+        @port = opts[:port] || fail(ArgumentError, "Port is required")
+        @host = opts[:host] || DEFAULT_HOST
+      end
+
       @ssl_certificate = opts[:ssl_certificate]
+
       @socket = nil
     end
 
