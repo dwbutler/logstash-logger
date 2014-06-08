@@ -2,10 +2,12 @@
 - Support for tagged logging. The interface was extracted from `ActiveSupport::TaggedLogging`
 and outputs to the `tags` key.
 - The `(host, port, type)` constructor has been deprecated in favor of an options hash constructor.
+- Support for using SSL for TCP connections. (Thanks [Gazler](https://github.com/Gazler)!)
+- Support for configuring logger to write to STDOUT.
 - Support for Rails configuration.
-- Output to STDOUT in Rails console.
+- Fixed output to STDOUT in Rails console (Rails 4+).
 - `host` is no longer required. It will default to `0.0.0.0`, the same default port that logstash listens on.
-- Changed `source` to `host` to match what the latest logstash expects.
+- Changed event key `source` to `host` to match what the latest logstash expects.
 - Output event timestamp consistently even if `Time#to_json` is overridden.
 - Refactoring.
 
