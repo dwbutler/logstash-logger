@@ -3,10 +3,10 @@ require 'logstash-logger/tagged_logging'
 
 module LogStashLogger
   def self.new(*args)
-    connection_options = extract_connection_opts(*args)
-    @connection = Connection.new(connection_options)
+    opts = extract_opts(*args)
+    @device = Device.new(opts)
 
-    ::Logger.new(@connection).tap do |logger|
+    ::Logger.new(@device).tap do |logger|
       logger.extend(self)
       logger.extend(TaggedLogging)
       logger.formatter = Formatter.new
@@ -15,17 +15,17 @@ module LogStashLogger
 
   def self.included(base)
     base.instance_eval do
-      attr_reader :connection
+      attr_reader :device
 
       def flush
-        !!@connection.flush
+        !!@device.flush
       end
     end
   end
 
   protected
 
-  def self.extract_connection_opts(*args)
+  def self.extract_opts(*args)
     if args.length > 1
       puts "[LogStashLogger] (host, port, type) constructor is deprecated. Please use an options hash instead."
       host, port, type = *args

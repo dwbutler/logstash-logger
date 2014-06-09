@@ -31,5 +31,5 @@ RSpec.shared_context 'logger' do
   # The log device that the logger writes to
   let(:logdev) { logger.instance_variable_get(:@logdev) }
 
-  let(:connection) { LogStashLogger::Connection.new(port: port)}
+  let(:device) { LogStashLogger::Device.new(port: port)}
 end

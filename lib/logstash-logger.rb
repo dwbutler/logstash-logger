@@ -2,7 +2,7 @@ require 'logstash-logger/version'
 
 require 'logstash/event'
 
-require 'logstash-logger/connection'
+require 'logstash-logger/device'
 
 require 'logstash-logger/logger'
 require 'logstash-logger/formatter'
