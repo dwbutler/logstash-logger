@@ -7,17 +7,21 @@ module LogStashLogger
 
       def initialize(opts)
         super
+
         @ssl_certificate = opts[:ssl_certificate]
+        @use_ssl = !!@ssl_certificate || opts[:use_ssl] || opts[:ssl_enable]
       end
 
       protected
 
       def connect
-        if using_ssl?
+        if use_ssl?
           ssl_connect
         else
           non_ssl_connect
         end
+
+        @io
       end
 
       def non_ssl_connect
@@ -26,14 +30,13 @@ module LogStashLogger
 
       def ssl_connect
         non_ssl_connect
-        openssl_cert = OpenSSL::X509::Certificate.new(::File.read(@ssl_certificate))
-        @io = OpenSSL::SSL::SSLSocket.new(@io).tap do |socket|
-          socket.connect
-        end
+        #openssl_cert = OpenSSL::X509::Certificate.new(::File.read(@ssl_certificate))
+        @io = OpenSSL::SSL::SSLSocket.new(@io)
+        @io.connect
       end
 
-      def using_ssl?
-        !@ssl_certificate.nil?
+      def use_ssl?
+        @use_ssl || !@ssl_certificate.nil?
       end
     end
   end
