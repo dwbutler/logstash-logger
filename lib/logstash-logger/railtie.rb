@@ -1,6 +1,6 @@
 require 'rails/railtie'
 
-class LogStashLogger < ::Logger
+module LogStashLogger
   def self.setup(app)
     return unless app.config.logstash.present?
 

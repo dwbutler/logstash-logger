@@ -49,7 +49,7 @@ describe LogStashLogger do
   
   it 'uses a LogStashLogger::Connection as the log device' do
     expect(logdev).to be_a Logger::LogDevice
-    expect(logdev.instance_variable_get(:@dev)).to be_a LogStash::Connection
+    expect(logdev.instance_variable_get(:@dev)).to be_a LogStashLogger::Connection
   end
 
   it 'takes a string message as input and writes a logstash event' do

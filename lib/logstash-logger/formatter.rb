@@ -2,11 +2,11 @@ require 'logger'
 require 'socket'
 require 'time'
 
-class LogStashLogger < ::Logger
+module LogStashLogger
   HOST = ::Socket.gethostname
 
   class Formatter < ::Logger::Formatter
-    include ::LogStash::TaggedLogging::Formatter
+    include TaggedLogging::Formatter
 
     def call(severity, time, progname, message)
       event = build_event(message, severity, time)

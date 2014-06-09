@@ -1,6 +1,6 @@
 require 'logstash-logger'
 
-describe LogStash::Connection do
+describe LogStashLogger::Connection do
   include_context 'logger'
 
   it "defaults host to 0.0.0.0" do

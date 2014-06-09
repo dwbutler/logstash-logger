@@ -1,6 +1,6 @@
 require 'socket'
 
-module LogStash
+module LogStashLogger
   class Connection
     DEFAULT_HOST = '0.0.0.0'
     DEFAULT_TYPE = :udp

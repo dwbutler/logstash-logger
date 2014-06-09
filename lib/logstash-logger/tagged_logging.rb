@@ -1,4 +1,4 @@
-module LogStash
+module LogStashLogger
   # Shamelessly copied from ActiveSupport::TaggedLogging
   module TaggedLogging
     def tagged(*tags)
