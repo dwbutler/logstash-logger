@@ -30,6 +30,11 @@ RSpec.shared_context 'logger' do
   let(:logger) { LogStashLogger.new(host: host, port: port, type: connection_type) }
   # The log device that the logger writes to
   let(:logdev) { logger.instance_variable_get(:@logdev) }
+end
 
-  let(:device) { LogStashLogger::Device.new(port: port)}
+RSpec.shared_context 'device' do
+  let(:port) { PORT }
+  let(:device_with_port) { LogStashLogger::Device.new(port: port) }
+  let(:udp_device) { LogStashLogger::Device.new(type: :udp, port: port) }
+  let(:tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port) }
 end

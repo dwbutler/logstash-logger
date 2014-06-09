@@ -4,7 +4,6 @@ module LogStashLogger
       attr_reader :io
 
       def initialize(opts={})
-        @io = nil
       end
 
       def to_io

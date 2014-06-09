@@ -7,7 +7,7 @@ module LogStashLogger
 
     def flush
       formatter.clear_tags!
-      super
+      super if defined?(super)
     end
 
     module Formatter

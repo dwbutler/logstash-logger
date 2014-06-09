@@ -10,8 +10,6 @@ module LogStashLogger
       def initialize(opts)
         @port = opts[:port] || fail(ArgumentError, "Port is required")
         @host = opts[:host] || DEFAULT_HOST
-
-        super
       end
 
       def write(message)
@@ -27,16 +25,24 @@ module LogStashLogger
         end
       end
 
+      def to_io
+        with_connection do
+          @io
+        end
+      end
+
       def connected?
         !!@io
       end
 
       protected
 
+      # Implemented by TCP and UDP devices
       def connect
         fail NotImplementedError
       end
 
+      # Ensure the block is executed with a valid connection
       def with_connection(&block)
         connect unless @io
         yield

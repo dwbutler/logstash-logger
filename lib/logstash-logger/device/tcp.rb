@@ -1,3 +1,5 @@
+require 'openssl'
+
 module LogStashLogger
   module Device
     class TCP < Socket
@@ -25,8 +27,9 @@ module LogStashLogger
       def ssl_connect
         non_ssl_connect
         openssl_cert = OpenSSL::X509::Certificate.new(::File.read(@ssl_certificate))
-        @io = OpenSSL::SSL::SSLSocket.new(@io)
-        @io.connect
+        @io = OpenSSL::SSL::SSLSocket.new(@io).tap do |socket|
+          socket.connect
+        end
       end
 
       def using_ssl?
