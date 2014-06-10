@@ -117,12 +117,18 @@ For a more detailed discussion of UDP vs TCP, I recommend reading this article: 
 If you are using TCP then there is the option of adding an SSL certificate to the options hash on initialize.
 
 ```ruby
-LogStashLogger.new(:port => 5228, :type => :tcp, :ssl_certificate => "/path/to/certificate.crt")
+LogStashLogger.new(type: :tcp, port: 5228, ssl_certificate: "/path/to/certificate.crt")
 ```
 
 The SSL certificate and key can be generated using
 
     openssl req -x509 -batch -nodes -newkey rsa:2048 -keyout logstash.key -out logstash.crt
+
+You can also enable SSL without a certificate:
+
+```ruby
+LogStashLogger.new(type: :tcp, port: 5228, ssl_enable: true)
+```
 
 The following Logstash configuration is required for SSL:
 
