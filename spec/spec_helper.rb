@@ -37,4 +37,5 @@ RSpec.shared_context 'device' do
   let(:device_with_port) { LogStashLogger::Device.new(port: port) }
   let(:udp_device) { LogStashLogger::Device.new(type: :udp, port: port) }
   let(:tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port) }
+  let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true) }
 end

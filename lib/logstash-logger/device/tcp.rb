@@ -9,7 +9,11 @@ module LogStashLogger
         super
 
         @ssl_certificate = opts[:ssl_certificate]
-        @use_ssl = !!@ssl_certificate || opts[:use_ssl] || opts[:ssl_enable]
+        @use_ssl = !!(@ssl_certificate || opts[:use_ssl] || opts[:ssl_enable])
+      end
+
+      def use_ssl?
+        @use_ssl || !@ssl_certificate.nil?
       end
 
       protected
@@ -33,10 +37,6 @@ module LogStashLogger
         #openssl_cert = OpenSSL::X509::Certificate.new(::File.read(@ssl_certificate))
         @io = OpenSSL::SSL::SSLSocket.new(@io)
         @io.connect
-      end
-
-      def use_ssl?
-        @use_ssl || !@ssl_certificate.nil?
       end
     end
   end
