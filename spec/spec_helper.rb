@@ -39,6 +39,6 @@ RSpec.shared_context 'device' do
   let(:tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port) }
   let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true) }
 
-  let(:file) { Tempfile.create('test') }
+  let(:file) { Tempfile.new('test') }
   let(:file_device) { LogStashLogger::Device.new(type: :file, path: file.path)}
 end
