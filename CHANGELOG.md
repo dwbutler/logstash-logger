@@ -1,6 +1,7 @@
 ## 0.6.0 (Unreleased)
 - Support for logging to a file.
 - Support for logging to a Redis list.
+- Support for logging to a local Unix socket.
 - Railtie supports file logger, using default log path and `config.autoflush_log` configuration.
 - All `LogStashLogger` types now support a `sync` option, which controls if each message is automatically flushed.
 

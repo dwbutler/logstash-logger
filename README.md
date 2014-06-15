@@ -47,6 +47,7 @@ tcp_logger = LogStashLogger.new(host: 'localhost', port: 5229, type: :tcp)
 # Other types of loggers
 stdout_logger = LogStashLogger.new(type: :stdout)
 file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync: true)
+unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
 redis_logger = LogStashLogger.new(type: :redis)
 
 # The following messages are written to UDP port 5228:
@@ -168,6 +169,16 @@ config.logstash.type = :tcp
 
 # Optional, enables SSL
 config.logstash.ssl_enable = true
+```
+
+### Unix Socket
+
+```ruby
+# Required
+config.logstash.type = :unix
+
+# Required
+config.logstash.path = '/tmp/sock'
 ```
 
 ### Redis

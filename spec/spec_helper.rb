@@ -38,6 +38,7 @@ RSpec.shared_context 'device' do
   let(:udp_device) { LogStashLogger::Device.new(type: :udp, port: port) }
   let(:tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port) }
   let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true) }
+  let(:unix_device) { LogStashLogger::Device.new(type: :unix, path: '/tmp/logstash') }
 
   let(:file) { Tempfile.new('test') }
   let(:file_device) { LogStashLogger::Device.new(type: :file, path: file.path)}

@@ -9,6 +9,7 @@ module LogStashLogger
     autoload :Socket, 'logstash-logger/device/socket'
     autoload :UDP, 'logstash-logger/device/udp'
     autoload :TCP, 'logstash-logger/device/tcp'
+    autoload :Unix, 'logstash-logger/device/unix'
     autoload :Redis, 'logstash-logger/device/redis'
     autoload :File, 'logstash-logger/device/file'
     autoload :Stdout, 'logstash-logger/device/stdout'
@@ -23,6 +24,7 @@ module LogStashLogger
       case type
         when :udp then UDP
         when :tcp then TCP
+        when :unix then Unix
         when :file then File
         when :redis then Redis
         when :stdout then Stdout
