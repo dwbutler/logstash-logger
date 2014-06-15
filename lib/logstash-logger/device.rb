@@ -8,6 +8,7 @@ module LogStashLogger
     autoload :Socket, 'logstash-logger/device/socket'
     autoload :UDP, 'logstash-logger/device/udp'
     autoload :TCP, 'logstash-logger/device/tcp'
+    autoload :File, 'logstash-logger/device/file'
     autoload :Stdout, 'logstash-logger/device/stdout'
 
     def self.new(opts)
@@ -20,6 +21,7 @@ module LogStashLogger
       case type
         when :udp then UDP
         when :tcp then TCP
+        when :file then File
         when :stdout then Stdout
         else fail ArgumentError, 'Invalid type'
       end

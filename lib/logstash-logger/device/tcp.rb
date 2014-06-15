@@ -29,7 +29,9 @@ module LogStashLogger
       end
 
       def non_ssl_connect
-        @io = TCPSocket.new(@host, @port)
+        @io = TCPSocket.new(@host, @port).tap do |socket|
+          socket.sync = sync unless sync.nil?
+        end
       end
 
       def ssl_connect

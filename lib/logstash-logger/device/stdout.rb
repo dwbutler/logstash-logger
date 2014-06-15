@@ -2,7 +2,9 @@ module LogStashLogger
   module Device
     class Stdout < Base
       def initialize(opts={})
+        super
         @io = $stdout
+        @io.sync = sync unless sync.nil?
       end
 
       def close

@@ -7,7 +7,8 @@ writing to a file or syslog since logstash can receive the structured data direc
 
 ## Features
 
-* Writes directly to logstash over a UDP or TCP connection.
+* Can write directly to logstash over a UDP or TCP/SSL connection.
+* Can write to a file or to stdout (for debugging).
 * Always writes in logstash JSON format.
 * Logger can take a string message, a hash, a LogStash::Event, or a logstash-formatted json string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
@@ -43,6 +44,7 @@ logger = LogStashLogger.new(port: 5228)
 udp_logger = LogStashLogger.new(host: 'localhost', port: 5228, type: :udp)
 tcp_logger = LogStashLogger.new(host: 'localhost', port: 5229, type: :tcp)
 stdout_logger = LogStashLogger.new(type: :stdout)
+file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync: true)
 
 # The following messages are written to UDP port 5228:
 
@@ -127,21 +129,52 @@ Verified to work with both Rails 3 and 4.
 
 Add the following to your `config/environments/production.rb`:
 
+### Common Options
+
+```ruby
+# Optional, Rails sets the default to :info
+config.log_level = :debug
+
+# Optional, Rails 4 defaults to true in development and false in production
+config.autoflush_log = true
+```
+
+### UDP
 ```ruby
 # Optional, defaults to '0.0.0.0'
 config.logstash.host = 'localhost'
 
-# Required for TCP/UDP
-config.logstash.port = 5228
-
-# Optional, defaults to :udp. Possible values are :udp, :tcp, or :stdout
+# Optional, defaults to :udp.
 config.logstash.type = :udp
 
-# Optional, enables SSL when combined with :tcp type
-config.logstash.ssl_enable = true
+# Required, the port to connect to
+config.logstash.port = 5228
+```
 
-# Optional, Rails sets the default to :info
-config.log_level = :debug
+### TCP
+
+```ruby
+# Optional, defaults to '0.0.0.0'
+config.logstash.host = 'localhost'
+
+# Required, the port to connect to
+config.logstash.port = 5228
+
+# Required
+config.logstash.type = :tcp
+
+# Optional, enables SSL
+config.logstash.ssl_enable = true
+```
+
+### File
+
+```ruby
+# Required
+config.logstash.type = :file
+
+# Optional, defaults to Rails log path
+config.logstash.path = 'log/production.log'
 ```
 
 By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.

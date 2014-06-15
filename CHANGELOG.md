@@ -1,3 +1,8 @@
+## 0.6.0 (Unreleased)
+- Support for logging to a file.
+- Railtie supports file logger, using default log path and `config.autoflush_log` configuration.
+- All `LogStashLogger` types now support a `sync` option, which controls if each message is automatically flushed.
+
 ## 0.5.0
 - Support for tagged logging. The interface was extracted from `ActiveSupport::TaggedLogging`
 and outputs to the `tags` key. (Thanks [pctj101](https://github.com/pctj101)!)

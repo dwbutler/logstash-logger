@@ -2,8 +2,10 @@ module LogStashLogger
   module Device
     class Base
       attr_reader :io
+      attr_accessor :sync
 
       def initialize(opts={})
+        @sync = opts[:sync]
       end
 
       def to_io
