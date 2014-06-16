@@ -1,15 +1,24 @@
 require 'redis'
+require 'stud/buffer'
 
 module LogStashLogger
   module Device
     class Redis < Connectable
+      include Stud::Buffer
+
       DEFAULT_LIST = 'logstash'
 
       attr_accessor :list
 
       def initialize(opts)
+        super
         @list = opts.delete(:list) || DEFAULT_LIST
         @redis_options = opts
+
+        @batch_events = opts.fetch(:batch_events, 50)
+        @batch_timeout = opts.fetch(:batch_timeout, 5)
+
+        buffer_initialize max_items: @batch_events, max_interval: @batch_timeout
       end
 
       def connect
@@ -28,17 +37,16 @@ module LogStashLogger
         retry
       rescue => e
         warn "#{self.class} - #{e.class} - #{e.message}"
-        close
         @io = nil
       end
 
       def write(message)
-        with_connection do
-          @io.rpush(@list, message)
-        end
+        buffer_receive message, @list
+        buffer_flush(force: true) if @sync
       end
 
       def close
+        buffer_flush(final: true)
         @io && @io.quit
       rescue => e
         warn "#{self.class} - #{e.class} - #{e.message}"
@@ -46,10 +54,17 @@ module LogStashLogger
         @io = nil
       end
 
-      def flush
-        # TO-DO when buffers / batch-push implemented
-        # For now it's a no-op (every log message is pushed immediately)
+      def flush(*args)
+        if args.empty?
+          buffer_flush
+        else
+          messages, list = *args
+          with_connection do
+            @io.rpush(list, messages)
+          end
+        end
       end
+
     end
   end
 end
