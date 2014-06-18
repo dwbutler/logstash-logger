@@ -1,4 +1,4 @@
-## 0.6.0 (Unreleased)
+## 0.6.0
 - Support for logging to a file.
 - Support for logging to a Redis list.
 - Support for logging to a local Unix socket.

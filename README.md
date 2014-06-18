@@ -8,10 +8,11 @@ writing to a file or syslog since logstash can receive the structured data direc
 ## Features
 
 * Can write directly to logstash over a UDP or TCP/SSL connection.
-* Can write to a file or to stdout (for debugging).
+* Can write to a file, Redis, a unix socket, or stdout.
 * Always writes in logstash JSON format.
-* Logger can take a string message, a hash, a LogStash::Event, or a logstash-formatted json string as input.
+* Logger can take a string message, a hash, a `LogStash::Event`, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
+* Easily integrates with Rails via configuration.
 
 ## Installation
 
@@ -29,11 +30,6 @@ Or install it yourself as:
 
 ## Basic Usage
 
-First set up a logstash agent to receive input over a UDP or TCP port.
-Then in ruby, create a `LogStashLogger` that writes to that port.
-
-The logger accepts a string message, a JSON string, a hash, or a `LogStash::Event`.
-
 ```ruby
 require 'logstash-logger'
 
@@ -41,14 +37,14 @@ require 'logstash-logger'
 logger = LogStashLogger.new(port: 5228)
 
 # Specify host and type (UDP or TCP) explicitly
-udp_logger = LogStashLogger.new(host: 'localhost', port: 5228, type: :udp)
-tcp_logger = LogStashLogger.new(host: 'localhost', port: 5229, type: :tcp)
+udp_logger = LogStashLogger.new(type: :udp, host: 'localhost', port: 5228)
+tcp_logger = LogStashLogger.new(type: :tcp, host: 'localhost', port: 5229)
 
 # Other types of loggers
-stdout_logger = LogStashLogger.new(type: :stdout)
 file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync: true)
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
 redis_logger = LogStashLogger.new(type: :redis)
+stdout_logger = LogStashLogger.new(type: :stdout)
 
 # The following messages are written to UDP port 5228:
 
@@ -71,8 +67,9 @@ logger.tagged('foo') { logger.fatal('bar') }
 
 ## Logstash Configuration
 
-In order for Logstash to correctly receive and parse the event, you will need to
-configure and run a UDP listener that uses the `json_lines` codec:
+In order for logstash to correctly receive and parse the events, you will need to
+configure and run a listener that uses the `json_lines` codec. For example, to receive
+events over UDP on port 5228:
 
 ```ruby
 input {
@@ -85,14 +82,6 @@ input {
 ```
 
 See the [samples](https://github.com/dwbutler/logstash-logger/tree/master/samples) directory for more configuration samples.
-
-## UDP vs TCP
-Should you write to a UDP or TCP listener? It depends on your specific needs, but most applications should use the default (UDP).
-
-* UDP is faster because it's asynchronous (fire-and-forget). However, this means that log messages could get dropped. This is okay for most applications.
-* TCP verifies that every message has been received via two-way communication . This could slow your app down to a crawl if the TCP listener is under heavy load.
-
-For a more detailed discussion of UDP vs TCP, I recommend reading this article: [UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
 
 ## SSL
 
@@ -230,6 +219,25 @@ Verified to work with:
 * Rubinius 2.2+
 
 Ruby 1.8.7 is not supported.
+
+
+## What type of logger should I use?
+
+It depends on your specific needs, but most applications should use the default (UDP). Here are the advantages and
+disadvantages of each type:
+
+* UDP is faster than TCP because it's asynchronous (fire-and-forget). However, this means that log messages could get dropped.
+  This is okay for many applications.
+* TCP verifies that every message has been received via two-way communication. It also supports SSL for secure transmission
+  of log messages over a network. This could slow your app down to a crawl if the TCP listener is under heavy load.
+* A file is simple to use, but you will have to worry about log rotation and running out of disk space.
+* Writing to a Unix socket is faster than writing to a TCP or UDP port, but only works locally.
+* Writing to Redis is good for distributed setups that generate tons of logs. However, you will have another moving part and
+  have to worry about Redis running out of memory.
+* Writing to stdout is only recommended for debugging purposes.
+
+For a more detailed discussion of UDP vs TCP, I recommend reading this article:
+[UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
 
 ## Breaking changes
 
