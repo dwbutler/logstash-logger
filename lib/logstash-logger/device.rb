@@ -15,6 +15,7 @@ module LogStashLogger
     autoload :Stdout, 'logstash-logger/device/stdout'
 
     def self.new(opts)
+      opts = opts.dup
       type = opts.delete(:type) || DEFAULT_TYPE
 
       device_klass_for(type).new(opts)
