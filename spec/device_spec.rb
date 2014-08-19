@@ -8,4 +8,16 @@ describe LogStashLogger::Device do
       expect(device_with_port).to be_a LogStashLogger::Device::UDP
     end
   end
+
+  context "when passing in configuration" do
+    let(:configuration) { {type: :udp, port: port} }
+
+    subject(:new_device) { described_class.new(configuration) }
+
+    it "does not mutate the passed configuration" do
+      expect{ new_device }.to_not change { configuration }
+      expect( new_device ).to be_a LogStashLogger::Device::UDP
+    end
+  end
+
 end
