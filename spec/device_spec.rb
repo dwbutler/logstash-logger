@@ -25,7 +25,7 @@ describe LogStashLogger::Device do
 
     subject(:new_device) { described_class.new(configuration) }
 
-    it "is flexible and can except a device type that is a string" do
+    it "it correctly recognizes the device type" do
       expect(new_device).to be_a LogStashLogger::Device::UDP
     end
   end
