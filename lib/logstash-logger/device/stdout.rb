@@ -1,10 +1,8 @@
 module LogStashLogger
   module Device
-    class Stdout < Base
+    class Stdout < IO
       def initialize(opts={})
-        super
-        @io = STDOUT
-        @io.sync = sync unless sync.nil?
+        super(opts.merge(io: STDOUT))
       end
 
       def close

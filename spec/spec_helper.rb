@@ -43,5 +43,7 @@ RSpec.shared_context 'device' do
   let(:file) { Tempfile.new('test') }
   let(:file_device) { LogStashLogger::Device.new(type: :file, path: file.path)}
 
+  let(:io_device) { LogStashLogger::Device.new(type: :io, io: io)}
+
   let(:redis_device) { LogStashLogger::Device.new(type: :redis, sync: true) }
 end
