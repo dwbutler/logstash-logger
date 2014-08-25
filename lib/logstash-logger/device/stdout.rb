@@ -3,13 +3,13 @@ module LogStashLogger
     class Stdout < Base
       def initialize(opts={})
         super
-        @io = $stdout
+        @io = STDOUT
         @io.sync = sync unless sync.nil?
       end
 
       def close
         # no-op
-        # Calling $stdout.close would be a bad idea
+        # Calling STDOUT.close would be a bad idea
       end
     end
   end
