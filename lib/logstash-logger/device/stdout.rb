@@ -3,7 +3,7 @@ module LogStashLogger
     class Stdout < Base
       def initialize(opts={})
         super
-        @io = $stdout
+        @io = opts[:io] || $stdout
         @io.sync = sync unless sync.nil?
       end
 
