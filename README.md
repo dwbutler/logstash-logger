@@ -45,6 +45,7 @@ file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync:
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
 redis_logger = LogStashLogger.new(type: :redis)
 stdout_logger = LogStashLogger.new(type: :stdout)
+io_logger = LogStashLogger.new(type: :io, io: io)
 
 # The following messages are written to UDP port 5228:
 
@@ -120,9 +121,22 @@ input {
 
 Verified to work with both Rails 3 and 4.
 
+By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.
+
+For minimal, more-structured logstash events, try one of the following gems:
+
+* [lograge](https://github.com/roidrage/lograge)
+* [yarder](https://github.com/rurounijones/yarder)
+
+Currently these gems output a JSON string, which LogStashLogger then parses.
+Future versions of these gems could potentially have deeper integration with LogStashLogger
+(e.g. by directly writing `LogStash::Event` objects).
+
+### Rails Configuration
+
 Add the following to your `config/environments/production.rb`:
 
-### Common Options
+#### Common Options
 
 ```ruby
 # Optional, Rails sets the default to :info
@@ -132,7 +146,7 @@ config.log_level = :debug
 config.autoflush_log = true
 ```
 
-### UDP
+#### UDP
 ```ruby
 # Optional, defaults to '0.0.0.0'
 config.logstash.host = 'localhost'
@@ -144,7 +158,7 @@ config.logstash.type = :udp
 config.logstash.port = 5228
 ```
 
-### TCP
+#### TCP
 
 ```ruby
 # Optional, defaults to '0.0.0.0'
@@ -160,7 +174,7 @@ config.logstash.type = :tcp
 config.logstash.ssl_enable = true
 ```
 
-### Unix Socket
+#### Unix Socket
 
 ```ruby
 # Required
@@ -170,7 +184,7 @@ config.logstash.type = :unix
 config.logstash.path = '/tmp/sock'
 ```
 
-### Redis
+#### Redis
 
 ```ruby
 # Required
@@ -190,7 +204,7 @@ config.logstash.host = 'localhost'
 config.logstash.port = 6379
 ```
 
-### File
+#### File
 
 ```ruby
 # Required
@@ -200,15 +214,15 @@ config.logstash.type = :file
 config.logstash.path = 'log/production.log'
 ```
 
-By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.
+#### IO
 
-For minimal, more-structured logstash events, try one of the following gems:
+```ruby
+# Required
+config.logstash.type = :io
 
-* [lograge](https://github.com/roidrage/lograge)
-* [yarder](https://github.com/rurounijones/yarder)
-
-Currently these gems output a JSON string, which LogStashLogger then parses.
-Future versions of these gems could potentially have deeper integration with LogStashLogger (i.e. by writing `LogStash::Event` objects).
+# Required
+config.logstash.io = io
+```
 
 ## Ruby Compatibility
 
@@ -219,7 +233,6 @@ Verified to work with:
 * Rubinius 2.2+
 
 Ruby 1.8.7 is not supported.
-
 
 ## What type of logger should I use?
 
