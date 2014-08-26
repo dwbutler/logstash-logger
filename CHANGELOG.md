@@ -1,3 +1,11 @@
+## 0.6.2
+- Allow type to be specified as a string. Fixes [#19](https://github.com/dwbutler/logstash-logger/pull/19).
+Thanks [Arron Mabrey](https://github.com/arronmabrey)!
+
+## 0.6.1
+- Don't mutate options passed to LogStashLogger. Fixes [#18](https://github.com/dwbutler/logstash-logger/pull/18).
+Thanks [Arron Mabrey](https://github.com/arronmabrey)!
+
 ## 0.6.0
 - Support for logging to a file.
 - Support for logging to a Redis list.
