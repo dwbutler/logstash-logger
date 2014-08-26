@@ -2,12 +2,12 @@ module LogStashLogger
   module Device
     class Stdout < IO
       def initialize(opts={})
-        super(opts.merge(io: STDOUT))
+        super({io: $stdout}.merge(opts))
       end
 
       def close
         # no-op
-        # Calling STDOUT.close would be a bad idea
+        # Calling $stdout.close would be a bad idea
       end
     end
   end
