@@ -17,6 +17,11 @@ module LogStashLogger
 
     def self.new(opts)
       opts = opts.dup
+
+      if parsed_uri_opts = parse_uri_config(opts)
+        opts = parsed_uri_opts
+      end
+
       type = opts.delete(:type) || DEFAULT_TYPE
 
       device_klass_for(type).new(opts)
