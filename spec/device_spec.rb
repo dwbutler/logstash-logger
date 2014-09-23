@@ -30,4 +30,20 @@ describe LogStashLogger::Device do
     end
   end
 
+  describe ".parse_uri_config" do
+    subject(:parse_uri_config) { described_class.parse_uri_config(uri) }
+
+    context "when uri is valid" do
+      let(:uri) { 'udp://localhost:5228' }
+
+      it { is_expected.to eq({type: 'udp', host: 'localhost', port: 5228, path: ''}) }
+    end
+
+    context "when uri is invalid" do
+      let(:uri) { "I'm not a parsable uri" }
+      it { is_expected.to be nil }
+      specify { expect{ parse_uri_config }.to_not raise_error }
+    end
+  end
+
 end

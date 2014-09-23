@@ -22,6 +22,13 @@ module LogStashLogger
       device_klass_for(type).new(opts)
     end
 
+    def self.parse_uri_config(uri)
+      parsed = URI.parse(uri)
+      {type: parsed.scheme, host: parsed.host, port: parsed.port, path: parsed.path}
+    rescue URI::InvalidURIError => ex
+      return nil
+    end
+
     def self.device_klass_for(type)
       case type.to_sym
         when :udp then UDP
