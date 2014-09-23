@@ -46,4 +46,11 @@ RSpec.shared_context 'device' do
   let(:io_device) { LogStashLogger::Device.new(type: :io, io: io)}
 
   let(:redis_device) { LogStashLogger::Device.new(type: :redis, sync: true) }
+
+  let(:udp_uri_config)    { "udp://localhost:5228"        }
+  let(:tcp_uri_config)    { "tcp://localhost:5229"        }
+  let(:unix_uri_config)   { "unix:///some/path/to/socket" }
+  let(:file_uri_config)   { "file://#{file.path}"         }
+  let(:redis_uri_config)  { "redis://localhost:9999"      }
+  let(:stdout_uri_config) { "stdout://localhost"          }
 end
