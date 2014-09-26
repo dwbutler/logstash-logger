@@ -39,7 +39,7 @@ describe LogStashLogger::Device do
     end
 
     context "when uri is invalid" do
-      let(:uri_config) { "I'm not a parsable uri" }
+      let(:uri_config) { invalid_uri_config }
       it { is_expected.to be nil }
       specify { expect{ parse_uri_config }.to_not raise_error }
     end

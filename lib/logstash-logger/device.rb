@@ -27,7 +27,8 @@ module LogStashLogger
       device_klass_for(type).new(opts)
     end
 
-    def self.parse_uri_config(uri)
+    def self.parse_uri_config(opts)
+      uri = opts[:uri]
       parsed = URI.parse(uri)
       {type: parsed.scheme, host: parsed.host, port: parsed.port, path: parsed.path}
     rescue URI::InvalidURIError => ex
