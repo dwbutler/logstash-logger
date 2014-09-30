@@ -17,9 +17,21 @@ module LogStashLogger
 
     def self.new(opts)
       opts = opts.dup
+
+      if parsed_uri_opts = parse_uri_config(opts)
+        opts = parsed_uri_opts
+      end
+
       type = opts.delete(:type) || DEFAULT_TYPE
 
       device_klass_for(type).new(opts)
+    end
+
+    def self.parse_uri_config(opts)
+      if uri = opts[:uri]
+        parsed = URI.parse(uri)
+        {type: parsed.scheme, host: parsed.host, port: parsed.port, path: parsed.path}
+      end
     end
 
     def self.device_klass_for(type)
