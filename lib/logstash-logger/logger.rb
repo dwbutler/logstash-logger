@@ -15,8 +15,10 @@ module LogStashLogger
   end
 
   def self.extended(base)
-    base.class_eval do
-      attr_reader :device
+    base.instance_eval do
+      class << self
+        attr_reader :device
+      end
 
       def flush
         !!@device.flush
