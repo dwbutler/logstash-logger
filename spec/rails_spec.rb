@@ -14,32 +14,46 @@ end
 Test::Application.initialize!
 
 describe LogStashLogger do
+  include_context 'device'
+
   describe "Rails integration" do
     let(:app) { Rails.application }
     let(:config) { app.config }
+    subject { app.config.logger }
 
-    describe 'Railtie' do
-      describe 'Rails.logger' do
-        subject { Rails.logger }
+    before(:each) do
+      app.config.logstash.clear
+      app.config.logger = nil
+    end
 
-        it { should be_a LogStashLogger }
+    describe '#setup' do
+      context "when configured with a port" do
+        before(:each) do
+          app.config.logstash.port = PORT
+          app.config.log_level = :info
+          LogStashLogger.setup(app)
+        end
+
+        it { is_expected.to be_a LogStashLogger }
 
         it "defaults level to config.log_level" do
           expect(subject.level).to eq(::Logger::INFO)
         end
       end
-    end
 
-    describe '#setup' do
-      before do
-        app.config.logstash.port = PORT
-        LogStashLogger.setup(app)
+      context "when configured with a URI" do
+        before(:each) do
+          app.config.logstash.uri = tcp_uri
+          LogStashLogger.setup(app)
+        end
+
+        it "configures the logger using the URI" do
+          expect(subject.device).to be_a LogStashLogger::Device::TCP
+        end
       end
 
       context "when logstash is not configured" do
-        before do
-          app.config.logstash.clear
-          app.config.logger = nil
+        before(:each) do
           LogStashLogger.setup(app)
         end
 

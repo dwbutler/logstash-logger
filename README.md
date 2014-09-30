@@ -66,6 +66,27 @@ logger.tagged('foo') { logger.fatal('bar') }
 # {"message":"bar","@timestamp":"2014-05-26T20:35:14.685-07:00","@version":"1","severity":"FATAL","host":"[hostname]","tags":["foo"]}
 ```
 
+## URI Configuration
+You can use a URI to configure your logstash logger instead of a hash. This is useful in environments
+such as Heroku where you may want to read configuration values from the environment. The URI scheme
+is `type://host:port/path`. Some sample URI configurations are given below.
+
+```
+udp://localhost:5228       
+tcp://localhost:5229       
+unix:///tmp/socket
+file:///path/to/file        
+redis://localhost:6379     
+stdout:/
+```
+
+Pass the URI into your logstash logger like so:
+
+```ruby
+# Read the URI from an environment variable
+logger = LogStashLogger.new(uri: ENV['LOGSTASH_URI'])
+```
+
 ## Logstash Configuration
 
 In order for logstash to correctly receive and parse the events, you will need to
@@ -144,6 +165,9 @@ config.log_level = :debug
 
 # Optional, Rails 4 defaults to true in development and false in production
 config.autoflush_log = true
+
+# Optional, use a URI to configure. Useful on Heroku
+config.logstash.uri = ENV['LOGSTASH_URI']
 ```
 
 #### UDP

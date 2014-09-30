@@ -6,6 +6,11 @@ module LogStashLogger
 
     logger_options = app.config.logstash
 
+    if parsed_uri_options = LogStashLogger::Device.parse_uri_config(logger_options)
+      logger_options.delete(:uri)
+      logger_options.merge!(parsed_uri_options)
+    end
+
     if logger_options.type == :file
       logger_options.path ||= app.config.paths["log"].first
     end
