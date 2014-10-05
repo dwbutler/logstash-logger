@@ -1,3 +1,11 @@
+## 0.7.0
+- Support for logging to a generic IO object.
+- Support for overriding IO in stdout logger. Fixes [#20](https://github.com/dwbutler/logstash-logger/pull/20).
+Thanks [Arron Mabrey](https://github.com/arronmabrey)!
+- Support for configuring logger with a URI. See [#22](https://github.com/dwbutler/logstash-logger/pull/22).
+Thanks [Arron Mabrey](https://github.com/arronmabrey)!
+- Support logging any object. See [#23](https://github.com/dwbutler/logstash-logger/issues/23).
+
 ## 0.6.2
 - Allow type to be specified as a string. Fixes [#19](https://github.com/dwbutler/logstash-logger/pull/19).
 Thanks [Arron Mabrey](https://github.com/arronmabrey)!

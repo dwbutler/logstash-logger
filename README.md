@@ -10,7 +10,7 @@ writing to a file or syslog since logstash can receive the structured data direc
 * Can write directly to logstash over a UDP or TCP/SSL connection.
 * Can write to a file, Redis, a unix socket, or stdout.
 * Always writes in logstash JSON format.
-* Logger can take a string message, a hash, a `LogStash::Event`, or a JSON string as input.
+* Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
 * Easily integrates with Rails via configuration.
 
