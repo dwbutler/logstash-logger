@@ -120,5 +120,20 @@ describe LogStashLogger do
     expect(listener_event['host']).to eq(hostname)
     expect(listener_event['@timestamp']).to_not be_nil
   end
+
+  it 'takes any object as input and writes a logstash event' do
+    message = Time.now
+
+    expect(logdev).to receive(:write).and_call_original do |event|
+      expect(event).to be_a LogStash::Event
+      expect(event.host).to eql(hostname)
+      expect(event['message']).to eql(message.inspect)
+      expect(event['severity']).to eql('INFO')
+    end
+
+    logger.info(message)
+
+    expect(listener_event['message']).to eq(message.inspect)
+  end
   
 end

@@ -27,8 +27,8 @@ module LogStashLogger
                 when Hash
                   event_data = data.merge("@timestamp" => time)
                   LogStash::Event.new(event_data)
-                when String
-                  LogStash::Event.new("message" => data, "@timestamp" => time)
+                else
+                  LogStash::Event.new("message" => msg2str(data), "@timestamp" => time)
               end
 
       event['severity'] ||= severity
