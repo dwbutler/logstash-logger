@@ -44,6 +44,7 @@ module LogStashLogger
         when :redis then Redis
         when :io then IO
         when :stdout then Stdout
+        when :stderr then Stderr
         else fail ArgumentError, 'Invalid type'
       end
     end

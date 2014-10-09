@@ -53,6 +53,7 @@ RSpec.shared_context 'device' do
   let(:file_uri) { "file://#{file.path}" }
   let(:redis_uri) { "redis://localhost:6379" }
   let(:stdout_uri) { "stdout://localhost" }
+  let(:stderr_uri) { "stderr://localhost" }
 
   let(:invalid_uri_config) { {uri: "non parsable uri"} }
   let(:udp_uri_config)     { {uri: udp_uri} }
@@ -61,4 +62,5 @@ RSpec.shared_context 'device' do
   let(:file_uri_config)    { {uri: file_uri} }
   let(:redis_uri_config)   { {uri: redis_uri} }
   let(:stdout_uri_config)  { {uri: stdout_uri} }
+  let(:stderr_uri_config)  { {uri: stderr_uri} }
 end
