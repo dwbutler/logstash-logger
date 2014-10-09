@@ -14,6 +14,7 @@ module LogStashLogger
     autoload :File, 'logstash-logger/device/file'
     autoload :IO, 'logstash-logger/device/io'
     autoload :Stdout, 'logstash-logger/device/stdout'
+    autoload :Stderr, 'logstash-logger/device/stderr'
 
     def self.new(opts)
       opts = opts.dup
