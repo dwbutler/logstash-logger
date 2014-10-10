@@ -14,6 +14,7 @@ module LogStashLogger
     autoload :File, 'logstash-logger/device/file'
     autoload :IO, 'logstash-logger/device/io'
     autoload :Stdout, 'logstash-logger/device/stdout'
+    autoload :Stderr, 'logstash-logger/device/stderr'
 
     def self.new(opts)
       opts = opts.dup
@@ -43,6 +44,7 @@ module LogStashLogger
         when :redis then Redis
         when :io then IO
         when :stdout then Stdout
+        when :stderr then Stderr
         else fail ArgumentError, 'Invalid type'
       end
     end

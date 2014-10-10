@@ -8,7 +8,7 @@ writing to a file or syslog since logstash can receive the structured data direc
 ## Features
 
 * Can write directly to logstash over a UDP or TCP/SSL connection.
-* Can write to a file, Redis, a unix socket, or stdout.
+* Can write to a file, Redis, a unix socket, stdout or stderr.
 * Always writes in logstash JSON format.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
@@ -45,6 +45,7 @@ file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync:
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
 redis_logger = LogStashLogger.new(type: :redis)
 stdout_logger = LogStashLogger.new(type: :stdout)
+stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
 
 # The following messages are written to UDP port 5228:
@@ -78,6 +79,7 @@ unix:///tmp/socket
 file:///path/to/file        
 redis://localhost:6379     
 stdout:/
+stderr:/
 ```
 
 Pass the URI into your logstash logger like so:

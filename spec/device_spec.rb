@@ -76,6 +76,11 @@ describe LogStashLogger::Device do
       let(:uri_config) { stdout_uri_config }
       it { is_expected.to be_a LogStashLogger::Device::Stdout }
     end
+
+    context 'when URI config is stderr' do
+      let(:uri_config) { stderr_uri_config }
+      it { is_expected.to be_a LogStashLogger::Device::Stderr }
+    end
   end
 
 end
