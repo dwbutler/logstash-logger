@@ -48,6 +48,9 @@ stdout_logger = LogStashLogger.new(type: :stdout)
 stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
 
+# Multiple Outputs
+multi_logger = LogStashLogger.new([{type: :file, path: 'log/development.log'}, {type: :udp, host: 'localhost', port: 5228}])
+
 # The following messages are written to UDP port 5228:
 
 logger.info 'test'
@@ -249,6 +252,21 @@ config.logstash.type = :io
 # Required
 config.logstash.io = io
 ```
+
+#### Multiple Outputs
+
+```ruby
+config.logstash = [
+  {
+    type: :file,
+    path: 'log/production.log'
+  },
+  {
+    type: :udp,
+    port: 5228,
+    host: 'localhost'
+  }
+]
 
 ## Ruby Compatibility
 

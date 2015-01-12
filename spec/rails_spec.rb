@@ -22,7 +22,7 @@ describe LogStashLogger do
     subject { app.config.logger }
 
     before(:each) do
-      app.config.logstash.clear
+      app.config.logstash = ActiveSupport::OrderedOptions.new
       app.config.logger = nil
     end
 
@@ -49,6 +49,29 @@ describe LogStashLogger do
 
         it "configures the logger using the URI" do
           expect(subject.device).to be_a LogStashLogger::Device::TCP
+        end
+      end
+
+      context "when configured with multiple devices" do
+        before(:each) do
+          app.config.logstash = [
+            {
+              type: :udp,
+              uri: udp_uri
+            },
+            {
+              type: :file
+            }
+          ]
+          LogStashLogger.setup(app)
+        end
+
+        it "uses a multi-delegator" do
+          expect(subject.device).to be_a LogStashLogger::Device::MultiDelegator
+          expect(subject.device.targets.map(&:class)).to eq([
+            LogStashLogger::Device::UDP,
+            LogStashLogger::Device::File
+          ])
         end
       end
 

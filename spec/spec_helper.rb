@@ -46,6 +46,7 @@ RSpec.shared_context 'device' do
   let(:io_device) { LogStashLogger::Device.new(type: :io, io: io)}
 
   let(:redis_device) { LogStashLogger::Device.new(type: :redis, sync: true) }
+  let(:multi_delegator_device) { LogStashLogger::Device.new([{type: :stdout}, {type: :io, io: io}]) }
 
   let(:udp_uri) { "udp://localhost:5228" }
   let(:tcp_uri) { "tcp://localhost:5229" }
