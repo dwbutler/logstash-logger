@@ -29,15 +29,22 @@ module LogStashLogger
   protected
 
   def self.extract_opts(*args)
+    args.flatten!
+
     if args.length > 1
-      puts "[LogStashLogger] (host, port, type) constructor is deprecated. Please use an options hash instead."
-      host, port, type = *args
-      {host: host, port: port, type: type}
+      if args.all?{|arg| arg.is_a?(Hash)}
+        # Array of Hashes
+        args
+      else
+        # Deprecated host/port/type syntax
+        puts "[LogStashLogger] (host, port, type) constructor is deprecated. Please use an options hash instead."
+        host, port, type = *args
+        {host: host, port: port, type: type}
+      end
     elsif Hash === args[0]
       args[0]
     else
       fail ArgumentError, "Invalid LogStashLogger options"
     end
   end
-
 end

@@ -6,6 +6,25 @@ module LogStashLogger
 
     logger_options = app.config.logstash
 
+    sanitized_logger_options = if logger_options.is_a?(Array)
+                                 logger_options.map do |opts|
+                                   sanitize_logger_options(app, opts)
+                                 end
+                               else
+                                 sanitize_logger_options(app, logger_options)
+                               end
+
+    logger = LogStashLogger.new(sanitized_logger_options)
+
+    logger.level = ::Logger.const_get(app.config.log_level.to_s.upcase)
+
+    app.config.logger = logger
+  end
+
+  def self.sanitize_logger_options(app, logger_options)
+    # Convert logger options to OrderedOptions if regular Hash
+    logger_options = ActiveSupport::OrderedOptions.new.merge(logger_options)
+
     if parsed_uri_options = LogStashLogger::Device.parse_uri_config(logger_options)
       logger_options.delete(:uri)
       logger_options.merge!(parsed_uri_options)
@@ -19,11 +38,7 @@ module LogStashLogger
       logger_options.sync = app.config.autoflush_log
     end
 
-    logger = LogStashLogger.new(logger_options)
-
-    logger.level = ::Logger.const_get(app.config.log_level.to_s.upcase)
-
-    app.config.logger = logger
+    logger_options
   end
 
   class Railtie < ::Rails::Railtie

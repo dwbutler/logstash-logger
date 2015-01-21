@@ -15,10 +15,24 @@ module LogStashLogger
     autoload :IO, 'logstash-logger/device/io'
     autoload :Stdout, 'logstash-logger/device/stdout'
     autoload :Stderr, 'logstash-logger/device/stderr'
+    autoload :MultiDelegator, 'logstash-logger/device/multi_delegator'
 
     def self.new(opts)
       opts = opts.dup
 
+      if opts.is_a?(Array)
+        # Multiple device configs supplied... create a MultiDelegator
+        devices = opts.map{|opt| build_device(opt)}
+        Device::MultiDelegator.delegate(:write, :close, :flush).to(*devices)
+      elsif Hash
+        # Create a single device
+        build_device(opts)
+      else
+        raise ArgumentError, "Invalid device options: must be a Hash or an Array of Hashes"
+      end
+    end
+
+    def self.build_device(opts)
       if parsed_uri_opts = parse_uri_config(opts)
         opts = parsed_uri_opts
       end
