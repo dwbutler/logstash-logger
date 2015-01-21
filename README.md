@@ -267,6 +267,7 @@ config.logstash = [
     host: 'localhost'
   }
 ]
+```
 
 ## Ruby Compatibility
 
