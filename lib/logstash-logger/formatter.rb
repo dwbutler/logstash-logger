@@ -4,6 +4,7 @@ require 'time'
 
 module LogStashLogger
   HOST = ::Socket.gethostname
+  APPNAME = Rails.application.class.parent_name.titleize
 
   class Formatter < ::Logger::Formatter
     include TaggedLogging::Formatter
@@ -36,7 +37,7 @@ module LogStashLogger
 
       event['host'] ||= HOST
       
-      event['appname'] ||= Rails.application.class.parent_name.titleize
+      event['appname'] ||= APPNAME
 
       current_tags.each do |tag|
         event.tag(tag)
