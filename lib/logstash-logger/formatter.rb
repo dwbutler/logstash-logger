@@ -35,6 +35,8 @@ module LogStashLogger
       #event.type = progname
 
       event['host'] ||= HOST
+      
+      event['appname'] ||= Rails.application.class.parent_name.titleize
 
       current_tags.each do |tag|
         event.tag(tag)
