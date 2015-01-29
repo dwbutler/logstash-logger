@@ -157,7 +157,7 @@ LogStash-Logger by default will log a json object with the format below.
 }
 ```
 
-Some applications may need additional metadata. These metadata can be specific with the LogStashLogger as below.
+Some applications may need additional metadata. Metadata can be specified in the LogStashLogger.config.custom_fields hash.
 
 ```ruby
 LogStashLogger.config do |conf|
@@ -165,7 +165,7 @@ LogStashLogger.config do |conf|
 end
 ```
 
-Which would result in the following output.
+This configuration would result in the following output.
 
 ```json
 {
