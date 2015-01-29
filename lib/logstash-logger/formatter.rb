@@ -35,8 +35,10 @@ module LogStashLogger
       #event.type = progname
 
       event['host'] ||= HOST
-      
-      event['appname'] ||= Rails.application.class.parent_name.titleize
+
+      LogStashLogger.config.custom_fields.each do |field, fn|
+        event[field] = fn.call()
+      end
 
       current_tags.each do |tag|
         event.tag(tag)
