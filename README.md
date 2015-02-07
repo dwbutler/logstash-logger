@@ -320,6 +320,15 @@ logger = LogStashLogger.new('localhost', 5228)
 logger = LogStashLogger.new('localhost', 5228, :tcp)
 ```
 
+## Contributors
+* [David Butler](https://github.com/dwbutler)
+* [pctj101](https://github.com/pctj101)
+* [Gary Rennie](https://github.com/Gazler)
+* [Nick Ethier](https://github.com/nickethier)
+* [Arron Mabrey](https://github.com/arronmabrey)
+* [Jan Schulte](https://github.com/schultyy)
+* [Kurt Preston](https://github.com/KurtPreston)
+
 ## Contributing
 
 1. Fork it
