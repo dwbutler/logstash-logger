@@ -3,7 +3,7 @@ require 'logstash-logger'
 describe LogStashLogger::Device::MultiDelegator do
   include_context 'device'
 
-  # Create a MultiDelegator writing to both STDOUT and IO
+  # Create a MultiDelegator writing to both STDOUT and a StringIO
   let(:subject) { multi_delegator_device }
 
   let(:stdout) { $stdout }

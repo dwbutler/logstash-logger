@@ -23,7 +23,7 @@ module LogStashLogger
       if opts.is_a?(Array)
         # Multiple device configs supplied... create a MultiDelegator
         devices = opts.map{|opt| build_device(opt)}
-        Device::MultiDelegator.delegate(:write, :close, :flush).to(*devices)
+        Device::MultiDelegator.new(*devices)
       elsif Hash
         # Create a single device
         build_device(opts)
