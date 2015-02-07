@@ -1,6 +1,7 @@
 require 'logger'
 require 'socket'
 require 'time'
+require 'multi_json'
 
 module LogStashLogger
   HOST = ::Socket.gethostname
@@ -10,7 +11,7 @@ module LogStashLogger
 
     def call(severity, time, progname, message)
       event = build_event(message, severity, time)
-      "#{event.to_json}\n"
+      "#{MultiJson.dump(event)}\n"
     end
 
     protected
@@ -18,7 +19,7 @@ module LogStashLogger
     def build_event(message, severity, time)
       data = message
       if data.is_a?(String) && data.start_with?('{')
-        data = (JSON.parse(message) rescue nil) || message
+        data = (MultiJson.load(message) rescue nil) || message
       end
 
       event = case data
