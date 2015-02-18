@@ -68,7 +68,7 @@ describe LogStashLogger do
 
         it "uses a multi-delegator" do
           expect(subject.device).to be_a LogStashLogger::Device::MultiDelegator
-          expect(subject.device.targets.map(&:class)).to eq([
+          expect(subject.device.devices.map(&:class)).to eq([
             LogStashLogger::Device::UDP,
             LogStashLogger::Device::File
           ])

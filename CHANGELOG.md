@@ -1,3 +1,9 @@
+## 0.8.0
+- Support for logging to stderr. Fixes [#24](https://github.com/dwbutler/logstash-logger/pull/25).
+Thanks [Jan Schulte](https://github.com/schultyy)!
+- Support multiple log outputs. Fixes [#28](https://github.com/dwbutler/logstash-logger/pull/28).
+Thanks [Kurt Preston](https://github.com/KurtPreston)!
+
 ## 0.7.0
 - Support for logging to a generic IO object.
 - Support for overriding IO in stdout logger. Fixes [#20](https://github.com/dwbutler/logstash-logger/pull/20).

@@ -5,24 +5,23 @@
 
 module LogStashLogger
   module Device
-    class MultiDelegator
-      attr_reader :targets
+    class MultiDelegator < Base
+      attr_reader :devices
 
-      def initialize(*targets)
-        @targets = targets
+      def initialize(*devices)
+        @io = self
+        @devices = devices
+        self.class.delegate(:write, :close, :flush)
       end
+
+      private
 
       def self.delegate(*methods)
         methods.each do |m|
           define_method(m) do |*args|
-            @targets.map { |t| t.send(m, *args) }
+            @devices.each { |device| device.send(m, *args) }
           end
         end
-        self
-      end
-
-      class <<self
-        alias to new
       end
     end
   end
