@@ -162,6 +162,7 @@ Some applications may need additional metadata. Metadata can be specified in the
 ```ruby
 LogStashLogger.config do |conf|
   conf.custom_fields["field_name"] = -> { some_business_logic }
+  conf.custom_fields["second_field"] = "a_string_literal"
 end
 ```
 

@@ -36,8 +36,12 @@ module LogStashLogger
 
       event['host'] ||= HOST
 
-      LogStashLogger.config.custom_fields.each do |field, fn|
-        event[field] = fn.call()
+      LogStashLogger.config.custom_fields.each do |field, msg|
+        if msg.respond_to? (:call)
+          event[field] = msg.call()
+        elsif msg.is_a? String
+          event[field] = msg
+        end
       end
 
       current_tags.each do |tag|

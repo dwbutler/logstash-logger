@@ -14,10 +14,10 @@ describe LogStashLogger do
 
   it 'Responds to a configuration block sanely' do
     config = LogStashLogger.config do |conf|
-      conf.custom_fields = {"test1" => -> {"response1"}}
+      conf.custom_fields = {"test1" => "response1"}
     end
 
-    expect(config.custom_fields["test1"]).to be_a Proc
+    expect(config.custom_fields["test1"]).to eq("response1")
   end
 
   it 'Executes procs' do
@@ -25,6 +25,7 @@ describe LogStashLogger do
       conf.custom_fields["test2"] = -> {"response2"}
     end
 
+    expect(config.custom_fields["test2"]).to be_a Proc
     expect(config.custom_fields["test2"].call).to eq("response2")
   end
 
