@@ -39,7 +39,7 @@ module LogStashLogger
       LogStashLogger.config.custom_fields.each do |field, msg|
         if msg.respond_to? (:call)
           event[field] = msg.call()
-        elsif msg.is_a? String
+        else
           event[field] = msg
         end
       end
