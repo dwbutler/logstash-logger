@@ -27,7 +27,7 @@ RSpec.shared_context 'logger' do
   let(:port) { PORT }
 
   # The logstash logger
-  let(:logger) { LogStashLogger.new(host: host, port: port, type: connection_type) }
+  let(:logger) { LogStashLogger.new(host: host, port: port, type: connection_type, sync: true) }
   # The log device that the logger writes to
   let(:logdev) { logger.instance_variable_get(:@logdev) }
 end
@@ -35,10 +35,10 @@ end
 RSpec.shared_context 'device' do
   let(:port) { PORT }
   let(:device_with_port) { LogStashLogger::Device.new(port: port) }
-  let(:udp_device) { LogStashLogger::Device.new(type: :udp, port: port) }
-  let(:tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port) }
-  let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true) }
-  let(:unix_device) { LogStashLogger::Device.new(type: :unix, path: '/tmp/logstash') }
+  let(:udp_device) { LogStashLogger::Device.new(type: :udp, port: port, sync: true) }
+  let(:tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, sync: true) }
+  let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true, sync: true) }
+  let(:unix_device) { LogStashLogger::Device.new(type: :unix, path: '/tmp/logstash', sync: true) }
 
   let(:file) { Tempfile.new('test') }
   let(:file_device) { LogStashLogger::Device.new(type: :file, path: file.path)}
