@@ -157,12 +157,13 @@ LogStash-Logger by default will log a json object with the format below.
 }
 ```
 
-Some applications may need additional metadata. Metadata can be specified in the LogStashLogger.config.custom_fields hash.
+Some applications may need additional metadata. The event can be manipulated directly by specifying a `customize_event` block in the LogStashLogger configuration.
 
 ```ruby
-LogStashLogger.config do |conf|
-  conf.custom_fields["field_name"] = -> { some_business_logic }
-  conf.custom_fields["second_field"] = "a_string_literal"
+config = LogStashLogger.configure do |conf|
+  conf.customize_event do |event|
+    event["other_field"] = "some_other_value"
+  end
 end
 ```
 
@@ -175,7 +176,7 @@ This configuration would result in the following output.
     "@version": "1",
     "severity": "INFO",
     "host": "hostname",
-    "field_name": "output_from_lambda"
+    "other_field": "some_other_value"
 }
 ```
 

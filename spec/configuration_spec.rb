@@ -3,30 +3,20 @@ require 'logstash-logger'
 describe LogStashLogger do
 
   it 'Initializes with LogStashLogger#config' do
-    config = LogStashLogger.config
+    config = LogStashLogger.configure
     expect(config).to be_a LogStashLogger::Configuration
   end
 
-  it 'Initializes custom_fields with sane defaults' do
-    config = LogStashLogger.config
-    expect(config.custom_fields).to be_a Hash
-  end
-
   it 'Responds to a configuration block sanely' do
-    config = LogStashLogger.config do |conf|
-      conf.custom_fields = {"test1" => "response1"}
+    config = LogStashLogger.configure do |conf|
+      conf.customize_event do |event|
+        event["test1"] = "response1"
+      end
     end
 
-    expect(config.custom_fields["test1"]).to eq("response1")
-  end
-
-  it 'Executes procs' do
-    config = LogStashLogger.config do |conf|
-      conf.custom_fields["test2"] = -> {"response2"}
-    end
-
-    expect(config.custom_fields["test2"]).to be_a Proc
-    expect(config.custom_fields["test2"].call).to eq("response2")
+    event = LogStash::Event.new({})
+    config.customize_event_block.call(event)
+    expect(event["test1"]).to eq("response1")
   end
 
 end

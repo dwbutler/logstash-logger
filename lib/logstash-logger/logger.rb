@@ -26,7 +26,7 @@ module LogStashLogger
     end
   end
 
-  def self.config(&block)
+  def self.configure(&block)
     @config = LogStashLogger::Configuration.new(&block) if block_given? || @config.nil?
     @config
   end
