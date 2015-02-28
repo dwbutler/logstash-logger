@@ -54,27 +54,14 @@ describe LogStashLogger do
 
   it 'takes a string message as input and writes a logstash event' do
     message = 'test'
-
-    expect(logdev).to receive(:write).and_call_original do |event|
-      expect(event).to be_a LogStash::Event
-      expect(event.host).to eql(hostname)
-      expect(event['message']).to eql(message)
-      expect(event['severity']).to eql('INFO')
-    end
-
     logger.info(message)
 
+    expect(listener_event['severity']).to eql('INFO')
     expect(listener_event['message']).to eq(message)
     expect(listener_event['host']).to eq(hostname)
   end
 
   it 'takes a logstash-formatted json string as input and writes out a logstash event' do
-    expect(logdev).to receive(:write).and_call_original do |event|
-      expect(event).to be_a LogStash::Event
-      expect(event['message']).to eql(logstash_event['message'])
-      expect(event.host).to eql(hostname)
-    end
-
     logger.info(logstash_event.to_json)
 
     expect(listener_event['message']).to eq(logstash_event['message'])
@@ -82,18 +69,11 @@ describe LogStashLogger do
   end
 
   it 'takes a LogStash::Event as input and writes it out intact' do
-    expect(logdev).to receive(:write).and_call_original do |event|
-      expect(event).to be_a LogStash::Event
-      expect(event['message']).to eql(logstash_event['message'])
-      expect(event['severity']).to eql(logstash_event['severity'])
-      expect(event.timestamp).to eql(logstash_event.timestamp)
-      expect(event.host).to eql(hostname)
-    end
-
     logger.warn(logstash_event)
 
     expect(listener_event['message']).to eq(logstash_event['message'])
     expect(listener_event['severity']).to eq(logstash_event['severity'])
+    expect(event['@timestamp']).to eq(logstash_event.timestamp)
     expect(listener_event['host']).to eq(hostname)
   end
 
@@ -103,14 +83,6 @@ describe LogStashLogger do
       'severity' => 'INFO',
       'foo' => 'bar'
     }
-
-    expect(logdev).to receive(:write).and_call_original do |event|
-      expect(event).to be_a LogStash::Event
-      expect(event['message']).to eql('test')
-      expect(event['severity']).to eql('INFO')
-      expect(event['foo']).to eql('bar')
-      expect(event.host).to eql(hostname)
-    end
 
     logger.info(data.dup)
 
@@ -124,16 +96,11 @@ describe LogStashLogger do
   it 'takes any object as input and writes a logstash event' do
     message = Time.now
 
-    expect(logdev).to receive(:write).and_call_original do |event|
-      expect(event).to be_a LogStash::Event
-      expect(event.host).to eql(hostname)
-      expect(event['message']).to eql(message.inspect)
-      expect(event['severity']).to eql('INFO')
-    end
-
     logger.info(message)
 
     expect(listener_event['message']).to eq(message.inspect)
+    expect(listener_event['host']).to eq(hostname)
+    expect(listener_event['severity']).to eq('INFO')
   end
 
   it 'allows event to be customized via configuration' do
@@ -144,7 +111,7 @@ describe LogStashLogger do
     end
 
     logger.info("test")
-    
+
     expect(listener_event["test1"]).to eq("response1")
   end
 
