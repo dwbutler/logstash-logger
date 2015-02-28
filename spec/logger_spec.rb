@@ -73,7 +73,7 @@ describe LogStashLogger do
 
     expect(listener_event['message']).to eq(logstash_event['message'])
     expect(listener_event['severity']).to eq(logstash_event['severity'])
-    expect(event['@timestamp']).to eq(logstash_event.timestamp)
+    expect(listener_event['@timestamp'].iso8601).to eq(logstash_event.timestamp.iso8601)
     expect(listener_event['host']).to eq(hostname)
   end
 
