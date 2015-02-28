@@ -76,11 +76,11 @@ such as Heroku where you may want to read configuration values from the environm
 is `type://host:port/path`. Some sample URI configurations are given below.
 
 ```
-udp://localhost:5228       
-tcp://localhost:5229       
+udp://localhost:5228
+tcp://localhost:5229
 unix:///tmp/socket
-file:///path/to/file        
-redis://localhost:6379     
+file:///path/to/file
+redis://localhost:6379
 stdout:/
 stderr:/
 ```
@@ -140,6 +140,43 @@ input {
     ssl_cert => "/path/to/certificate.crt"
     ssl_key => "/path/to/key.key"
   }
+}
+```
+
+## Custom log fields
+
+LogStash-Logger by default will log a json object with the format below.
+
+```json
+{
+  "message":"Some Message",
+  "@timestamp":"2015-01-29T10:43:32.196-05:00",
+  "@version":"1",
+  "severity":"INFO",
+  "host":"hostname"
+}
+```
+
+Some applications may need additional metadata. The event can be manipulated directly by specifying a `customize_event` block in the LogStashLogger configuration.
+
+```ruby
+config = LogStashLogger.configure do |conf|
+  conf.customize_event do |event|
+    event["other_field"] = "some_other_value"
+  end
+end
+```
+
+This configuration would result in the following output.
+
+```json
+{
+    "message": "Some Message",
+    "@timestamp": "2015-01-29T10:43:32.196-05:00",
+    "@version": "1",
+    "severity": "INFO",
+    "host": "hostname",
+    "other_field": "some_other_value"
 }
 ```
 
