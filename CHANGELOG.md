@@ -1,3 +1,8 @@
+## Edge
+- Support for customizing the fields on all logged messages via configuration.
+Fixes [#32](https://github.com/dwbutler/logstash-logger/pull/32).
+Thanks [Chris Blatchley](https://github.com/chrisblatchley)!
+
 ## 0.8.0
 - Support for logging to stderr. Fixes [#24](https://github.com/dwbutler/logstash-logger/pull/25).
 Thanks [Jan Schulte](https://github.com/schultyy)!

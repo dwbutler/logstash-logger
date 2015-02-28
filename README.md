@@ -366,6 +366,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Arron Mabrey](https://github.com/arronmabrey)
 * [Jan Schulte](https://github.com/schultyy)
 * [Kurt Preston](https://github.com/KurtPreston)
+* [Chris Blatchley](https://github.com/chrisblatchley)
 
 ## Contributing
 
