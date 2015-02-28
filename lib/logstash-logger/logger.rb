@@ -26,11 +26,6 @@ module LogStashLogger
     end
   end
 
-  def self.configure(&block)
-    @config = LogStashLogger::Configuration.new(&block) if block_given? || @config.nil?
-    @config
-  end
-
   protected
 
   def self.extract_opts(*args)

@@ -136,4 +136,16 @@ describe LogStashLogger do
     expect(listener_event['message']).to eq(message.inspect)
   end
 
+  it 'allows event to be customized via configuration' do
+    LogStashLogger.configure do |config|
+      config.customize_event do |event|
+        event["test1"] = "response1"
+      end
+    end
+
+    logger.info("test")
+    
+    expect(listener_event["test1"]).to eq("response1")
+  end
+
 end

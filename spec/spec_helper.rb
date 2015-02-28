@@ -7,6 +7,12 @@ RSpec.configure do |config|
     puts "Testing with #{CONNECTION_TYPE.to_s.upcase} socket type"
   end
 
+  config.before(:each) do
+    LogStashLogger.configure do
+
+    end
+  end
+
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end

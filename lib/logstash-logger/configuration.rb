@@ -1,4 +1,12 @@
 module LogStashLogger
+  class << self
+    def configure(&block)
+      @configuration = Configuration.new(&block) if block_given? || @configuration.nil?
+      @configuration
+    end
+
+    alias :configuration :configure
+  end
 
   class Configuration
     attr_accessor :customize_event_block

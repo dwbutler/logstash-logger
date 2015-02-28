@@ -143,9 +143,9 @@ input {
 }
 ```
 
-## Custom log fields
+## Custom Log Fields
 
-LogStash-Logger by default will log a json object with the format below.
+`LogStashLogger` by default will log a JSON object with the format below.
 
 ```json
 {
@@ -157,11 +157,12 @@ LogStash-Logger by default will log a json object with the format below.
 }
 ```
 
-Some applications may need additional metadata. The event can be manipulated directly by specifying a `customize_event` block in the LogStashLogger configuration.
+Some applications may need to attach additional metadata to each message.
+The `LogStash::Event` can be manipulated directly by specifying a `customize_event` block in the `LogStashLogger` configuration.
 
 ```ruby
-config = LogStashLogger.configure do |conf|
-  conf.customize_event do |event|
+config = LogStashLogger.configure do |config|
+  config.customize_event do |event|
     event["other_field"] = "some_other_value"
   end
 end
