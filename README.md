@@ -311,7 +311,7 @@ config.logstash = [
 
 Verified to work with:
 
-* MRI Ruby 1.9.3, 2.0+, 2.1+
+* MRI Ruby 1.9.3, 2.0.x, 2.1.x, 2.2.x
 * JRuby 1.7+
 * Rubinius 2.2+
 
@@ -334,6 +334,18 @@ disadvantages of each type:
 
 For a more detailed discussion of UDP vs TCP, I recommend reading this article:
 [UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
+
+## Troubleshooting
+
+### JSON::GeneratorError
+Your application is probably attempting to log data that is not encoded in a valid way. When this happens, Ruby's
+standard JSON library will raise an exception. You may be able to overcome this by swapping out a different JSON encoder
+such as Oj. Use the [oj_mimic_json](https://github.com/ohler55/oj_mimic_json) gem to use Oj for JSON generation.
+
+### No logs getting sent on Heroku
+Heroku recommends installing the [rails_12factor](https://github.com/heroku/rails_12factor) so that logs get sent to STDOUT.
+Unfortunately, this overrides LogStashLogger, preventing logs from being sent to their configured destination. The solution
+is to remove `rails_12factor` from your Gemfile.
 
 ## Breaking changes
 
