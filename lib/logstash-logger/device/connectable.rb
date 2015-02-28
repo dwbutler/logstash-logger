@@ -18,11 +18,11 @@ module LogStashLogger
         buffer_flush(force: true) if @sync
       end
 
-      def flush(*messages)
-        if messages.empty?
+      def flush(*args)
+        if args.empty?
           buffer_flush
         else
-          write_batch(messages)
+          write_batch(args[0])
         end
       end
 
@@ -43,7 +43,9 @@ module LogStashLogger
 
       def write_batch(messages)
         with_connection do
-          @io.write(messages.join)
+          messages.each do |message|
+            @io.write(message)
+          end
         end
       end
 
