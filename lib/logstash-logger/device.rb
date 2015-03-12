@@ -11,6 +11,7 @@ module LogStashLogger
     autoload :TCP, 'logstash-logger/device/tcp'
     autoload :Unix, 'logstash-logger/device/unix'
     autoload :Redis, 'logstash-logger/device/redis'
+    autoload :Kafka, 'logstash-logger/device/kafka'
     autoload :File, 'logstash-logger/device/file'
     autoload :IO, 'logstash-logger/device/io'
     autoload :Stdout, 'logstash-logger/device/stdout'
@@ -56,6 +57,7 @@ module LogStashLogger
         when :unix then Unix
         when :file then File
         when :redis then Redis
+        when :kafka then Kafka
         when :io then IO
         when :stdout then Stdout
         when :stderr then Stderr
