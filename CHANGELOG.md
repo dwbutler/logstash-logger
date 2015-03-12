@@ -1,4 +1,4 @@
-## Edge
+## 0.9.0
 - Support for customizing the fields on all logged messages via configuration.
 Fixes [#32](https://github.com/dwbutler/logstash-logger/pull/32).
 Thanks [Chris Blatchley](https://github.com/chrisblatchley)!
