@@ -60,7 +60,7 @@ module LogStashLogger
         else
           messages, list = *args
           with_connection do
-            @io.rpush(list, messages)
+            @io.publish(list, messages)
           end
         end
       end
