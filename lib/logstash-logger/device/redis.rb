@@ -1,5 +1,4 @@
 require 'redis'
-require 'stud/buffer'
 
 module LogStashLogger
   module Device
@@ -39,6 +38,12 @@ module LogStashLogger
         buffer_flush(force: true) if @sync
       end
 
+      def write_batch(messages, list = nil)
+        with_connection do
+          @io.rpush(list, messages)
+        end
+      end
+
       def close
         buffer_flush(final: true)
         @io && @io.quit
@@ -56,13 +61,6 @@ module LogStashLogger
           write_batch(messages, list)
         end
       end
-
-      def write_batch(messages, list = nil)
-        with_connection do
-          @io.rpush(list, messages)
-        end
-      end
-
     end
   end
 end

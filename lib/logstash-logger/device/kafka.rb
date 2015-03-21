@@ -1,10 +1,8 @@
 require 'poseidon'
-require 'stud/buffer'
 
 module LogStashLogger
   module Device
     class Kafka < Connectable
-      include Stud::Buffer
 
       DEFAULT_HOST = 'localhost'
       DEFAULT_PORT = 9092
@@ -22,11 +20,6 @@ module LogStashLogger
         @topic = opts[:path] || DEFAULT_TOPIC
         @producer = opts[:producer] || DEFAULT_PRODUCER
         @backoff = opts[:backoff] || DEFAULT_BACKOFF
-
-        @batch_events = opts.fetch(:batch_events, 50)
-        @batch_timeout = opts.fetch(:batch_timeout, 5)
-
-        buffer_initialize max_items: @batch_events, max_interval: @batch_timeout
       end
 
       def connect
@@ -56,6 +49,12 @@ module LogStashLogger
         buffer_flush(force: true) if @sync
       end
 
+      def write_batch(messages)
+        with_connection do
+          @io.send_messages messages
+        end
+      end
+
       def close
         buffer_flush(final: true)
         @io && @io.close
@@ -70,9 +69,7 @@ module LogStashLogger
           buffer_flush
         else
           messages = *args.first
-          with_connection do
-            @io.send_messages messages
-          end
+          write_batch(messages)
         end
       end
 
