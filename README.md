@@ -347,6 +347,11 @@ Heroku recommends installing the [rails_12factor](https://github.com/heroku/rail
 Unfortunately, this overrides LogStashLogger, preventing logs from being sent to their configured destination. The solution
 is to remove `rails_12factor` from your Gemfile.
 
+### Logging eventually stops in production
+This is most likely not a problem with LogStashLogger, but rather a different gem changing the log level of `Rails.logger`.
+This is especially likely if you're using a threaded server such as Puma, since gems often change the log level of
+`Rails.logger` in a non thread-safe way. See [#17](https://github.com/dwbutler/logstash-logger/issues/17) for more information.
+
 ## Breaking changes
 
 ### Version 0.5+
