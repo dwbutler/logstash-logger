@@ -72,6 +72,11 @@ describe LogStashLogger::Device do
       it { is_expected.to be_a LogStashLogger::Device::Redis }
     end
 
+    context "when URI config is kafka" do
+      let(:uri_config) { kafka_uri_config }
+      it { is_expected.to be_a LogStashLogger::Device::Kafka }
+    end
+
     context "when URI config is stdout" do
       let(:uri_config) { stdout_uri_config }
       it { is_expected.to be_a LogStashLogger::Device::Stdout }

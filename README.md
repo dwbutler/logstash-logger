@@ -44,6 +44,7 @@ tcp_logger = LogStashLogger.new(type: :tcp, host: 'localhost', port: 5229)
 file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync: true)
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
 redis_logger = LogStashLogger.new(type: :redis)
+kafka_logger = LogStashLogger.new(type: :kafka)
 stdout_logger = LogStashLogger.new(type: :stdout)
 stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
@@ -76,11 +77,12 @@ such as Heroku where you may want to read configuration values from the environm
 is `type://host:port/path`. Some sample URI configurations are given below.
 
 ```
-udp://localhost:5228       
-tcp://localhost:5229       
+udp://localhost:5228
+tcp://localhost:5229
 unix:///tmp/socket
-file:///path/to/file        
-redis://localhost:6379     
+file:///path/to/file
+redis://localhost:6379
+kafka://localhost:9092
 stdout:/
 stderr:/
 ```
@@ -140,6 +142,44 @@ input {
     ssl_cert => "/path/to/certificate.crt"
     ssl_key => "/path/to/key.key"
   }
+}
+```
+
+## Custom Log Fields
+
+`LogStashLogger` by default will log a JSON object with the format below.
+
+```json
+{
+  "message":"Some Message",
+  "@timestamp":"2015-01-29T10:43:32.196-05:00",
+  "@version":"1",
+  "severity":"INFO",
+  "host":"hostname"
+}
+```
+
+Some applications may need to attach additional metadata to each message.
+The `LogStash::Event` can be manipulated directly by specifying a `customize_event` block in the `LogStashLogger` configuration.
+
+```ruby
+config = LogStashLogger.configure do |config|
+  config.customize_event do |event|
+    event["other_field"] = "some_other_value"
+  end
+end
+```
+
+This configuration would result in the following output.
+
+```json
+{
+    "message": "Some Message",
+    "@timestamp": "2015-01-29T10:43:32.196-05:00",
+    "@version": "1",
+    "severity": "INFO",
+    "host": "hostname",
+    "other_field": "some_other_value"
 }
 ```
 
@@ -233,6 +273,26 @@ config.logstash.host = 'localhost'
 config.logstash.port = 6379
 ```
 
+#### Kafka
+
+```ruby
+# Required
+config.logstash.type = :kafka
+
+# Optional, will default to the 'logstash' topic
+config.logstash.path = 'logstash'
+
+# Optional, will default to the 'logstash-logger' producer
+config.logstash.producer = 'logstash-logger'
+
+# Optional, will default to localhost:9092 host/port
+config.logstash.hosts = ['localhost:9092']
+
+# Optional, will default to 1s backoff
+config.logstash.backoff = 1
+
+```
+
 #### File
 
 ```ruby
@@ -273,7 +333,7 @@ config.logstash = [
 
 Verified to work with:
 
-* MRI Ruby 1.9.3, 2.0+, 2.1+
+* MRI Ruby 1.9.3, 2.0.x, 2.1.x, 2.2.x
 * JRuby 1.7+
 * Rubinius 2.2+
 
@@ -296,6 +356,23 @@ disadvantages of each type:
 
 For a more detailed discussion of UDP vs TCP, I recommend reading this article:
 [UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
+
+## Troubleshooting
+
+### JSON::GeneratorError
+Your application is probably attempting to log data that is not encoded in a valid way. When this happens, Ruby's
+standard JSON library will raise an exception. You may be able to overcome this by swapping out a different JSON encoder
+such as Oj. Use the [oj_mimic_json](https://github.com/ohler55/oj_mimic_json) gem to use Oj for JSON generation.
+
+### No logs getting sent on Heroku
+Heroku recommends installing the [rails_12factor](https://github.com/heroku/rails_12factor) so that logs get sent to STDOUT.
+Unfortunately, this overrides LogStashLogger, preventing logs from being sent to their configured destination. The solution
+is to remove `rails_12factor` from your Gemfile.
+
+### Logging eventually stops in production
+This is most likely not a problem with LogStashLogger, but rather a different gem changing the log level of `Rails.logger`.
+This is especially likely if you're using a threaded server such as Puma, since gems often change the log level of
+`Rails.logger` in a non thread-safe way. See [#17](https://github.com/dwbutler/logstash-logger/issues/17) for more information.
 
 ## Breaking changes
 
@@ -328,6 +405,8 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Arron Mabrey](https://github.com/arronmabrey)
 * [Jan Schulte](https://github.com/schultyy)
 * [Kurt Preston](https://github.com/KurtPreston)
+* [Chris Blatchley](https://github.com/chrisblatchley)
+* [Felix Bechstein](https://github.com/felixb)
 
 ## Contributing
 

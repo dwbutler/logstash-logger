@@ -7,6 +7,12 @@ RSpec.configure do |config|
     puts "Testing with #{CONNECTION_TYPE.to_s.upcase} socket type"
   end
 
+  config.before(:each) do
+    LogStashLogger.configure do
+
+    end
+  end
+
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
@@ -46,6 +52,7 @@ RSpec.shared_context 'device' do
   let(:io_device) { LogStashLogger::Device.new(type: :io, io: io)}
 
   let(:redis_device) { LogStashLogger::Device.new(type: :redis, sync: true) }
+  let(:kafka_device) { LogStashLogger::Device.new(type: :kafka, sync: true) }
   let(:multi_delegator_device) { LogStashLogger::Device.new([{type: :stdout}, {type: :io, io: io}]) }
 
   let(:udp_uri) { "udp://localhost:5228" }
@@ -53,6 +60,7 @@ RSpec.shared_context 'device' do
   let(:unix_uri) { "unix:///some/path/to/socket" }
   let(:file_uri) { "file://#{file.path}" }
   let(:redis_uri) { "redis://localhost:6379" }
+  let(:kafka_uri) { "kafka://localhost:9092" }
   let(:stdout_uri) { "stdout://localhost" }
   let(:stderr_uri) { "stderr://localhost" }
 
@@ -62,6 +70,7 @@ RSpec.shared_context 'device' do
   let(:unix_uri_config)    { {uri: unix_uri} }
   let(:file_uri_config)    { {uri: file_uri} }
   let(:redis_uri_config)   { {uri: redis_uri} }
+  let(:kafka_uri_config)   { {uri: kafka_uri} }
   let(:stdout_uri_config)  { {uri: stdout_uri} }
   let(:stderr_uri_config)  { {uri: stderr_uri} }
 end
