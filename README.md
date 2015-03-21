@@ -255,6 +255,10 @@ config.logstash.path = '/tmp/sock'
 
 #### Redis
 
+Add the redis gem to your Gemfile:
+
+    gem 'redis'
+
 ```ruby
 # Required
 config.logstash.type = :redis
@@ -274,6 +278,10 @@ config.logstash.port = 6379
 ```
 
 #### Kafka
+
+Add the poseidon gem to your Gemfile:
+
+    gem 'poseidon'
 
 ```ruby
 # Required
