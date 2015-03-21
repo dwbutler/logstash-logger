@@ -44,6 +44,7 @@ tcp_logger = LogStashLogger.new(type: :tcp, host: 'localhost', port: 5229)
 file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync: true)
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
 redis_logger = LogStashLogger.new(type: :redis)
+kafka_logger = LogStashLogger.new(type: :kafka)
 stdout_logger = LogStashLogger.new(type: :stdout)
 stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
@@ -81,6 +82,7 @@ tcp://localhost:5229
 unix:///tmp/socket
 file:///path/to/file
 redis://localhost:6379
+kafka://localhost:9092
 stdout:/
 stderr:/
 ```
@@ -271,6 +273,26 @@ config.logstash.host = 'localhost'
 config.logstash.port = 6379
 ```
 
+#### Kafka
+
+```ruby
+# Required
+config.logstash.type = :kafka
+
+# Optional, will default to the 'logstash' topic
+config.logstash.path = 'logstash'
+
+# Optional, will default to the 'logstash-logger' producer
+config.logstash.producer = 'logstash-logger'
+
+# Optional, will default to localhost:9092 host/port
+config.logstash.hosts = ['localhost:9092']
+
+# Optional, will default to 1s backoff
+config.logstash.backoff = 1
+
+```
+
 #### File
 
 ```ruby
@@ -384,6 +406,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Jan Schulte](https://github.com/schultyy)
 * [Kurt Preston](https://github.com/KurtPreston)
 * [Chris Blatchley](https://github.com/chrisblatchley)
+* [Felix Bechstein](https://github.com/felixb)
 
 ## Contributing
 
