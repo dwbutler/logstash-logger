@@ -1,3 +1,8 @@
+## 0.10.0
+- Support for logging to Kafka.
+Fixes [#37](https://github.com/dwbutler/logstash-logger/issues/37).
+Thanks [Felix Bechstein](https://github.com/felixb)!
+
 ## 0.9.0
 - Support for customizing the fields on all logged messages via configuration.
 Fixes [#32](https://github.com/dwbutler/logstash-logger/pull/32).
