@@ -1,3 +1,8 @@
+## 0.10.1
+- Fix for Redis URI parsing issue.
+Fixes [#41](https://github.com/dwbutler/logstash-logger/issues/41).
+Thanks [Vadim Kazakov](https://github.com/yads)!
+
 ## 0.10.0
 - Support for logging to Kafka.
 Fixes [#37](https://github.com/dwbutler/logstash-logger/issues/37).
