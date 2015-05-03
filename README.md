@@ -43,8 +43,8 @@ tcp_logger = LogStashLogger.new(type: :tcp, host: 'localhost', port: 5229)
 # Other types of loggers
 file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync: true)
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
-redis_logger = LogStashLogger.new(type: :redis)
-kafka_logger = LogStashLogger.new(type: :kafka)
+redis_logger = LogStashLogger.new(type: :redis, sync: true)
+kafka_logger = LogStashLogger.new(type: :kafka, sync: true)
 stdout_logger = LogStashLogger.new(type: :stdout)
 stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
@@ -69,6 +69,9 @@ logger.warn LogStash::Event.new(message: 'test', foo: 'bar')
 # Tagged logging
 logger.tagged('foo') { logger.fatal('bar') }
 # {"message":"bar","@timestamp":"2014-05-26T20:35:14.685-07:00","@version":"1","severity":"FATAL","host":"[hostname]","tags":["foo"]}
+
+# flush buffer (unless you already set sync: true)
+logger.close
 ```
 
 ## URI Configuration
