@@ -18,7 +18,7 @@ module LogStashLogger
 
     logger.level = ::Logger.const_get(app.config.log_level.to_s.upcase)
 
-    app.config.logger = logger
+    app.config.logger = logger unless logger_options.disable_default_logger_replacement
   end
 
   def self.sanitize_logger_options(app, logger_options)
