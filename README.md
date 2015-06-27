@@ -416,6 +416,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Chris Blatchley](https://github.com/chrisblatchley)
 * [Felix Bechstein](https://github.com/felixb)
 * [Vadim Kazakov](https://github.com/yads)
+* [Anil Rhemtulla](https://github.com/AnilRh)
 
 ## Contributing
 

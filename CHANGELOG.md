@@ -1,3 +1,8 @@
+## 0.10.2
+- Fix for Custom Events can't access tags from Tagged Logging
+Fixes [#48](https://github.com/dwbutler/logstash-logger/issues/48).
+Thanks [Anil Rhemtulla](https://github.com/AnilRh)!
+
 ## 0.10.1
 - Fix for Redis URI parsing issue.
 Fixes [#41](https://github.com/dwbutler/logstash-logger/issues/41).
