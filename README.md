@@ -363,8 +363,6 @@ def track_load_balancer_session_id
 end
 ```
 
-ou would be using  RequestStore Rack middleware
-
 ## Ruby Compatibility
 
 Verified to work with:
