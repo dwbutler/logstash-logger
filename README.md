@@ -338,7 +338,11 @@ config.logstash = [
 ]
 ```
 
-### In rails, you can log dynamic values (eg. http headers) like this
+### Logging HTTP request data
+
+In web applications, you can log data from HTTP requests (such as headers) using the
+[RequestStore](https://github.com/steveklabnik/request_store) middleware. The following
+example assumes Rails.
 
 ```ruby
 # in Gemfile
@@ -349,13 +353,13 @@ gem 'request_store'
 # in application.rb
 LogStashLogger.configure do |config|
   config.customize_event do |event|
-    event["session_id"] = RequestStore[:load_balancer_session_id]
+    event["session_id"] = RequestStore.store[:load_balancer_session_id]
   end
 end
 ```
 
 ```ruby
-# in application_controller.rb
+# in app/controllers/application_controller.rb
 before_filter :track_load_balancer_session_id
 
 def track_load_balancer_session_id
