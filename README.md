@@ -183,6 +183,7 @@ This configuration would result in the following output.
 }
 ```
 
+
 ## Rails Integration
 
 Verified to work with both Rails 3 and 4.
@@ -335,6 +336,31 @@ config.logstash = [
     host: 'localhost'
   }
 ]
+```
+
+### In rails, you can log dynamic values (eg. http headers) like this
+
+```ruby
+# in Gemfile
+gem 'request_store'
+```
+
+```ruby
+# in application.rb
+LogStashLogger.configure do |config|
+  config.customize_event do |event|
+    event["session_id"] = RequestStore[:load_balancer_session_id]
+  end
+end
+```
+
+```ruby
+# in application_controller.rb
+before_filter :track_load_balancer_session_id
+
+def track_load_balancer_session_id
+  RequestStore.store[:load_balancer_session_id] = request.headers["X-LOADBALANCER-SESSIONID"]
+end
 ```
 
 ## Ruby Compatibility
