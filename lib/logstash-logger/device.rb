@@ -16,6 +16,7 @@ module LogStashLogger
     autoload :IO, 'logstash-logger/device/io'
     autoload :Stdout, 'logstash-logger/device/stdout'
     autoload :Stderr, 'logstash-logger/device/stderr'
+    autoload :Balancer, 'logstash-logger/device/balancer'
     autoload :MultiDelegator, 'logstash-logger/device/multi_delegator'
 
     def self.new(opts)
@@ -62,6 +63,7 @@ module LogStashLogger
         when :io then IO
         when :stdout then Stdout
         when :stderr then Stderr
+        when :balancer then Balancer
         else fail ArgumentError, 'Invalid type'
       end
     end
