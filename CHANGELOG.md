@@ -1,44 +1,33 @@
+## 0.10.3
+- Merge URI and non-URI configuration. [#54](https://github.com/dwbutler/logstash-logger/pull/54) 
+
 ## 0.10.2
-- Fix for Custom Events can't access tags from Tagged Logging
-Fixes [#48](https://github.com/dwbutler/logstash-logger/issues/48).
-Thanks [Anil Rhemtulla](https://github.com/AnilRh)!
+- Fix for Custom Events can't access tags from Tagged Logging. [#48](https://github.com/dwbutler/logstash-logger/issues/48)
 
 ## 0.10.1
-- Fix for Redis URI parsing issue.
-Fixes [#41](https://github.com/dwbutler/logstash-logger/issues/41).
-Thanks [Vadim Kazakov](https://github.com/yads)!
+- Fix for Redis URI parsing issue. [#41](https://github.com/dwbutler/logstash-logger/issues/41)
 
 ## 0.10.0
-- Support for logging to Kafka.
-Fixes [#37](https://github.com/dwbutler/logstash-logger/issues/37).
-Thanks [Felix Bechstein](https://github.com/felixb)!
+- Support for logging to Kafka. [#37](https://github.com/dwbutler/logstash-logger/issues/37)
 
 ## 0.9.0
-- Support for customizing the fields on all logged messages via configuration.
-Fixes [#32](https://github.com/dwbutler/logstash-logger/pull/32).
-Thanks [Chris Blatchley](https://github.com/chrisblatchley)!
+- Support for customizing the fields on all logged messages via configuration. [#32](https://github.com/dwbutler/logstash-logger/pull/32)
 
 ## 0.8.0
-- Support for logging to stderr. Fixes [#24](https://github.com/dwbutler/logstash-logger/pull/25).
-Thanks [Jan Schulte](https://github.com/schultyy)!
-- Support multiple log outputs. Fixes [#28](https://github.com/dwbutler/logstash-logger/pull/28).
-Thanks [Kurt Preston](https://github.com/KurtPreston)!
+- Support for logging to stderr. [#24](https://github.com/dwbutler/logstash-logger/pull/25)
+- Support multiple log outputs. [#28](https://github.com/dwbutler/logstash-logger/pull/28)
 
 ## 0.7.0
 - Support for logging to a generic IO object.
-- Support for overriding IO in stdout logger. Fixes [#20](https://github.com/dwbutler/logstash-logger/pull/20).
-Thanks [Arron Mabrey](https://github.com/arronmabrey)!
-- Support for configuring logger with a URI. See [#22](https://github.com/dwbutler/logstash-logger/pull/22).
-Thanks [Arron Mabrey](https://github.com/arronmabrey)!
-- Support logging any object. See [#23](https://github.com/dwbutler/logstash-logger/issues/23).
+- Support for overriding IO in stdout logger. [#20](https://github.com/dwbutler/logstash-logger/pull/20)
+- Support for configuring logger with a URI. [#22](https://github.com/dwbutler/logstash-logger/pull/22)
+- Support logging any object. [#23](https://github.com/dwbutler/logstash-logger/issues/23)
 
 ## 0.6.2
-- Allow type to be specified as a string. Fixes [#19](https://github.com/dwbutler/logstash-logger/pull/19).
-Thanks [Arron Mabrey](https://github.com/arronmabrey)!
+- Allow type to be specified as a string. [#19](https://github.com/dwbutler/logstash-logger/pull/19)
 
 ## 0.6.1
-- Don't mutate options passed to LogStashLogger. Fixes [#18](https://github.com/dwbutler/logstash-logger/pull/18).
-Thanks [Arron Mabrey](https://github.com/arronmabrey)!
+- Don't mutate options passed to LogStashLogger. [#18](https://github.com/dwbutler/logstash-logger/pull/18)
 
 ## 0.6.0
 - Support for logging to a file.
@@ -49,10 +38,10 @@ Thanks [Arron Mabrey](https://github.com/arronmabrey)!
 
 ## 0.5.0
 - Support for tagged logging. The interface was extracted from `ActiveSupport::TaggedLogging`
-and outputs to the `tags` key. (Thanks [pctj101](https://github.com/pctj101)!)
+and outputs to the `tags` key.
 - The `(host, port, type)` constructor has been deprecated in favor of an options hash constructor.
-- Support for using SSL for TCP connections. (Thanks [Gary Rennie](https://github.com/Gazler)!)
-- Support for configuring logger to write to STDOUT. (Thanks [Nick Ethier](https://github.com/nickethier)!)
+- Support for using SSL for TCP connections.
+- Support for configuring logger to write to STDOUT.
 - Support for Rails configuration.
 - Fixed output to STDOUT in Rails console (Rails 4+).
 - `host` is no longer required for TCP/UDP. It will default to `0.0.0.0`, the same default port that logstash listens on.
