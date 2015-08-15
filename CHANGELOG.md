@@ -1,3 +1,6 @@
+## 0.11.0
+- Support for balancer log device. [#55](https://github.com/dwbutler/logstash-logger/pull/55)
+
 ## 0.10.3
 - Merge URI and non-URI configuration. [#54](https://github.com/dwbutler/logstash-logger/pull/54) 
 

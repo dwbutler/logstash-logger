@@ -450,6 +450,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Felix Bechstein](https://github.com/felixb)
 * [Vadim Kazakov](https://github.com/yads)
 * [Anil Rhemtulla](https://github.com/AnilRh)
+* [Nikita Vorobei](https://github.com/Nikita-V)
 
 ## Contributing
 
