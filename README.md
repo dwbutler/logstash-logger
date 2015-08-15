@@ -52,6 +52,9 @@ io_logger = LogStashLogger.new(type: :io, io: io)
 # Multiple Outputs
 multi_logger = LogStashLogger.new([{type: :file, path: 'log/development.log'}, {type: :udp, host: 'localhost', port: 5228}])
 
+# Balancing messages between several outputs
+balancer_logger = LogStashLogger.new(type: :balancer, outputs: [{type: :udp, host: 'host1', port: 5228}, {type: :udp, host: 'host2', port: 5228}])
+
 # The following messages are written to UDP port 5228:
 
 logger.info 'test'
