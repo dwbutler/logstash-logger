@@ -4,13 +4,14 @@ require 'logstash-logger/tagged_logging'
 module LogStashLogger
   def self.new(*args)
     opts = extract_opts(*args)
+    formatter = Formatter.new(opts.delete(:formatter))
     device = Device.new(opts)
 
     ::Logger.new(device).tap do |logger|
       logger.instance_variable_set(:@device, device)
       logger.extend(self)
       logger.extend(TaggedLogging)
-      logger.formatter = Formatter.new
+      logger.formatter = formatter
     end
   end
 
