@@ -35,7 +35,14 @@ describe LogStashLogger::Formatter do
       end
 
       it "returns a formatter proc if it is passed in" do
-        formatter = proc do |serverity, time, progname, msg|
+        formatter = proc do |severity, time, progname, msg|
+          msg
+        end
+        expect(described_class.new(formatter)).to eql(formatter)
+      end
+
+      it "returns a formatter lambda if it is passed in" do
+        formatter = lambda do |severity, time, progname, msg|
           msg
         end
         expect(described_class.new(formatter)).to eql(formatter)
