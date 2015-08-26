@@ -81,6 +81,7 @@ RSpec.shared_context 'formatter' do
   let(:time) { Time.now }
   let(:progname) { "ruby" }
   let(:message) { "foo" }
+  let(:hostname) { Socket.gethostname }
   let(:formatted_message) do
     subject.call(severity, time, progname, message)
   end
