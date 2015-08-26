@@ -17,7 +17,7 @@ module LogStashLogger
 
       def build_event(message, severity, time)
         data = message
-        if data.is_a?(String) && data.start_with?('{')
+        if data.is_a?(String) && data.start_with?('{'.freeze)
           data = (JSON.parse(message) rescue nil) || message
         end
 
@@ -25,16 +25,16 @@ module LogStashLogger
                   when LogStash::Event
                     data.clone
                   when Hash
-                    event_data = data.merge("@timestamp" => time)
+                    event_data = data.merge("@timestamp".freeze => time)
                     LogStash::Event.new(event_data)
                   else
-                    LogStash::Event.new("message" => msg2str(data), "@timestamp" => time)
+                    LogStash::Event.new("message".freeze => msg2str(data), "@timestamp".freeze => time)
                 end
 
-        event['severity'] ||= severity
+        event['severity'.freeze] ||= severity
         #event.type = progname
 
-        event['host'] ||= HOST
+        event['host'.freeze] ||= HOST
 
         current_tags.each { |tag| event.tag(tag) }
         
