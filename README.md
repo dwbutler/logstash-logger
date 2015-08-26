@@ -28,7 +28,7 @@ Or install it yourself as:
 
     $ gem install logstash-logger
 
-## Basic Usage
+## Usage Examples
 
 ```ruby
 require 'logstash-logger'
@@ -48,6 +48,12 @@ kafka_logger = LogStashLogger.new(type: :kafka)
 stdout_logger = LogStashLogger.new(type: :stdout)
 stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
+
+# Use a different formatter
+cee_logger = LogStashLogger.new(type: :tcp, host: 'logsene-receiver-syslog.sematext.com', port: 514, formatter: :cee_syslog)
+custom_formatted_logger = LogStashLogger.new(type: :redis, formatter: MyCustomFormatter)
+lambda_formatted_logger = LogStashLogger.new(type: :stdout, formatter: ->(severity, time, progname, msg) { "[#{progname}] #{msg}" })
+ruby_default_formatter_logger = LogStashLogger.new(type: :file, path: 'log/development.log', formatter: ::Logger::Formatter)
 
 # Multiple Outputs
 multi_logger = LogStashLogger.new([{type: :file, path: 'log/development.log'}, {type: :udp, host: 'localhost', port: 5228}])
@@ -77,7 +83,7 @@ logger.tagged('foo') { logger.fatal('bar') }
 ## URI Configuration
 You can use a URI to configure your logstash logger instead of a hash. This is useful in environments
 such as Heroku where you may want to read configuration values from the environment. The URI scheme
-is `type://host:port/path`. Some sample URI configurations are given below.
+is `type://host:port/path?key=value`. Some sample URI configurations are given below.
 
 ```
 udp://localhost:5228
@@ -97,7 +103,7 @@ Pass the URI into your logstash logger like so:
 logger = LogStashLogger.new(uri: ENV['LOGSTASH_URI'])
 ```
 
-## Logstash Configuration
+## Logstash Listener Configuration
 
 In order for logstash to correctly receive and parse the events, you will need to
 configure and run a listener that uses the `json_lines` codec. For example, to receive
