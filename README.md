@@ -1,15 +1,15 @@
 # LogStashLogger
 [![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master)
 
-This gem implements a subclass of Ruby's Logger class that logs directly to [logstash](http://logstash.net).
-It writes to a logstash listener over a UDP (default) or TCP connection, in logstash JSON format. This is an improvement over
+LogStashLogger extends Ruby's `Logger` class to log directly to [logstash](http://logstash.net).
+It supports writing to various outputs in logstash JSON format. This is an improvement over
 writing to a file or syslog since logstash can receive the structured data directly.
 
 ## Features
 
 * Can write directly to logstash over a UDP or TCP/SSL connection.
 * Can write to a file, Redis, a unix socket, stdout or stderr.
-* Always writes in logstash JSON format.
+* Writes in logstash JSON format, but supports other formats as well.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
 * Easily integrates with Rails via configuration.
