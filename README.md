@@ -421,6 +421,11 @@ This is most likely not a problem with LogStashLogger, but rather a different ge
 This is especially likely if you're using a threaded server such as Puma, since gems often change the log level of
 `Rails.logger` in a non thread-safe way. See [#17](https://github.com/dwbutler/logstash-logger/issues/17) for more information.
 
+### Sometimes two lines of JSON log messages get sent as one message
+If you're using UDP output and writing to a logstash listener, you are most likely encountering a bug in the UDP implementation
+of the logstash listener. There is no known fix at this time. See [#43](https://github.com/dwbutler/logstash-logger/issues/43)
+for more information.
+
 ## Breaking changes
 
 ### Version 0.5+
