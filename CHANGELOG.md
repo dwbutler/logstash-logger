@@ -1,3 +1,7 @@
+## 0.12.0
+- Support for other formatters, including custom formatters. [#56](https://github.com/dwbutler/logstash-logger/pull/56)
+- Support for CEE output.
+
 ## 0.11.0
 - Support for balancer log device. [#55](https://github.com/dwbutler/logstash-logger/pull/55)
 
