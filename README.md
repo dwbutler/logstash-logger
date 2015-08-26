@@ -457,6 +457,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Vadim Kazakov](https://github.com/yads)
 * [Anil Rhemtulla](https://github.com/AnilRh)
 * [Nikita Vorobei](https://github.com/Nikita-V)
+* [fireboy1919](https://github.com/fireboy1919)
 
 ## Contributing
 
