@@ -75,3 +75,14 @@ RSpec.shared_context 'device' do
   let(:stdout_uri_config)  { {uri: stdout_uri} }
   let(:stderr_uri_config)  { {uri: stderr_uri} }
 end
+
+RSpec.shared_context 'formatter' do
+  let(:severity) { "DEBUG" }
+  let(:time) { Time.now }
+  let(:progname) { "ruby" }
+  let(:message) { "foo" }
+  let(:hostname) { Socket.gethostname }
+  let(:formatted_message) do
+    subject.call(severity, time, progname, message)
+  end
+end
