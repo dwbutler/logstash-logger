@@ -2,4 +2,4 @@ source 'https://rubygems.org'
 
 gemspec
 
-#gem 'json', :platform => :ruby_18
+gem 'codecov', require: false, group: :test
