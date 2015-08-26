@@ -14,3 +14,4 @@ gemfile:
 matrix:
   allow_failures:
     - rbx-2
+sudo: false
