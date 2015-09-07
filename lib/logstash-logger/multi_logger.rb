@@ -55,6 +55,7 @@ module LogStashLogger
     # Create an instance.
     #
     def initialize(loggers)
+      @loggers = []
       super(nil)
       @loggers = Array(loggers)
     end
