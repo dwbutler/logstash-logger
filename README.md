@@ -10,6 +10,7 @@ writing to a file or syslog since logstash can receive the structured data direc
 * Can write directly to logstash over a UDP or TCP/SSL connection.
 * Can write to a file, Redis, a unix socket, stdout or stderr.
 * Writes in logstash JSON format, but supports other formats as well.
+* Can write to multiple outputs.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
 * Easily integrates with Rails via configuration.
@@ -410,6 +411,7 @@ config.logstash.outputs = [
     host: 'localhost'
   }
 ]
+```
 
 ### Logging HTTP request data
 
@@ -527,7 +529,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Anil Rhemtulla](https://github.com/AnilRh)
 * [Nikita Vorobei](https://github.com/Nikita-V)
 * [fireboy1919](https://github.com/fireboy1919)
-* [ffmike](https://github.com/ffmike)
+* [Mike Gunderloy](https://github.com/ffmike)
 
 ## Contributing
 
