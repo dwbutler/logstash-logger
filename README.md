@@ -50,16 +50,52 @@ stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
 
 # Use a different formatter
-cee_logger = LogStashLogger.new(type: :tcp, host: 'logsene-receiver-syslog.sematext.com', port: 514, formatter: :cee_syslog)
-custom_formatted_logger = LogStashLogger.new(type: :redis, formatter: MyCustomFormatter)
-lambda_formatted_logger = LogStashLogger.new(type: :stdout, formatter: ->(severity, time, progname, msg) { "[#{progname}] #{msg}" })
-ruby_default_formatter_logger = LogStashLogger.new(type: :file, path: 'log/development.log', formatter: ::Logger::Formatter)
+cee_logger = LogStashLogger.new(
+  type: :tcp,
+  host: 'logsene-receiver-syslog.sematext.com',
+  port: 514,
+  formatter: :cee_syslog
+)
 
-# Multiple Outputs
-multi_logger = LogStashLogger.new([{type: :file, path: 'log/development.log'}, {type: :udp, host: 'localhost', port: 5228}])
+custom_formatted_logger = LogStashLogger.new(
+  type: :redis,
+  formatter: MyCustomFormatter
+)
 
-# Balancing messages between several outputs
-balancer_logger = LogStashLogger.new(type: :balancer, outputs: [{type: :udp, host: 'host1', port: 5228}, {type: :udp, host: 'host2', port: 5228}])
+lambda_formatted_logger = LogStashLogger.new(
+  type: :stdout,
+  formatter: ->(severity, time, progname, msg) { "[#{progname}] #{msg}" }
+)
+
+ruby_default_formatter_logger = LogStashLogger.new(
+  type: :file,
+  path: 'log/development.log',
+  formatter: ::Logger::Formatter
+)
+
+# Send the same log message format to multiple devices
+multi_delegating_logger = LogStashLogger.new(
+  type: :multi_delegator,
+  outputs: [
+    {type: :file, path: 'log/development.log'},
+    {type: :udp, host: 'localhost', port: 5228}
+  ])
+
+# Balance messages between several devices
+balancer_logger = LogStashLogger.new(
+  type: :balancer,
+  outputs: [
+    {type: :udp, host: 'host1', port: 5228},
+    {type: :udp, host: 'host2', port: 5228}
+  ])
+
+# Send the message to multiple loggers. Each logger can have a different format.
+multi_logger = LogStashLogger.new(
+  type: :multi_logger,
+  outputs: [
+    {type: :file, path: 'log/development.log', formatter: ::Logger::Formatter},
+    {type: :tcp, host: 'localhost', port: 5228, formatter: :json}
+  ])
 
 # The following messages are written to UDP port 5228:
 
@@ -223,6 +259,10 @@ config.autoflush_log = true
 
 # Optional, use a URI to configure. Useful on Heroku
 config.logstash.uri = ENV['LOGSTASH_URI']
+
+# Optional. Defaults to :json_lines. If there are multiple outputs,
+# they will all share the same formatter.
+config.logstash.formatter = :json_lines
 ```
 
 #### UDP
@@ -331,11 +371,14 @@ config.logstash.type = :io
 config.logstash.io = io
 ```
 
-#### Multiple Outputs
+#### Multi Delegator
 
 ```ruby
-config.logstash = [
-  {
+# Required
+config.logstash.type = :multi_delegator
+
+# Required
+config.logstash.outputs = [
     type: :file,
     path: 'log/production.log'
   },
@@ -346,6 +389,25 @@ config.logstash = [
   }
 ]
 ```
+
+#### Multi Logger
+
+```ruby
+# Required
+config.logstash.type = :multi_logger
+
+# Required. Each logger may have its own formatter.
+config.logstash.outputs = [
+    type: :file,
+    path: 'log/production.log',
+    formatter: ::Logger::Formatter
+  },
+  {
+    type: :udp,
+    port: 5228,
+    host: 'localhost'
+  }
+]
 
 ### Logging HTTP request data
 

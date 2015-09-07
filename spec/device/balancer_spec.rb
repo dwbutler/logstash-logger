@@ -6,9 +6,6 @@ describe LogStashLogger::Device::Balancer do
   # Create a Balancer writing to both STDOUT and a StringIO
   let(:subject) { balancer_device }
 
-  let(:stdout) { $stdout }
-  let(:io) { StringIO.new }
-
   describe '#write' do
     before do
       allow(subject.devices).to receive(:sample) { io }
@@ -16,7 +13,7 @@ describe LogStashLogger::Device::Balancer do
 
     it "writes to one device" do
       expect(io).to receive(:write).once
-      expect(stdout).to_not receive(:write)
+      expect($stdout).to_not receive(:write)
       subject.write("log message")
     end
   end

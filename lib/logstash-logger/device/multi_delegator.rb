@@ -8,13 +8,19 @@ module LogStashLogger
     class MultiDelegator < Base
       attr_reader :devices
 
-      def initialize(*devices)
+      def initialize(opts)
         @io = self
-        @devices = devices
+        @devices = create_devices(opts[:outputs])
         self.class.delegate(:write, :close, :flush)
       end
 
       private
+
+      def create_devices(opts)
+        opts.map do |device_opts|
+          Device.new(device_opts)
+        end
+      end
 
       def self.delegate(*methods)
         methods.each do |m|

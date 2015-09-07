@@ -13,7 +13,7 @@ module LogStashLogger
       private
 
       def create_devices(opts)
-        opts.map { |o| Device.new(o) }
+        opts.map { |device_opts| Device.new(device_opts) }
       end
 
       def self.delegate_to_all(*methods)
