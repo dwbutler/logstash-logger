@@ -17,13 +17,16 @@ module LogStashLogger
     def self.build_formatter(formatter_type)
       formatter_type ||= DEFAULT_FORMATTER
 
-      if custom_formatter_instance?(formatter_type)
+      formatter = if custom_formatter_instance?(formatter_type)
         formatter_type
       elsif custom_formatter_class?(formatter_type)
         formatter_type.new
       else
         formatter_klass(formatter_type).new
       end
+
+      formatter.send(:extend, ::LogStashLogger::TaggedLogging::Formatter)
+      formatter
     end
 
     def self.formatter_klass(formatter_type)

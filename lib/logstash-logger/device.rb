@@ -21,17 +21,7 @@ module LogStashLogger
 
     def self.new(opts)
       opts = opts.dup
-
-      if opts.is_a?(Array)
-        # Multiple device configs supplied... create a MultiDelegator
-        devices = opts.map{|opt| build_device(opt)}
-        Device::MultiDelegator.new(*devices)
-      elsif Hash
-        # Create a single device
-        build_device(opts)
-      else
-        raise ArgumentError, "Invalid device options: must be a Hash or an Array of Hashes"
-      end
+      build_device(opts)
     end
 
     def self.build_device(opts)
@@ -63,8 +53,9 @@ module LogStashLogger
         when :io then IO
         when :stdout then Stdout
         when :stderr then Stderr
+        when :multi_delegator then MultiDelegator
         when :balancer then Balancer
-        else fail ArgumentError, 'Invalid type'
+        else fail ArgumentError, 'Invalid device type'
       end
     end
   end

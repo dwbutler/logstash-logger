@@ -10,6 +10,7 @@ writing to a file or syslog since logstash can receive the structured data direc
 * Can write directly to logstash over a UDP or TCP/SSL connection.
 * Can write to a file, Redis, a unix socket, stdout or stderr.
 * Writes in logstash JSON format, but supports other formats as well.
+* Can write to multiple outputs.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
 * Easily integrates with Rails via configuration.
@@ -50,16 +51,52 @@ stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
 
 # Use a different formatter
-cee_logger = LogStashLogger.new(type: :tcp, host: 'logsene-receiver-syslog.sematext.com', port: 514, formatter: :cee_syslog)
-custom_formatted_logger = LogStashLogger.new(type: :redis, formatter: MyCustomFormatter)
-lambda_formatted_logger = LogStashLogger.new(type: :stdout, formatter: ->(severity, time, progname, msg) { "[#{progname}] #{msg}" })
-ruby_default_formatter_logger = LogStashLogger.new(type: :file, path: 'log/development.log', formatter: ::Logger::Formatter)
+cee_logger = LogStashLogger.new(
+  type: :tcp,
+  host: 'logsene-receiver-syslog.sematext.com',
+  port: 514,
+  formatter: :cee_syslog
+)
 
-# Multiple Outputs
-multi_logger = LogStashLogger.new([{type: :file, path: 'log/development.log'}, {type: :udp, host: 'localhost', port: 5228}])
+custom_formatted_logger = LogStashLogger.new(
+  type: :redis,
+  formatter: MyCustomFormatter
+)
 
-# Balancing messages between several outputs
-balancer_logger = LogStashLogger.new(type: :balancer, outputs: [{type: :udp, host: 'host1', port: 5228}, {type: :udp, host: 'host2', port: 5228}])
+lambda_formatted_logger = LogStashLogger.new(
+  type: :stdout,
+  formatter: ->(severity, time, progname, msg) { "[#{progname}] #{msg}" }
+)
+
+ruby_default_formatter_logger = LogStashLogger.new(
+  type: :file,
+  path: 'log/development.log',
+  formatter: ::Logger::Formatter
+)
+
+# Send the same log message format to multiple devices
+multi_delegating_logger = LogStashLogger.new(
+  type: :multi_delegator,
+  outputs: [
+    { type: :file, path: 'log/development.log' },
+    { type: :udp, host: 'localhost', port: 5228 }
+  ])
+
+# Balance messages between several devices
+balancer_logger = LogStashLogger.new(
+  type: :balancer,
+  outputs: [
+    { type: :udp, host: 'host1', port: 5228 },
+    { type: :udp, host: 'host2', port: 5228 }
+  ])
+
+# Send the message to multiple loggers. Each logger can have a different format.
+multi_logger = LogStashLogger.new(
+  type: :multi_logger,
+  outputs: [
+    { type: :file, path: 'log/development.log', formatter: ::Logger::Formatter },
+    { type: :tcp, host: 'localhost', port: 5228, formatter: :json }
+  ])
 
 # The following messages are written to UDP port 5228:
 
@@ -223,6 +260,10 @@ config.autoflush_log = true
 
 # Optional, use a URI to configure. Useful on Heroku
 config.logstash.uri = ENV['LOGSTASH_URI']
+
+# Optional. Defaults to :json_lines. If there are multiple outputs,
+# they will all share the same formatter.
+config.logstash.formatter = :json_lines
 ```
 
 #### UDP
@@ -331,13 +372,38 @@ config.logstash.type = :io
 config.logstash.io = io
 ```
 
-#### Multiple Outputs
+#### Multi Delegator
 
 ```ruby
-config.logstash = [
+# Required
+config.logstash.type = :multi_delegator
+
+# Required
+config.logstash.outputs = [
   {
     type: :file,
     path: 'log/production.log'
+  },
+  {
+    type: :udp,
+    port: 5228,
+    host: 'localhost'
+  }
+]
+```
+
+#### Multi Logger
+
+```ruby
+# Required
+config.logstash.type = :multi_logger
+
+# Required. Each logger may have its own formatter.
+config.logstash.outputs = [
+  {
+    type: :file,
+    path: 'log/production.log',
+    formatter: ::Logger::Formatter
   },
   {
     type: :udp,
@@ -463,6 +529,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Anil Rhemtulla](https://github.com/AnilRh)
 * [Nikita Vorobei](https://github.com/Nikita-V)
 * [fireboy1919](https://github.com/fireboy1919)
+* [Mike Gunderloy](https://github.com/ffmike)
 
 ## Contributing
 
