@@ -1,3 +1,7 @@
+## 0.13.0
+- Support for sending messages to multiple loggers. Each one can have a different formatter. [#58](https://github.com/dwbutler/logstash-logger/pull/58)
+- Fixes tagged logging support when using a custom formatter.
+
 ## 0.12.0
 - Support for other formatters, including custom formatters. [#56](https://github.com/dwbutler/logstash-logger/pull/56)
 - Support for CEE output.

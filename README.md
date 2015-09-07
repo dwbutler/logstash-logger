@@ -74,7 +74,7 @@ ruby_default_formatter_logger = LogStashLogger.new(
   formatter: ::Logger::Formatter
 )
 
-# Send the same log message format to multiple devices
+# Send messages to multiple outputs. Each output will have the same format.
 multi_delegating_logger = LogStashLogger.new(
   type: :multi_delegator,
   outputs: [
@@ -82,7 +82,7 @@ multi_delegating_logger = LogStashLogger.new(
     { type: :udp, host: 'localhost', port: 5228 }
   ])
 
-# Balance messages between several devices
+# Balance messages between several outputs
 balancer_logger = LogStashLogger.new(
   type: :balancer,
   outputs: [
@@ -90,7 +90,8 @@ balancer_logger = LogStashLogger.new(
     { type: :udp, host: 'host2', port: 5228 }
   ])
 
-# Send the message to multiple loggers. Each logger can have a different format.
+# Send messages to multiple loggers.
+# Use this if you need to send different formats to different outputs.
 multi_logger = LogStashLogger.new(
   type: :multi_logger,
   outputs: [
