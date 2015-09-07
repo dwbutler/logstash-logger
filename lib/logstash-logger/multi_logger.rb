@@ -114,5 +114,22 @@ module LogStashLogger
         logger.close if logger.respond_to?(:close)
       end
     end
+
+    module TaggedLogging
+      def tagged(*tags)
+        @loggers.each do |logger|
+          logger.formatter.tagged(*tags) { yield self }
+        end
+      end
+
+      def flush
+        @loggers.each do |logger|
+          logger.formatter.clear_tags!
+        end
+        super if defined?(super)
+      end
+    end
+
+    include TaggedLogging
   end
 end

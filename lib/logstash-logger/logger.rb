@@ -16,7 +16,7 @@ module LogStashLogger
       end
 
       def flush
-        !!@device.flush
+        !!(@device.flush if @device.respond_to?(:flush))
       end
     end
   end
