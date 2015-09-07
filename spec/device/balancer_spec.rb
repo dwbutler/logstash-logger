@@ -4,7 +4,7 @@ describe LogStashLogger::Device::Balancer do
   include_context 'device'
 
   # Create a Balancer writing to both STDOUT and a StringIO
-  let(:subject) { balancer_device }
+  subject { balancer_device }
 
   describe '#write' do
     before do

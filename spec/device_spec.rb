@@ -40,7 +40,7 @@ describe LogStashLogger::Device do
 
     context "when uri is invalid" do
       let(:uri_config) { invalid_uri_config }
-      specify { expect{ parse_uri_config }.to raise_error(URI::InvalidURIError) }
+      specify { expect { parse_uri_config }.to raise_error(URI::InvalidURIError) }
     end
   end
 

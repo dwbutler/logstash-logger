@@ -16,7 +16,7 @@ describe LogStashLogger::Device::Unix do
 
   context "when path is not specified" do
     it "raises an exception" do
-      expect { described_class.new }.to raise_error
+      expect { described_class.new }.to raise_error(ArgumentError)
     end
   end
 end

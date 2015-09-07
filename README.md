@@ -77,24 +77,24 @@ ruby_default_formatter_logger = LogStashLogger.new(
 multi_delegating_logger = LogStashLogger.new(
   type: :multi_delegator,
   outputs: [
-    {type: :file, path: 'log/development.log'},
-    {type: :udp, host: 'localhost', port: 5228}
+    { type: :file, path: 'log/development.log' },
+    { type: :udp, host: 'localhost', port: 5228 }
   ])
 
 # Balance messages between several devices
 balancer_logger = LogStashLogger.new(
   type: :balancer,
   outputs: [
-    {type: :udp, host: 'host1', port: 5228},
-    {type: :udp, host: 'host2', port: 5228}
+    { type: :udp, host: 'host1', port: 5228 },
+    { type: :udp, host: 'host2', port: 5228 }
   ])
 
 # Send the message to multiple loggers. Each logger can have a different format.
 multi_logger = LogStashLogger.new(
   type: :multi_logger,
   outputs: [
-    {type: :file, path: 'log/development.log', formatter: ::Logger::Formatter},
-    {type: :tcp, host: 'localhost', port: 5228, formatter: :json}
+    { type: :file, path: 'log/development.log', formatter: ::Logger::Formatter },
+    { type: :tcp, host: 'localhost', port: 5228, formatter: :json }
   ])
 
 # The following messages are written to UDP port 5228:
@@ -379,6 +379,7 @@ config.logstash.type = :multi_delegator
 
 # Required
 config.logstash.outputs = [
+  {
     type: :file,
     path: 'log/production.log'
   },
@@ -398,6 +399,7 @@ config.logstash.type = :multi_logger
 
 # Required. Each logger may have its own formatter.
 config.logstash.outputs = [
+  {
     type: :file,
     path: 'log/production.log',
     formatter: ::Logger::Formatter
@@ -525,6 +527,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Anil Rhemtulla](https://github.com/AnilRh)
 * [Nikita Vorobei](https://github.com/Nikita-V)
 * [fireboy1919](https://github.com/fireboy1919)
+* [ffmike](https://github.com/ffmike)
 
 ## Contributing
 
