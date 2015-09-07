@@ -25,27 +25,54 @@ describe LogStashLogger::Formatter do
     end
 
     context "custom formatter" do
-      it "returns a new instance of a custom formatter class" do
-        expect(described_class.new(::Logger::Formatter)).to be_a ::Logger::Formatter
-      end
+      subject { described_class.new(formatter) }
 
-      it "returns the same formatter instance if a custom formatter instance is passed in" do
-        formatter = ::Logger::Formatter.new
-        expect(described_class.new(formatter)).to eql(formatter)
-      end
+      context "formatter class" do
+        let(:formatter) { ::Logger::Formatter }
 
-      it "returns a formatter proc if it is passed in" do
-        formatter = proc do |severity, time, progname, msg|
-          msg
+        it "returns a new instance of the class" do
+          expect(subject).to be_a formatter
         end
-        expect(described_class.new(formatter)).to eql(formatter)
       end
 
-      it "returns a formatter lambda if it is passed in" do
-        formatter = lambda do |severity, time, progname, msg|
-          msg
+      context "formatter instance" do
+        let(:formatter) { ::Logger::Formatter.new }
+
+        it "returns the same formatter instance" do
+          expect(subject).to eql(formatter)
         end
-        expect(described_class.new(formatter)).to eql(formatter)
+
+        it "supports tagged logging" do
+          expect(subject).to be_a ::LogStashLogger::TaggedLogging::Formatter
+        end
+      end
+
+      context "formatter proc" do
+        let(:formatter) do
+          proc { |severity, time, progname, msg| msg }
+        end
+
+        it "returns the same formatter proc" do
+          expect(subject).to eql(formatter)
+        end
+
+        it "supports tagged logging" do
+          expect(subject).to be_a ::LogStashLogger::TaggedLogging::Formatter
+        end
+      end
+
+      context "formatter lambda" do
+        let(:formatter) do
+          ->(severity, time, progname, msg) { msg }
+        end
+
+        it "returns the same formatter lambda" do
+          expect(subject).to eql(formatter)
+        end
+
+        it "supports tagged logging" do
+          expect(subject).to be_a ::LogStashLogger::TaggedLogging::Formatter
+        end
       end
     end
   end
