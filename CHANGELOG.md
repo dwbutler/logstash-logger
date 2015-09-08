@@ -1,3 +1,6 @@
+## 0.14.0
+- Support for Syslog output. [#59](https://github.com/dwbutler/logstash-logger/pull/59)
+
 ## 0.13.0
 - Support for sending messages to multiple loggers. Each one can have a different formatter. [#58](https://github.com/dwbutler/logstash-logger/pull/58)
 - Fixes tagged logging support when using a custom formatter.
