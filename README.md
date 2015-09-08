@@ -8,7 +8,7 @@ writing to a file or syslog since logstash can receive the structured data direc
 ## Features
 
 * Can write directly to logstash over a UDP or TCP/SSL connection.
-* Can write to a file, Redis, a unix socket, stdout or stderr.
+* Can write to a file, Redis, Kafka, a unix socket, syslog, stdout, or stderr.
 * Writes in logstash JSON format, but supports other formats as well.
 * Can write to multiple outputs.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
@@ -44,6 +44,7 @@ tcp_logger = LogStashLogger.new(type: :tcp, host: 'localhost', port: 5229)
 # Other types of loggers
 file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync: true)
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
+syslog_logger = LogStashLogger.new(type: :syslog)
 redis_logger = LogStashLogger.new(type: :redis)
 kafka_logger = LogStashLogger.new(type: :kafka)
 stdout_logger = LogStashLogger.new(type: :stdout)
@@ -75,6 +76,7 @@ ruby_default_formatter_logger = LogStashLogger.new(
 )
 
 # Send messages to multiple outputs. Each output will have the same format.
+# Syslog cannot be an output because it requires a separate logger.
 multi_delegating_logger = LogStashLogger.new(
   type: :multi_delegator,
   outputs: [
@@ -82,7 +84,8 @@ multi_delegating_logger = LogStashLogger.new(
     { type: :udp, host: 'localhost', port: 5228 }
   ])
 
-# Balance messages between several outputs
+# Balance messages between several outputs.
+# Works the same as multi delegator, but randomly chooses an output to send each message.
 balancer_logger = LogStashLogger.new(
   type: :balancer,
   outputs: [
@@ -92,6 +95,7 @@ balancer_logger = LogStashLogger.new(
 
 # Send messages to multiple loggers.
 # Use this if you need to send different formats to different outputs.
+# If you need to log to syslog, you must use this.
 multi_logger = LogStashLogger.new(
   type: :multi_logger,
   outputs: [
@@ -303,6 +307,25 @@ config.logstash.type = :unix
 
 # Required
 config.logstash.path = '/tmp/sock'
+```
+
+#### Syslog
+
+If you're on Ruby 1.9, add `Syslog::Logger` v2 to your Gemfile:
+
+    gem 'SyslogLogger', '2.0'
+
+If you're on Ruby 2+, `Syslog::Logger` is already built into the standard library.
+
+```ruby
+# Required
+config.logstash.type = :syslog
+
+# Optional. Defaults to 'ruby'
+config.logstash.program_name = 'MyApp'
+
+# Optional default facility level. Only works in Ruby 2+
+config.logstash.facility = Syslog::LOG_LOCAL0
 ```
 
 #### Redis

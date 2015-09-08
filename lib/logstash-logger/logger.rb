@@ -1,6 +1,11 @@
 require 'logger'
 require 'logstash-logger/tagged_logging'
 
+autoload :Syslog, 'syslog'
+module Syslog
+  autoload :Logger, 'syslog/logger'
+end
+
 module LogStashLogger
   autoload :MultiLogger, 'logstash-logger/multi_logger'
 
@@ -45,20 +50,45 @@ module LogStashLogger
   end
 
   def self.build_logger(opts)
-    case opts[:type]
-    when :multi_logger
-      loggers = opts[:outputs].map {|logger_opts| build_logger(logger_opts) }
-      MultiLogger.new(loggers)
-    else
-      formatter = Formatter.new(opts.delete(:formatter))
-      device = Device.new(opts)
+    formatter = Formatter.new(opts.delete(:formatter))
 
-      ::Logger.new(device).tap do |logger|
-        logger.instance_variable_set(:@device, device)
-        logger.extend(self)
-        logger.extend(TaggedLogging)
-        logger.formatter = formatter
-      end
+    logger = case opts[:type]
+    when :multi_logger
+      build_multi_logger(opts)
+    when :syslog
+      build_syslog_logger(opts)
+    else
+      build_default_logger(opts)
     end
+
+    logger.formatter = formatter if formatter
+    logger
+  end
+
+  private
+
+  def self.build_default_logger(opts)
+    device = Device.new(opts)
+    ::Logger.new(device).tap do |logger|
+      logger.instance_variable_set(:@device, device)
+      logger.extend(self)
+      logger.extend(TaggedLogging)
+    end
+  end
+
+  def self.build_multi_logger(opts)
+    loggers = opts[:outputs].map { |logger_opts| build_logger(logger_opts) }
+    MultiLogger.new(loggers)
+  end
+
+  def self.build_syslog_logger(opts)
+    logger = begin
+      Syslog::Logger.new(opts[:program_name], opts[:facility])
+    rescue ArgumentError
+      Syslog::Logger.new(opts[:program_name])
+    end
+
+    logger.extend(self)
+    logger.extend(TaggedLogging)
   end
 end
