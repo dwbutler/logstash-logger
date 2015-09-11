@@ -29,24 +29,4 @@ describe LogStashLogger::MultiLogger do
 
     multi_logger.info("test")
   end
-
-  context "tagged logging" do
-    it "forwards tags to each logger's formatter" do
-      subject.loggers.each do |logger|
-        expect(logger.formatter).to receive(:tagged).with("foo")
-      end
-
-      subject.tagged("foo") do |logger|
-        logger.debug("bar")
-      end
-    end
-
-    it "clears tags on each logger's formatter when flushing" do
-      subject.loggers.each do |logger|
-        expect(logger.formatter).to receive(:clear_tags!)
-      end
-
-      subject.flush
-    end
-  end
 end
