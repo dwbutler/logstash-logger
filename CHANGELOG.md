@@ -1,3 +1,6 @@
+## 0.14.1
+- Fixes MultiLogger tagged logging in Rails. [#60](https://github.com/dwbutler/logstash-logger/pull/60)
+
 ## 0.14.0
 - Support for Syslog output. [#59](https://github.com/dwbutler/logstash-logger/pull/59)
 
