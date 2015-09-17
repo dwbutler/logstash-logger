@@ -52,21 +52,23 @@ describe LogStashLogger do
         end
       end
 
-      context "when configured with multiple devices" do
+      context "when configuring a multi delegator" do
         before(:each) do
-          app.config.logstash = [
+          app.config.logstash.type = :multi_delegator
+          app.config.logstash.outputs = [
             {
               type: :udp,
               uri: udp_uri
             },
             {
-              type: :file
+              type: :file,
+              path: '/tmp/foo.log'
             }
           ]
           LogStashLogger.setup(app)
         end
 
-        it "uses a multi-delegator" do
+        it "uses a multi delegator" do
           expect(subject.device).to be_a LogStashLogger::Device::MultiDelegator
           expect(subject.device.devices.map(&:class)).to eq([
             LogStashLogger::Device::UDP,

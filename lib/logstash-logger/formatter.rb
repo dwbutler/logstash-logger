@@ -1,53 +1,51 @@
-require 'logger'
-require 'socket'
-require 'time'
+require 'logstash-logger/formatter/base'
 
 module LogStashLogger
-  HOST = ::Socket.gethostname
+	module Formatter
+		DEFAULT_FORMATTER = :json_lines
 
-  class Formatter < ::Logger::Formatter
-    include TaggedLogging::Formatter
+    autoload :LogStashEvent, 'logstash-logger/formatter/logstash_event'
+    autoload :Json, 'logstash-logger/formatter/json'
+    autoload :JsonLines, 'logstash-logger/formatter/json_lines'
+    autoload :Cee, 'logstash-logger/formatter/cee'
+    autoload :CeeSyslog, 'logstash-logger/formatter/cee_syslog'
 
-    def call(severity, time, progname, message)
-      event = build_event(message, severity, time)
-      "#{event.to_json}\n"
+		def self.new(formatter_type)
+    	build_formatter(formatter_type)
     end
 
-    protected
+    def self.build_formatter(formatter_type)
+      formatter_type ||= DEFAULT_FORMATTER
 
-    def build_event(message, severity, time)
-      data = message
-      if data.is_a?(String) && data.start_with?('{')
-        data = (JSON.parse(message) rescue nil) || message
+      formatter = if custom_formatter_instance?(formatter_type)
+        formatter_type
+      elsif custom_formatter_class?(formatter_type)
+        formatter_type.new
+      else
+        formatter_klass(formatter_type).new
       end
 
-      event = case data
-                when LogStash::Event
-                  data.clone
-                when Hash
-                  event_data = data.merge("@timestamp" => time)
-                  LogStash::Event.new(event_data)
-                else
-                  LogStash::Event.new("message" => msg2str(data), "@timestamp" => time)
-              end
-
-      event['severity'] ||= severity
-      #event.type = progname
-
-      event['host'] ||= HOST
-
-      LogStashLogger.configuration.customize_event_block.call(event) if LogStashLogger.configuration.customize_event_block.respond_to?(:call)
-
-      current_tags.each do |tag|
-        event.tag(tag)
-      end
-
-      # In case Time#to_json has been overridden
-      if event.timestamp.is_a?(Time)
-        event.timestamp = event.timestamp.iso8601(3)
-      end
-
-      event
+      formatter.send(:extend, ::LogStashLogger::TaggedLogging::Formatter)
+      formatter
     end
-  end
+
+    def self.formatter_klass(formatter_type)
+      case formatter_type.to_sym
+      when :json_lines then JsonLines
+      when :json then Json
+      when :logstash_event then LogStashEvent
+      when :cee then Cee
+      when :cee_syslog then CeeSyslog
+      else fail ArgumentError, 'Invalid formatter'
+      end
+    end
+
+    def self.custom_formatter_instance?(formatter_type)
+      formatter_type.respond_to?(:call)
+    end
+
+    def self.custom_formatter_class?(formatter_type)
+      formatter_type.is_a?(Class) && formatter_type.method_defined?(:call)
+    end
+	end
 end

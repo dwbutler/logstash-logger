@@ -1,5 +1,12 @@
 require 'pry'
 
+require 'simplecov'
+SimpleCov.start
+if ENV['CI']=='true'
+  require 'codecov'
+  SimpleCov.formatter = SimpleCov::Formatter::Codecov
+end
+
 RSpec.configure do |config|
   config.order = "random"
 
@@ -49,11 +56,24 @@ RSpec.shared_context 'device' do
   let(:file) { Tempfile.new('test') }
   let(:file_device) { LogStashLogger::Device.new(type: :file, path: file.path)}
 
+  let(:io) { StringIO.new }
   let(:io_device) { LogStashLogger::Device.new(type: :io, io: io)}
 
   let(:redis_device) { LogStashLogger::Device.new(type: :redis, sync: true) }
   let(:kafka_device) { LogStashLogger::Device.new(type: :kafka, sync: true) }
-  let(:multi_delegator_device) { LogStashLogger::Device.new([{type: :stdout}, {type: :io, io: io}]) }
+
+  let(:outputs) { [{type: :stdout}, {type: :io, io: io}] }
+  let(:multi_delegator_device) { LogStashLogger::Device.new(type: :multi_delegator, outputs: outputs) }
+  let(:balancer_device) { LogStashLogger::Device.new(type: :balancer, outputs: outputs) }
+  let(:multi_logger) do
+    LogStashLogger.new(
+        type: :multi_logger,
+        outputs: [
+            { type: :stdout, formatter: ::Logger::Formatter },
+            { type: :io, io: io }
+        ]
+    )
+  end
 
   let(:udp_uri) { "udp://localhost:5228" }
   let(:tcp_uri) { "tcp://localhost:5229" }
@@ -73,4 +93,15 @@ RSpec.shared_context 'device' do
   let(:kafka_uri_config)   { {uri: kafka_uri} }
   let(:stdout_uri_config)  { {uri: stdout_uri} }
   let(:stderr_uri_config)  { {uri: stderr_uri} }
+end
+
+RSpec.shared_context 'formatter' do
+  let(:severity) { "DEBUG" }
+  let(:time) { Time.now }
+  let(:progname) { "ruby" }
+  let(:message) { "foo" }
+  let(:hostname) { Socket.gethostname }
+  let(:formatted_message) do
+    subject.call(severity, time, progname, message)
+  end
 end

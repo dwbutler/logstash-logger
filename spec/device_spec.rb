@@ -40,7 +40,7 @@ describe LogStashLogger::Device do
 
     context "when uri is invalid" do
       let(:uri_config) { invalid_uri_config }
-      specify { expect{ parse_uri_config }.to raise_error(URI::InvalidURIError) }
+      specify { expect { parse_uri_config }.to raise_error(URI::InvalidURIError) }
     end
   end
 
@@ -70,6 +70,12 @@ describe LogStashLogger::Device do
     context "when URI config is redis" do
       let(:uri_config) { redis_uri_config }
       it { is_expected.to be_a LogStashLogger::Device::Redis }
+      context "list specified" do
+        let(:uri_config) { redis_uri_config.merge({list: 'mylist'}) }
+        it 'is expected to have the list option set' do
+          expect(new_device.list).to eq('mylist')
+        end
+      end
     end
 
     context "when URI config is kafka" do

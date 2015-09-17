@@ -1,15 +1,16 @@
 # LogStashLogger
-[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.png?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger.png)](https://codeclimate.com/github/dwbutler/logstash-logger)
+[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master)
 
-This gem implements a subclass of Ruby's Logger class that logs directly to [logstash](http://logstash.net).
-It writes to a logstash listener over a UDP (default) or TCP connection, in logstash JSON format. This is an improvement over
+LogStashLogger extends Ruby's `Logger` class to log directly to [logstash](http://logstash.net).
+It supports writing to various outputs in logstash JSON format. This is an improvement over
 writing to a file or syslog since logstash can receive the structured data directly.
 
 ## Features
 
 * Can write directly to logstash over a UDP or TCP/SSL connection.
-* Can write to a file, Redis, a unix socket, stdout or stderr.
-* Always writes in logstash JSON format.
+* Can write to a file, Redis, Kafka, a unix socket, syslog, stdout, or stderr.
+* Writes in logstash JSON format, but supports other formats as well.
+* Can write to multiple outputs.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
 * Easily integrates with Rails via configuration.
@@ -28,7 +29,7 @@ Or install it yourself as:
 
     $ gem install logstash-logger
 
-## Basic Usage
+## Usage Examples
 
 ```ruby
 require 'logstash-logger'
@@ -43,14 +44,64 @@ tcp_logger = LogStashLogger.new(type: :tcp, host: 'localhost', port: 5229)
 # Other types of loggers
 file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync: true)
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
+syslog_logger = LogStashLogger.new(type: :syslog)
 redis_logger = LogStashLogger.new(type: :redis)
 kafka_logger = LogStashLogger.new(type: :kafka)
 stdout_logger = LogStashLogger.new(type: :stdout)
 stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
 
-# Multiple Outputs
-multi_logger = LogStashLogger.new([{type: :file, path: 'log/development.log'}, {type: :udp, host: 'localhost', port: 5228}])
+# Use a different formatter
+cee_logger = LogStashLogger.new(
+  type: :tcp,
+  host: 'logsene-receiver-syslog.sematext.com',
+  port: 514,
+  formatter: :cee_syslog
+)
+
+custom_formatted_logger = LogStashLogger.new(
+  type: :redis,
+  formatter: MyCustomFormatter
+)
+
+lambda_formatted_logger = LogStashLogger.new(
+  type: :stdout,
+  formatter: ->(severity, time, progname, msg) { "[#{progname}] #{msg}" }
+)
+
+ruby_default_formatter_logger = LogStashLogger.new(
+  type: :file,
+  path: 'log/development.log',
+  formatter: ::Logger::Formatter
+)
+
+# Send messages to multiple outputs. Each output will have the same format.
+# Syslog cannot be an output because it requires a separate logger.
+multi_delegating_logger = LogStashLogger.new(
+  type: :multi_delegator,
+  outputs: [
+    { type: :file, path: 'log/development.log' },
+    { type: :udp, host: 'localhost', port: 5228 }
+  ])
+
+# Balance messages between several outputs.
+# Works the same as multi delegator, but randomly chooses an output to send each message.
+balancer_logger = LogStashLogger.new(
+  type: :balancer,
+  outputs: [
+    { type: :udp, host: 'host1', port: 5228 },
+    { type: :udp, host: 'host2', port: 5228 }
+  ])
+
+# Send messages to multiple loggers.
+# Use this if you need to send different formats to different outputs.
+# If you need to log to syslog, you must use this.
+multi_logger = LogStashLogger.new(
+  type: :multi_logger,
+  outputs: [
+    { type: :file, path: 'log/development.log', formatter: ::Logger::Formatter },
+    { type: :tcp, host: 'localhost', port: 5228, formatter: :json }
+  ])
 
 # The following messages are written to UDP port 5228:
 
@@ -74,7 +125,7 @@ logger.tagged('foo') { logger.fatal('bar') }
 ## URI Configuration
 You can use a URI to configure your logstash logger instead of a hash. This is useful in environments
 such as Heroku where you may want to read configuration values from the environment. The URI scheme
-is `type://host:port/path`. Some sample URI configurations are given below.
+is `type://host:port/path?key=value`. Some sample URI configurations are given below.
 
 ```
 udp://localhost:5228
@@ -94,7 +145,7 @@ Pass the URI into your logstash logger like so:
 logger = LogStashLogger.new(uri: ENV['LOGSTASH_URI'])
 ```
 
-## Logstash Configuration
+## Logstash Listener Configuration
 
 In order for logstash to correctly receive and parse the events, you will need to
 configure and run a listener that uses the `json_lines` codec. For example, to receive
@@ -183,6 +234,7 @@ This configuration would result in the following output.
 }
 ```
 
+
 ## Rails Integration
 
 Verified to work with both Rails 3 and 4.
@@ -213,6 +265,10 @@ config.autoflush_log = true
 
 # Optional, use a URI to configure. Useful on Heroku
 config.logstash.uri = ENV['LOGSTASH_URI']
+
+# Optional. Defaults to :json_lines. If there are multiple outputs,
+# they will all share the same formatter.
+config.logstash.formatter = :json_lines
 ```
 
 #### UDP
@@ -253,7 +309,30 @@ config.logstash.type = :unix
 config.logstash.path = '/tmp/sock'
 ```
 
+#### Syslog
+
+If you're on Ruby 1.9, add `Syslog::Logger` v2 to your Gemfile:
+
+    gem 'SyslogLogger', '2.0'
+
+If you're on Ruby 2+, `Syslog::Logger` is already built into the standard library.
+
+```ruby
+# Required
+config.logstash.type = :syslog
+
+# Optional. Defaults to 'ruby'
+config.logstash.program_name = 'MyApp'
+
+# Optional default facility level. Only works in Ruby 2+
+config.logstash.facility = Syslog::LOG_LOCAL0
+```
+
 #### Redis
+
+Add the redis gem to your Gemfile:
+
+    gem 'redis'
 
 ```ruby
 # Required
@@ -274,6 +353,10 @@ config.logstash.port = 6379
 ```
 
 #### Kafka
+
+Add the poseidon gem to your Gemfile:
+
+    gem 'poseidon'
 
 ```ruby
 # Required
@@ -313,10 +396,14 @@ config.logstash.type = :io
 config.logstash.io = io
 ```
 
-#### Multiple Outputs
+#### Multi Delegator
 
 ```ruby
-config.logstash = [
+# Required
+config.logstash.type = :multi_delegator
+
+# Required
+config.logstash.outputs = [
   {
     type: :file,
     path: 'log/production.log'
@@ -327,6 +414,56 @@ config.logstash = [
     host: 'localhost'
   }
 ]
+```
+
+#### Multi Logger
+
+```ruby
+# Required
+config.logstash.type = :multi_logger
+
+# Required. Each logger may have its own formatter.
+config.logstash.outputs = [
+  {
+    type: :file,
+    path: 'log/production.log',
+    formatter: ::Logger::Formatter
+  },
+  {
+    type: :udp,
+    port: 5228,
+    host: 'localhost'
+  }
+]
+```
+
+### Logging HTTP request data
+
+In web applications, you can log data from HTTP requests (such as headers) using the
+[RequestStore](https://github.com/steveklabnik/request_store) middleware. The following
+example assumes Rails.
+
+```ruby
+# in Gemfile
+gem 'request_store'
+```
+
+```ruby
+# in application.rb
+LogStashLogger.configure do |config|
+  config.customize_event do |event|
+    event["session_id"] = RequestStore.store[:load_balancer_session_id]
+  end
+end
+```
+
+```ruby
+# in app/controllers/application_controller.rb
+before_filter :track_load_balancer_session_id
+
+def track_load_balancer_session_id
+  RequestStore.store[:load_balancer_session_id] = request.headers["X-LOADBALANCER-SESSIONID"]
+end
 ```
 
 ## Ruby Compatibility
@@ -374,6 +511,11 @@ This is most likely not a problem with LogStashLogger, but rather a different ge
 This is especially likely if you're using a threaded server such as Puma, since gems often change the log level of
 `Rails.logger` in a non thread-safe way. See [#17](https://github.com/dwbutler/logstash-logger/issues/17) for more information.
 
+### Sometimes two lines of JSON log messages get sent as one message
+If you're using UDP output and writing to a logstash listener, you are most likely encountering a bug in the UDP implementation
+of the logstash listener. There is no known fix at this time. See [#43](https://github.com/dwbutler/logstash-logger/issues/43)
+for more information.
+
 ## Breaking changes
 
 ### Version 0.5+
@@ -407,6 +549,11 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Kurt Preston](https://github.com/KurtPreston)
 * [Chris Blatchley](https://github.com/chrisblatchley)
 * [Felix Bechstein](https://github.com/felixb)
+* [Vadim Kazakov](https://github.com/yads)
+* [Anil Rhemtulla](https://github.com/AnilRh)
+* [Nikita Vorobei](https://github.com/Nikita-V)
+* [fireboy1919](https://github.com/fireboy1919)
+* [Mike Gunderloy](https://github.com/ffmike)
 
 ## Contributing
 

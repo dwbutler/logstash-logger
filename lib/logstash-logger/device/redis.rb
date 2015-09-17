@@ -10,8 +10,12 @@ module LogStashLogger
       def initialize(opts)
         super
         @list = opts.delete(:list) || DEFAULT_LIST
+
+        normalize_path(opts)
+
         @redis_options = opts
       end
+
 
       def connect
         @io = ::Redis.new(@redis_options)
@@ -61,6 +65,17 @@ module LogStashLogger
           write_batch(messages, list)
         end
       end
+      
+      private
+
+      def normalize_path(opts)
+        path = opts.fetch(:path, nil)
+        if path
+          opts[:db] = path.gsub("/", "").to_i unless path.empty?
+          opts.delete(:path)
+        end
+      end
+
     end
   end
 end
