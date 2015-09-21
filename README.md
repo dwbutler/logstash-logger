@@ -246,7 +246,7 @@ You can configure its behavior by passing the following options to LogStashLogge
     :buffer_max_items - Max number of items to buffer before flushing. Defaults to 50.
     :buffer_max_interval - Max number of seconds to wait between flushes. Defaults to 5.
 
-You can turn this behavior off by setting `max_items` to `1` or `sync` to `true`.
+You can turn this behavior off by setting `buffer_max_items` to `1` or `sync` to `true`.
 
 Please be aware of the following caveats to this behavior:
 
@@ -256,9 +256,9 @@ Please be aware of the following caveats to this behavior:
    in a `customize_event` block, or by using logstash's
    [UUID filter](https://www.elastic.co/guide/en/logstash/current/plugins-filters-uuid.html).
  * It's still possible to lose log messages. Ruby won't detect a TCP/UDP connection problem
-   immediately - in my testing, it took Ruby about 4 seconds to notice the receiving end was down.
-   Since logstash listeners over TCP/UDP do not acknowledge received messages, it's not possible
-   to know which log messages to re-send.
+   immediately. In my testing, it took Ruby about 4 seconds to notice the receiving end was down
+   and start raising exceptions. Since logstash listeners over TCP/UDP do not acknowledge received
+   messages, it's not possible to know which log messages to re-send.
  * If your output source is unavailable long enough, writing to the log will block until it is
    available again. This could make your application unresponsive.
  * If your application suddenly terminates (for example, by SIGKILL or a power outage), the whole
