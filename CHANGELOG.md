@@ -1,3 +1,6 @@
+## 0.15.0
+- Adds buffering and automatic retry support for all connectable outputs. [#35](https://github.com/dwbutler/logstash-logger/pull/35)
+
 ## 0.14.1
 - Fixes MultiLogger tagged logging in Rails. [#60](https://github.com/dwbutler/logstash-logger/pull/60)
 
