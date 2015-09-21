@@ -7,12 +7,13 @@ writing to a file or syslog since logstash can receive the structured data direc
 
 ## Features
 
-* Can write directly to logstash over a UDP or TCP/SSL connection.
+* Can write directly to a logstash listener over a UDP or TCP/SSL connection.
 * Can write to a file, Redis, Kafka, a unix socket, syslog, stdout, or stderr.
-* Writes in logstash JSON format, but supports other formats as well.
-* Can write to multiple outputs.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
+* Writes in logstash JSON format, but supports other formats as well.
+* Can write to multiple outputs.
+* Log messages are automatically re-sent if there is a connection problem.
 * Easily integrates with Rails via configuration.
 
 ## Installation
@@ -234,6 +235,36 @@ This configuration would result in the following output.
 }
 ```
 
+## Automatic Retries
+
+Log messages are buffered and automatically re-sent if there is a connection problem. This is
+accomplished using [Stud::Buffer](https://github.com/jordansissel/ruby-stud/blob/master/lib/stud/buffer.rb).
+You can configure its behavior by passing the following options to LogStashLogger:
+
+    :max_items - Max number of items to buffer before flushing. Default 50.
+    :max_interval - Max number of seconds to wait between flushes. Default 5.
+
+You can turn this behavior off by setting `max_items` to `1` or `sync` to `true`.
+
+Please be aware of the following caveats to this behavior:
+
+ * It's possible for duplicate log messages to be sent when retrying. If this is a problem, you
+   can add a UUID field to the event to uniquely identify it. You can either do this
+   in a `customize_event` block, or by using logstash's
+   [UUID filter](https://www.elastic.co/guide/en/logstash/current/plugins-filters-uuid.html)
+ * It's still possible to lose log messages. Ruby won't detect a TCP/UDP connection problem
+   immediately - in my testing, it took Ruby about 4 seconds to notice the receiving end was down.
+   Since logstash listeners over TCP/UDP do not acknowledge received messages, it's not possible
+   to know which log messages to re-send.
+ * If your output source is unavailable long enough, writing to the log will block until it is
+   available again. This could make your application unresponsive.
+ * If your application suddenly terminates (for example, by SIGKILL or a power outage), the whole
+   buffer will be lost.
+
+You can make message loss and application blockage less likely by increasing `max_items`
+(so that more events can be held in the buffer), and increasing `max_interval` (to wait longer
+between flushes). This will increase memory pressure on your application as log messages
+accumulate in the buffer, so make sure you have allocated enough memory to your process.
 
 ## Rails Integration
 

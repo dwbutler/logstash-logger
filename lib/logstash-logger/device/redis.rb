@@ -16,7 +16,6 @@ module LogStashLogger
         @redis_options = opts
       end
 
-
       def connect
         @io = ::Redis.new(@redis_options)
       end
