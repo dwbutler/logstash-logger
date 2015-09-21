@@ -16,8 +16,6 @@ module LogStashLogger
         @use_ssl || !@ssl_certificate.nil?
       end
 
-      protected
-
       def connect
         if use_ssl?
           ssl_connect
@@ -27,6 +25,8 @@ module LogStashLogger
 
         @io
       end
+
+      protected
 
       def non_ssl_connect
         @io = TCPSocket.new(@host, @port).tap do |socket|

@@ -7,6 +7,7 @@ describe LogStashLogger::Device::Unix do
 
   before(:each) do
     allow(::UNIXSocket).to receive(:new) { unix_socket }
+    allow(unix_socket).to receive(:sync=)
   end
 
   it "writes to a local unix socket" do

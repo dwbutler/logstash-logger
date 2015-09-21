@@ -1,17 +1,43 @@
+require 'stud/buffer'
+
 module LogStashLogger
   module Device
     class Connectable < Base
+      include Stud::Buffer
+
+      def initialize(opts = {})
+        super
+
+        if opts[:batch_events]
+          warn "The :batch_events option is deprecated. Please use :buffer_max_items instead"
+        end
+
+        if opts[:batch_timeout]
+          warn "The :batch_timeout option is deprecated. Please use :buffer_max_interval instead"
+        end
+
+        @buffer_max_items = opts[:batch_events] || opts[:buffer_max_items]
+        @buffer_max_interval = opts[:batch_timeout] || opts[:buffer_max_interval]
+
+        buffer_initialize max_items: @buffer_max_items, max_interval: @buffer_max_interval
+      end
+
       def write(message)
-        with_connection do
-          super
+        buffer_receive message
+        buffer_flush(force: true) if @sync
+      end
+
+      def flush(*args)
+        if args.empty?
+          buffer_flush
+        else
+          write_batch(args[0])
         end
       end
 
-      def flush
-        return unless connected?
-        with_connection do
-          super
-        end
+      def close
+        buffer_flush(final: true)
+        super
       end
 
       def to_io
@@ -24,7 +50,13 @@ module LogStashLogger
         !!@io
       end
 
-      protected
+      def write_batch(messages)
+        with_connection do
+          messages.each do |message|
+            @io.write(message)
+          end
+        end
+      end
 
       # Implemented by subclasses
       def connect
@@ -38,12 +70,12 @@ module LogStashLogger
 
       # Ensure the block is executed with a valid connection
       def with_connection(&block)
-        connect unless @io
+        connect unless connected?
         yield
       rescue => e
         warn "#{self.class} - #{e.class} - #{e.message}"
-        close
         @io = nil
+        raise
       end
     end
   end
