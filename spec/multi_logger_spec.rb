@@ -18,8 +18,8 @@ describe LogStashLogger::MultiLogger do
   end
 
   it "allows a different formatter for each logger" do
-    expect(subject.loggers[0].formatter).to be_a ::Logger::Formatter
-    expect(subject.loggers[1].formatter).to be_a LogStashLogger::Formatter::JsonLines
+    expect(subject.loggers[0].formatter.class).to eq ::Logger::Formatter
+    expect(subject.loggers[1].formatter.class).to eq LogStashLogger::Formatter::JsonLines
   end
 
   it "logs to all loggers" do

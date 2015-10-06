@@ -24,7 +24,7 @@ module LogStashLogger
 
     def formatter=(formatter)
       @loggers.each do |logger|
-        logger.formatter = formatter
+        logger.formatter ||= formatter
       end
     end
 
