@@ -1,3 +1,6 @@
+## 0.15.1
+- Fixes MultiLogger overriding each logger with the default formatter. [#61](https://github.com/dwbutler/logstash-logger/issues/61)
+
 ## 0.15.0
 - Adds buffering and automatic retry support for all connectable outputs. [#35](https://github.com/dwbutler/logstash-logger/pull/35)
 
