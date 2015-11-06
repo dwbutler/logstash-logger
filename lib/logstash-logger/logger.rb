@@ -1,11 +1,6 @@
 require 'logger'
 require 'logstash-logger/tagged_logging'
 
-autoload :Syslog, 'syslog'
-module Syslog
-  autoload :Logger, 'syslog/logger'
-end
-
 module LogStashLogger
   autoload :MultiLogger, 'logstash-logger/multi_logger'
 
@@ -83,6 +78,8 @@ module LogStashLogger
 
   def self.build_syslog_logger(opts)
     logger = begin
+      require 'syslog/logger'
+
       Syslog::Logger.new(opts[:program_name], opts[:facility])
     rescue ArgumentError
       Syslog::Logger.new(opts[:program_name])
