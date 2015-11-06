@@ -3,7 +3,7 @@ require 'logstash-logger'
 describe LogStashLogger do
   context "Syslog" do
     let(:program_name) { "MyApp" }
-    let(:facility) { Syslog::LOG_LOCAL0 }
+    let(:facility) { 128 } #Syslog::LOG_LOCAL0 }
     subject { LogStashLogger.new(type: :syslog, program_name: program_name, facility: facility) }
     let(:syslog) { subject.class.class_variable_get(:@@syslog) }
 
