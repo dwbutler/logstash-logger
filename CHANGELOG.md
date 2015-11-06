@@ -1,3 +1,6 @@
+## 0.15.2
+- Fixes Windows support. [#64](https://github.com/dwbutler/logstash-logger/issues/64)
+
 ## 0.15.1
 - Fixes MultiLogger overriding each logger with the default formatter. [#61](https://github.com/dwbutler/logstash-logger/issues/61)
 
