@@ -64,6 +64,7 @@ module LogStashLogger
       end
 
       def reconnect
+        @io.close if @io
         @io = nil
         connect
       end
@@ -74,6 +75,7 @@ module LogStashLogger
         yield
       rescue => e
         warn "#{self.class} - #{e.class} - #{e.message}"
+        @io.close if @io
         @io = nil
         raise
       end
