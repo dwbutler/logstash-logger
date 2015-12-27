@@ -25,9 +25,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'redis'
   gem.add_development_dependency 'poseidon'
 
-  begin
-    require 'syslog/logger'
-  rescue LoadError
+  if RUBY_VERSION < '2' || defined?(JRUBY_VERSION)
     gem.add_development_dependency 'SyslogLogger'
   end
 
