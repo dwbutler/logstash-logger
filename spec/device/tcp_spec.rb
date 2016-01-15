@@ -12,6 +12,7 @@ describe LogStashLogger::Device::TCP do
 
     allow(OpenSSL::SSL::SSLSocket).to receive(:new) { ssl_socket }
     allow(ssl_socket).to receive(:connect)
+    allow(ssl_socket).to receive(:post_connection_check)
   end
 
   context "when not using SSL" do
@@ -33,6 +34,11 @@ describe LogStashLogger::Device::TCP do
 
     it "returns false for #use_ssl?" do
       expect(ssl_tcp_device.use_ssl?).to be_truthy
+    end
+
+    it "checks ssl certificate validity" do
+      expect(ssl_socket).to receive(:post_connection_check).with(HOST)
+      ssl_tcp_device.connect
     end
   end
 end

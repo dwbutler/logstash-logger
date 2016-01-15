@@ -39,6 +39,7 @@ module LogStashLogger
         #openssl_cert = OpenSSL::X509::Certificate.new(::File.read(@ssl_certificate))
         @io = OpenSSL::SSL::SSLSocket.new(@io)
         @io.connect
+        @io.post_connection_check(@host)
       end
     end
   end
