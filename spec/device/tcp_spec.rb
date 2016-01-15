@@ -40,5 +40,16 @@ describe LogStashLogger::Device::TCP do
       expect(ssl_socket).to receive(:post_connection_check).with(HOST)
       ssl_tcp_device.connect
     end
+
+    context 'with a provided SSL context' do
+      let(:ssl_context) { 'test_ssl_context' }
+      let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true, sync: true, ssl_context: ssl_context) }
+
+      it 'creates the socket using that context' do
+        expect(OpenSSL::SSL::SSLSocket).to receive(:new).with(tcp_socket, ssl_context)
+        ssl_tcp_device.connect
+      end
+    end
   end
+
 end
