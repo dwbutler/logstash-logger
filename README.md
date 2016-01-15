@@ -182,6 +182,14 @@ You can also enable SSL without a certificate:
 LogStashLogger.new(type: :tcp, port: 5228, ssl_enable: true)
 ```
 
+You can also specify an SSL context. This can be used to disable host verification.
+
+```ruby
+ctx = OpenSSL::SSL::SSLContext.new
+ctx.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
+LogStashLogger.new(type: :tcp, port: 5228, ssl_enable: true, ssl_context: ctx)
+```
+
 The following Logstash configuration is required for SSL:
 
 ```ruby
