@@ -36,11 +36,11 @@ module LogStashLogger
       def with_connection
         retry_cpt = 0
         begin
+          retry_cpt += 1
           connect unless @io
           yield
         rescue ::Poseidon::Errors::ChecksumError, Poseidon::Errors::UnableToFetchMetadata => e
-          retry_cpt += 1
-          unless retry_cpt >= @max_retry
+          unless retry_cpt > @max_retry
             warn "#{self.class} - #{e.class} -> reconnect/retry #{retry_cpt}/#{@max_retry}"
             sleep backoff if backoff
             reconnect
