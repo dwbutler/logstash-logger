@@ -9,6 +9,7 @@ module LogStashLogger
       DEFAULT_TOPIC = 'logstash'
       DEFAULT_PRODUCER = 'logstash-logger'
       DEFAULT_BACKOFF = 1
+      DEFAULT_RETRY = 2
 
       attr_accessor :hosts, :topic, :producer, :backoff
 
@@ -20,6 +21,7 @@ module LogStashLogger
         @topic = opts[:path] || DEFAULT_TOPIC
         @producer = opts[:producer] || DEFAULT_PRODUCER
         @backoff = opts[:backoff] || DEFAULT_BACKOFF
+        @max_retry = opts[:max_retry] || DEFAULT_RETRY
       end
 
       def connect
@@ -32,16 +34,22 @@ module LogStashLogger
       end
 
       def with_connection
-        connect unless @io
-        yield
-      rescue ::Poseidon::Errors::ChecksumError, Poseidon::Errors::UnableToFetchMetadata => e
-        warn "#{self.class} - #{e.class} -> reconnect/retry"
-        sleep backoff if backoff
-        reconnect
-        retry
-      rescue => e
-        warn "#{self.class} - #{e.class} - #{e.message} -> giving up"
-        @io = nil
+        retry_cpt = 0
+        begin
+          connect unless @io
+          yield
+        rescue ::Poseidon::Errors::ChecksumError, Poseidon::Errors::UnableToFetchMetadata => e
+          retry_cpt += 1
+          unless retry_cpt >= @max_retry
+            warn "#{self.class} - #{e.class} -> reconnect/retry #{retry_cpt}/#{@max_retry}"
+            sleep backoff if backoff
+            reconnect
+            retry
+          end
+        rescue => e
+          warn "#{self.class} - #{e.class} - #{e.message} -> giving up"
+          @io = nil
+        end
       end
 
       def write(message)
