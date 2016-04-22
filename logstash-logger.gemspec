@@ -23,7 +23,7 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency 'rails'
   if RUBY_VERSION < '2'
-    gem.add_development_dependency 'mime-types', '~> 2'
+    gem.add_development_dependency 'mime-types', '< 3'
   end
   gem.add_development_dependency 'redis'
   gem.add_development_dependency 'poseidon'
