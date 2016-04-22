@@ -22,6 +22,9 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'stud'
 
   gem.add_development_dependency 'rails'
+  if RUBY_VERSION < '2'
+    gem.add_development_dependency 'mime-types', '~> 2'
+  end
   gem.add_development_dependency 'redis'
   gem.add_development_dependency 'poseidon'
 
