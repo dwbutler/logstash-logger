@@ -162,6 +162,9 @@ input {
 }
 ```
 
+File and Redis inputs should use the `json` codec instead. For more information
+read the [Logstash docs](https://www.elastic.co/guide/en/logstash/current/plugins-codecs-json_lines.html).
+
 See the [samples](https://github.com/dwbutler/logstash-logger/tree/master/samples) directory for more configuration samples.
 
 ## SSL
