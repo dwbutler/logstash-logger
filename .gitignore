@@ -19,3 +19,5 @@ tmp
 .idea/
 log/
 .ruby-version
+logstash-logger.sublime-project
+logstash-logger.sublime-workspace

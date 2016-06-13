@@ -75,7 +75,8 @@ module LogStashLogger
       rescue => e
         warn "#{self.class} - #{e.class} - #{e.message}"
         @io = nil
-        raise
+        # DO NOT RAISE AN EXCEPTION IF YOU CANNOT LOG
+        #raise
       end
     end
   end
