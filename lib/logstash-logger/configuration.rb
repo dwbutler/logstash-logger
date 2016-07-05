@@ -10,6 +10,7 @@ module LogStashLogger
 
   class Configuration
     attr_accessor :customize_event_block
+    attr_accessor :max_message_size
 
     def initialize(*args)
       @customize_event_block = nil
