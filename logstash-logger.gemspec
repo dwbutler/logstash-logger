@@ -32,7 +32,7 @@ Gem::Specification.new do |gem|
     gem.add_development_dependency 'SyslogLogger'
   end
 
-  if RUBY_VERSION < '1.9'
+  if RUBY_VERSION < '2'
     gem.add_development_dependency 'json', '~> 1.8'
   end
 
