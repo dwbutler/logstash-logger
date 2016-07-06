@@ -20,6 +20,7 @@ module LogStashLogger
         @topic = opts[:path] || DEFAULT_TOPIC
         @producer = opts[:producer] || DEFAULT_PRODUCER
         @backoff = opts[:backoff] || DEFAULT_BACKOFF
+        @buffer_group = @topic
       end
 
       def connect
@@ -44,14 +45,9 @@ module LogStashLogger
         @io = nil
       end
 
-      def write(message)
-        buffer_receive Poseidon::MessageToSend.new(@topic, message)
-        buffer_flush(force: true) if @sync
-      end
-
-      def write_batch(messages)
+      def write_batch(messages, topic)
         with_connection do
-          @io.send_messages messages
+          @io.send_messages messages.map { |message| Poseidon::MessageToSend.new(topic, message) }
         end
       end
 
@@ -63,16 +59,6 @@ module LogStashLogger
       ensure
         @io = nil
       end
-
-      def flush(*args)
-        if args.empty?
-          buffer_flush
-        else
-          messages = *args.first
-          write_batch(messages)
-        end
-      end
-
     end
   end
 end

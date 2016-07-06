@@ -16,22 +16,44 @@ module LogStashLogger
           warn "The :batch_timeout option is deprecated. Please use :buffer_max_interval instead"
         end
 
+        @buffer_group = nil
         @buffer_max_items = opts[:batch_events] || opts[:buffer_max_items]
         @buffer_max_interval = opts[:batch_timeout] || opts[:buffer_max_interval]
+        @drop_messages_on_flush_error = opts.delete(:drop_messages_on_flush_error)
+        @drop_messages_on_full_buffer = opts.delete(:drop_messages_on_full_buffer)
 
-        buffer_initialize max_items: @buffer_max_items, max_interval: @buffer_max_interval
+        reset_buffer
       end
 
       def write(message)
-        buffer_receive message
+        buffer_receive message, @buffer_group
         buffer_flush(force: true) if @sync
+      rescue
       end
 
       def flush(*args)
         if args.empty?
           buffer_flush
         else
-          write_batch(args[0])
+          messages, group = *args
+          write_batch(messages, group)
+        end
+      rescue
+        if @drop_messages_on_flush_error
+          reset_buffer
+        else
+          cancel_flush
+        end
+        raise
+      end
+
+      def on_flush_error(e)
+        raise e
+      end
+
+      def on_full_buffer_receive(args)
+        if @drop_messages_on_full_buffer
+          reset_buffer
         end
       end
 
@@ -50,7 +72,7 @@ module LogStashLogger
         !!@io
       end
 
-      def write_batch(messages)
+      def write_batch(messages, group = nil)
         with_connection do
           messages.each do |message|
             @io.write(message)
@@ -76,6 +98,37 @@ module LogStashLogger
         warn "#{self.class} - #{e.class} - #{e.message}"
         @io = nil
         raise
+      end
+
+      private
+
+      def reset_buffer
+        buffer_initialize max_items: @buffer_max_items, max_interval: @buffer_max_interval
+        @buffer_state[:timer] = Thread.new do
+          loop do
+            sleep(@buffer_config[:max_interval])
+            begin
+              buffer_flush(:force => true)
+            rescue
+            end
+          end
+        end
+      end
+
+      def buffer_clear_outgoing
+        @buffer_state[:outgoing_items] = Hash.new { |h, k| h[k] = [] }
+        @buffer_state[:outgoing_count] = 0
+      end
+
+      def cancel_flush
+        @buffer_state[:flush_mutex].lock rescue false
+        @buffer_state[:outgoing_items].each do |group, items|
+          @buffer_state[:pending_items][group].concat items
+        end
+        @buffer_state[:pending_count] += @buffer_state[:outgoing_count]
+        buffer_clear_outgoing
+      ensure
+        @buffer_state[:flush_mutex].unlock rescue false
       end
     end
   end

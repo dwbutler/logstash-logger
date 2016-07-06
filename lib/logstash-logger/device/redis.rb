@@ -10,6 +10,7 @@ module LogStashLogger
       def initialize(opts)
         super
         @list = opts.delete(:list) || DEFAULT_LIST
+        @buffer_group = @list
 
         normalize_path(opts)
 
@@ -36,11 +37,6 @@ module LogStashLogger
         raise
       end
 
-      def write(message)
-        buffer_receive message, @list
-        buffer_flush(force: true) if @sync
-      end
-
       def write_batch(messages, list = nil)
         with_connection do
           @io.rpush(list, messages)
@@ -56,15 +52,6 @@ module LogStashLogger
         @io = nil
       end
 
-      def flush(*args)
-        if args.empty?
-          buffer_flush
-        else
-          messages, list = *args
-          write_batch(messages, list)
-        end
-      end
-      
       private
 
       def normalize_path(opts)
