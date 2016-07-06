@@ -32,6 +32,10 @@ Gem::Specification.new do |gem|
     gem.add_development_dependency 'SyslogLogger'
   end
 
+  if RUBY_VERSION < '2'
+    gem.add_development_dependency 'json', '~> 1.8'
+  end
+
   gem.add_development_dependency 'rspec', '>= 3'
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'pry'
