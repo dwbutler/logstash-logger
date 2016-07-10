@@ -32,7 +32,7 @@ module LogStashLogger
         reconnect
         retry
       rescue => e
-        warn "#{self.class} - #{e.class} - #{e.message}"
+        log_error(e)
         @io = nil
         raise
       end
@@ -47,7 +47,7 @@ module LogStashLogger
         buffer_flush(final: true)
         @io && @io.quit
       rescue => e
-        warn "#{self.class} - #{e.class} - #{e.message}"
+        log_error(e)
       ensure
         @io = nil
       end
