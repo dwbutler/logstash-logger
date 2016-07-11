@@ -64,7 +64,7 @@ module LogStashLogger
 
       def to_io
         with_connection do
-          @io
+          super
         end
       end
 
@@ -72,11 +72,15 @@ module LogStashLogger
         !!@io
       end
 
+      def write_one(message)
+        with_connection do
+          super
+        end
+      end
+
       def write_batch(messages, group = nil)
         with_connection do
-          messages.each do |message|
-            @io.write(message)
-          end
+          super
         end
       end
 

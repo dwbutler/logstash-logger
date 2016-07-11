@@ -15,7 +15,24 @@ module LogStashLogger
       end
 
       def write(message)
+        write_one(message)
+      end
+
+      def write_one(message)
         @io.write(message)
+      rescue => e
+        if unrecoverable_error?(e)
+          log_error(e)
+          log_warning("unrecoverable error, aborting write")
+        else
+          raise
+        end
+      end
+
+      def write_batch(messages, group = nil)
+        messages.each do |message|
+          write_one(message)
+        end
       end
 
       def flush
@@ -28,6 +45,10 @@ module LogStashLogger
         log_error(e)
       ensure
         @io = nil
+      end
+
+      def unrecoverable_error?(e)
+        false
       end
 
       private
