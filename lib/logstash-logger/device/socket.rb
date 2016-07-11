@@ -12,6 +12,10 @@ module LogStashLogger
         @port = opts[:port] || fail(ArgumentError, "Port is required")
         @host = opts[:host] || DEFAULT_HOST
       end
+
+      def unrecoverable_error?(e)
+        e.is_a? Errno::EMSGSIZE
+      end
     end
   end
 end
