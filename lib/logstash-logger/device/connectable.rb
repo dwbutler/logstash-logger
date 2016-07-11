@@ -19,8 +19,19 @@ module LogStashLogger
         @buffer_group = nil
         @buffer_max_items = opts[:batch_events] || opts[:buffer_max_items]
         @buffer_max_interval = opts[:batch_timeout] || opts[:buffer_max_interval]
-        @drop_messages_on_flush_error = opts.delete(:drop_messages_on_flush_error)
-        @drop_messages_on_full_buffer = opts.delete(:drop_messages_on_full_buffer)
+        @drop_messages_on_flush_error = 
+          if opts.key?(:drop_messages_on_flush_error)
+            opts.delete(:drop_messages_on_flush_error)
+          else
+            false
+          end
+
+        @drop_messages_on_full_buffer =
+          if opts.key?(:drop_messages_on_full_buffer)
+            opts.delete(:drop_messages_on_full_buffer)
+          else
+            true
+          end
 
         reset_buffer
       end
