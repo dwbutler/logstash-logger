@@ -11,7 +11,7 @@ module LogStashLogger
       def initialize(opts)
         @io = self
         @devices = create_devices(opts[:outputs])
-        self.class.delegate(:write, :close, :flush)
+        self.class.delegate(:write, :close, :close!, :flush)
       end
 
       private
