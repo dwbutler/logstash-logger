@@ -2,18 +2,16 @@ language: ruby
 rvm:
   - 1.9.3
   - 2.0.0
-  - 2.1
-  - 2.2
-  - 2.3.0
+  - 2.1.9
+  - 2.2.5
+  - 2.3.1
   - jruby-19mode
-  - jruby-9.0
+  - jruby-9.0.5.0
   - rbx-2
 gemfile:
   - gemfiles/rails_3.2.gemfile
   - gemfiles/rails_4.0.gemfile
   - gemfiles/rails_4.1.gemfile
   - gemfiles/rails_4.2.gemfile
-#matrix:
-  #allow_failures:
-    #- rbx-2
+  - gemfiles/rails_5.0.gemfile
 sudo: false
