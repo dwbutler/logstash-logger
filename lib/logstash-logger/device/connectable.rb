@@ -101,6 +101,7 @@ module LogStashLogger
       end
 
       def reconnect
+        @io.close if @io
         @io = nil
         connect
       end
@@ -111,6 +112,7 @@ module LogStashLogger
         yield
       rescue => e
         log_error(e)
+        @io.close if @io
         @io = nil
         raise
       end
