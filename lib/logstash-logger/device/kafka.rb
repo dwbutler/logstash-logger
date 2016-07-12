@@ -27,13 +27,8 @@ module LogStashLogger
         @io = ::Poseidon::Producer.new(@hosts, @producer)
       end
 
-      def reconnect
-        @io.close
-        connect
-      end
-
       def with_connection
-        connect unless @io
+        connect unless connected?
         yield
       rescue ::Poseidon::Errors::ChecksumError, Poseidon::Errors::UnableToFetchMetadata => e
         log_error(e)
@@ -44,22 +39,18 @@ module LogStashLogger
       rescue => e
         log_error(e)
         log_warning("giving up")
-        @io = nil
+        close(flush: false)
       end
 
-      def write_batch(messages, topic)
+      def write_batch(messages, topic = nil)
+        topic ||= @topic
         with_connection do
           @io.send_messages messages.map { |message| Poseidon::MessageToSend.new(topic, message) }
         end
       end
 
-      def close
-        buffer_flush(final: true)
-        @io && @io.close
-      rescue => e
-        log_error(e)
-      ensure
-        @io = nil
+      def write_one(message, topic = nil)
+        write_batch([message], topic)
       end
     end
   end

@@ -68,8 +68,11 @@ module LogStashLogger
         end
       end
 
-      def close
-        buffer_flush(final: true)
+      def close(opts = {})
+        if opts.fetch(:flush, true)
+          buffer_flush(final: true)
+        end
+
         super
       end
 
@@ -101,8 +104,7 @@ module LogStashLogger
       end
 
       def reconnect
-        @io.close if @io
-        @io = nil
+        close(flush: false)
         connect
       end
 
@@ -112,8 +114,7 @@ module LogStashLogger
         yield
       rescue => e
         log_error(e)
-        @io.close if @io
-        @io = nil
+        close(flush: false)
         raise
       end
 

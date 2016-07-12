@@ -5,7 +5,7 @@ module LogStashLogger
         super({io: $stderr}.merge(opts))
       end
 
-      def close
+      def close!
         # no-op
       end
     end

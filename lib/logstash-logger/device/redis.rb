@@ -23,33 +23,35 @@ module LogStashLogger
 
       def reconnect
         @io.client.reconnect
+      rescue => e
+        log_error(e)
       end
 
       def with_connection
-        connect unless @io
+        connect unless connected?
         yield
       rescue ::Redis::InheritedError
         reconnect
         retry
       rescue => e
         log_error(e)
-        @io = nil
+        close(flush: false)
         raise
       end
 
       def write_batch(messages, list = nil)
+        list ||= @list
         with_connection do
           @io.rpush(list, messages)
         end
       end
 
-      def close
-        buffer_flush(final: true)
+      def write_one(message, list = nil)
+        write_batch(message, list)
+      end
+
+      def close!
         @io && @io.quit
-      rescue => e
-        log_error(e)
-      ensure
-        @io = nil
       end
 
       private

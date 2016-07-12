@@ -35,14 +35,24 @@ module LogStashLogger
         end
       end
 
+      def write_batch(messages, group = nil)
+        messages.each do |message|
+          @io.write(message)
+        end
+      end
+
       def flush
         @io && @io.flush
       end
 
-      def close
-        @io && @io.close
+      def close(opts = {})
+        close!
       rescue => e
         log_error(e)
+      end
+
+      def close!
+        @io && @io.close
       ensure
         @io = nil
       end
