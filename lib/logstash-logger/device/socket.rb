@@ -14,7 +14,7 @@ module LogStashLogger
       end
 
       def unrecoverable_error?(e)
-        e.is_a? Errno::EMSGSIZE
+        e.is_a?(Errno::EMSGSIZE)
       end
     end
   end

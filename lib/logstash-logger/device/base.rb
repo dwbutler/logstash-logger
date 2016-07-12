@@ -58,7 +58,7 @@ module LogStashLogger
       end
 
       def unrecoverable_error?(e)
-        false
+        e.is_a?(JSON::GeneratorError)
       end
 
       private
