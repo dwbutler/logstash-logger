@@ -28,8 +28,8 @@ matrix:
       gemfile: gemfiles/rails_3.2.gemfile
     - rvm: 2.3.1
       gemfile: gemfiles/rails_3.2.gemfile
-allow_failures:
-  -rvm: rbx-3.9
+  allow_failures:
+    -rvm: rbx-3.9
 sudo: false
 cache: bundler
 
