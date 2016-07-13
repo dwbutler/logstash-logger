@@ -583,7 +583,7 @@ of the logstash listener. There is no known fix at this time. See [#43](https://
 for more information.
 
 ### Errno::EMSGSIZE - Message too long
-A known drawback of using UDP is its limit on total message size. To workaround
+A known drawback of using TCP or UDP is the 65535 byte limit on total message size. To workaround
 this issue, you will have to truncate the message by setting the max message size:
 
 ```ruby
@@ -591,6 +591,10 @@ LogStashLogger.configure do |config|
   config.max_message_size = 2000
 end
 ```
+
+This will truncate only the `message` field of the LogStash Event. So make sure
+you set the max message size significantly less than 65535 bytes to make room
+for other fields.
 
 ## Breaking changes
 
