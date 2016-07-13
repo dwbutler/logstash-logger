@@ -240,16 +240,20 @@ This configuration would result in the following output.
 
 ## Buffering / Automatic Retries
 
-Log messages are buffered internally, and automatically re-sent if there is a connection problem.
+For devices that establish a connection to a remote service, log messages are buffered internally
+and automatically re-sent if there is a connection problem.
 Outputs that support batch writing (Redis and Kafka) will write log messages in bulk from the
 buffer. This functionality is implemented using
 [Stud::Buffer](https://github.com/jordansissel/ruby-stud/blob/master/lib/stud/buffer.rb).
 You can configure its behavior by passing the following options to LogStashLogger:
 
-    :buffer_max_items - Max number of items to buffer before flushing. Defaults to 50.
-    :buffer_max_interval - Max number of seconds to wait between flushes. Defaults to 5.
+* :buffer_max_items - Max number of items to buffer before flushing. Defaults to 50.
+* :buffer_max_interval - Max number of seconds to wait between flushes. Defaults to 5.
+* :drop_messages_on_flush_error - Drop messages when there is a flush error. Defaults to false.
+* :drop_messages_on_full_buffer - Drop messages when the buffer is full.
+  Defaults to true.
 
-You can turn this behavior off by setting `buffer_max_items` to `1` or `sync` to `true`.
+You can turn buffering off by setting `buffer_max_items` to `1` or `sync` to `true`.
 
 Please be aware of the following caveats to this behavior:
 
@@ -262,19 +266,29 @@ Please be aware of the following caveats to this behavior:
    immediately. In my testing, it took Ruby about 4 seconds to notice the receiving end was down
    and start raising exceptions. Since logstash listeners over TCP/UDP do not acknowledge received
    messages, it's not possible to know which log messages to re-send.
- * If your output source is unavailable long enough, writing to the log will block until it is
-   available again. This could make your application unresponsive.
+ * If your output source is unavailable long enough, the buffer will fill up
+   and messages will be dropped.
  * If your application suddenly terminates (for example, by SIGKILL or a power outage), the whole
    buffer will be lost.
 
-You can make message loss and application blockage less likely by increasing `buffer_max_items`
+By default, messages are discarded when the buffer gets full. This can happen
+if the output source is down for too long.
+You can make message loss less likely by increasing `buffer_max_items`
 (so that more events can be held in the buffer), and increasing `buffer_max_interval` (to wait
 longer between flushes). This will increase memory pressure on your application as log messages
 accumulate in the buffer, so make sure you have allocated enough memory to your process.
 
+## Error handling
+
+If an exception occurs while writing a message to the device, the exception is
+logged using an internal logger. By default, this logs to $stderr. You can
+change the error logger by setting `LogStashLogger.configuration.default_error_logger`, or by passsing
+your own logger object in the `:error_logger` configuration key when
+instantiating a LogStashLogger.
+
 ## Rails Integration
 
-Verified to work with both Rails 3 and 4.
+Verified to work with both Rails 3, 4, and 5.
 
 By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.
 
@@ -307,11 +321,20 @@ config.logstash.uri = ENV['LOGSTASH_URI']
 # they will all share the same formatter.
 config.logstash.formatter = :json_lines
 
+# Optional, the logger to log writing errors to. Defaults to logging to $stderr
+config.logstash.error_logger = Logger.new($stderr)
+
 # Optional, max number of items to buffer before flushing. Defaults to 50
 config.logstash.buffer_max_items = 50
 
 # Optional, max number of seconds to wait between flushes. Defaults to 5
 config.logstash.buffer_max_interval = 5
+
+# Optional, drop message when a connection error occurs. Defaults to false
+config.logstash.drop_messages_on_flush_error = false
+
+# Optional, drop messages when the buffer is full. Defaults to true
+config.logstash.drop_messages_on_full_buffer = true
 ```
 
 #### UDP
@@ -515,7 +538,7 @@ Verified to work with:
 
 * MRI Ruby 1.9.3, 2.0, 2.1, 2.2, 2.3
 * JRuby 1.7, 9.0
-* Rubinius 2.2
+* Rubinius
 
 Ruby 1.8.7 is not supported.
 
@@ -558,6 +581,16 @@ This is especially likely if you're using a threaded server such as Puma, since 
 If you're using UDP output and writing to a logstash listener, you are most likely encountering a bug in the UDP implementation
 of the logstash listener. There is no known fix at this time. See [#43](https://github.com/dwbutler/logstash-logger/issues/43)
 for more information.
+
+### Errno::EMSGSIZE - Message too long
+A known drawback of using UDP is its limit on total message size. To workaround
+this issue, you will have to truncate the message by setting the max message size:
+
+```ruby
+LogStashLogger.configure do |config|
+  config.max_message_size = 2000
+end
+```
 
 ## Breaking changes
 

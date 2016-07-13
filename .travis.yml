@@ -7,7 +7,7 @@ rvm:
   - 2.3.1
   - jruby-19mode
   - jruby-9.0.5.0
-  - rbx-2.2.7
+  - rbx-3.9
 gemfile:
   - gemfiles/rails_3.2.gemfile
   - gemfiles/rails_4.0.gemfile
@@ -28,6 +28,8 @@ matrix:
       gemfile: gemfiles/rails_3.2.gemfile
     - rvm: 2.3.1
       gemfile: gemfiles/rails_3.2.gemfile
+allow_failures:
+  -rvm: rbx-3.9
 sudo: false
 cache: bundler
 

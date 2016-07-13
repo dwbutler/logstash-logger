@@ -1,3 +1,16 @@
+## 0.16.0
+
+This release is focused on improving the reliability of LogStashLogger.
+Connectable log devices are now less likely to block or
+raise an exception, which avoids impacting the operation of the program. There was
+also a fix to avoid leaking connections.
+
+- Allow log messages to be dropped. [#81](https://github.com/dwbutler/logstash-logger/pull/81)
+- Provide `max_message_size` option. [#80](https://github.com/dwbutler/logstash-logger/pull/80)
+- Unify error logging. [#82](https://github.com/dwbutler/logstash-logger/pull/82)
+- Drop message when there is an unrecoverable error. [#83](https://github.com/dwbutler/logstash-logger/pull/83)
+- Safely close connection when reconnecting. [#84](https://github.com/dwbutler/logstash-logger/pull/84)
+
 ## 0.15.2
 - Fixes Windows support. [#64](https://github.com/dwbutler/logstash-logger/issues/64)
 
