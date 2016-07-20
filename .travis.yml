@@ -32,4 +32,6 @@ matrix:
     - rvm: rbx-3.9
 sudo: false
 cache: bundler
-
+addons:
+  code_climate:
+    repo_token: 4d712355fa2863c0f33f413eeede4e52cc221c4bc989a692d97574b1f6010b69

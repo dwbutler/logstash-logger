@@ -7,6 +7,9 @@ if ENV['CI']=='true'
   SimpleCov.formatter = SimpleCov::Formatter::Codecov
 end
 
+require "codeclimate-test-reporter"
+CodeClimate::TestReporter.start
+
 RSpec.configure do |config|
   config.order = "random"
 
