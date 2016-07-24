@@ -1,3 +1,8 @@
+## 0.17.0
+- Support for logger silencing. [#87](https://github.com/dwbutler/logstash-logger/pull/87)
+- Fixes Rails 5 support. [#86](https://github.com/dwbutler/logstash-logger/issues/86)
+- Fixes support for tagged logging in MultiLogger.
+
 ## 0.16.0
 
 This release is focused on improving the reliability of LogStashLogger.
