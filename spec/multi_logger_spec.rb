@@ -27,6 +27,33 @@ describe LogStashLogger::MultiLogger do
       expect(logger).to receive(:info).with("test")
     end
 
-    multi_logger.info("test")
+    subject.info("test")
+  end
+
+  it "supports silenced logging" do
+    subject.loggers.each do |logger|
+      expect(logger).to receive(:silence).and_call_original
+      expect(logger.device).to receive(:write).once
+    end
+
+    subject.silence(::Logger::WARN) do |logger|
+      expect(logger).to eq(subject)
+      logger.info 'info'
+      logger.warn 'warning'
+    end
+  end
+
+  it "supports tagged logging" do
+    subject.loggers.each do |logger|
+      expect(logger).to receive(:tagged).with('tag').and_call_original
+      expect(logger.device).to receive(:write) do |event_string|
+        event = JSON.parse(event_string)
+        expect(event['tags']).to match_array(['tag'])
+      end
+    end
+
+    subject.tagged('tag') do |logger|
+      logger.info 'test'
+    end
   end
 end

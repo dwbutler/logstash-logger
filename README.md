@@ -286,6 +286,18 @@ change the error logger by setting `LogStashLogger.configuration.default_error_l
 your own logger object in the `:error_logger` configuration key when
 instantiating a LogStashLogger.
 
+## Logger Silencing
+
+LogStashLogger provides support for Rails-style logger silencing. The
+implementation was extracted from Rails, but has no dependencies, so it can be
+used outside of a Rails app. The interface is the same as in Rails:
+
+```ruby
+logger.silence(temporary_level) do
+  ...
+end
+```
+
 ## Rails Integration
 
 Verified to work with both Rails 3, 4, and 5.
