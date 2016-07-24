@@ -1,5 +1,6 @@
 require 'logger'
 require 'logstash-logger/tagged_logging'
+require 'logstash-logger/silenced_logging'
 
 module LogStashLogger
   autoload :MultiLogger, 'logstash-logger/multi_logger'
@@ -68,6 +69,7 @@ module LogStashLogger
       logger.instance_variable_set(:@device, device)
       logger.extend(self)
       logger.extend(TaggedLogging)
+      logger.extend(SilencedLogging)
     end
   end
 
@@ -87,5 +89,6 @@ module LogStashLogger
 
     logger.extend(self)
     logger.extend(TaggedLogging)
+    logger.extend(SilencedLogging)
   end
 end

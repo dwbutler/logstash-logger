@@ -1,6 +1,9 @@
 # Adapted from https://github.com/ffmike/multilogger
 module LogStashLogger
   class MultiLogger < ::Logger
+    # Array of Loggers to be logged to. These can be anything that acts reasonably like a Logger.
+    attr_accessor :loggers
+
     def level=(value)
       super
       @loggers.each do |logger|
@@ -28,8 +31,39 @@ module LogStashLogger
       end
     end
 
-    # Array of Loggers to be logged to. These can be anything that acts reasonably like a Logger.
-    attr_accessor :loggers
+    def silence(temporary_level = ::Logger::ERROR, &block)
+      silenceable_loggers = @loggers.select do |logger|
+        logger.respond_to?(:silence)
+      end
+
+      silence_loggers(temporary_level, silenceable_loggers, &block)
+    end
+
+    def silence_loggers(temporary_level = ::Logger::ERROR, silenceable_loggers, &block)
+      return yield(self) if silenceable_loggers.empty?
+
+      silenceable_loggers.shift.silence(temporary_level) do
+        silence_loggers(temporary_level, silenceable_loggers, &block)
+      end
+    end
+    private :silenceable_loggers
+
+    def tagged(*tags, &block)
+      taggable_loggers = @loggers.select do |logger|
+        logger.respond_to?(:tagged)
+      end
+
+      tag_loggers(tags, taggable_loggers, &block)
+    end
+
+    def tag_loggers(tags, taggable_loggers, &block)
+      return yield(self) if taggable_loggers.empty?
+
+      taggable_loggers.shift.tagged(*tags) do
+        tag_loggers(tags, taggable_loggers, &block)
+      end
+    end
+    private :tag_loggers
 
     # Any method not defined on standard Logger class, just send it on to anyone who will listen
     def method_missing(name, *args, &block)
