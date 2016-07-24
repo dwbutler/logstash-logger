@@ -46,7 +46,7 @@ module LogStashLogger
         silence_loggers(temporary_level, silenceable_loggers, &block)
       end
     end
-    private :silenceable_loggers
+    private :silence_loggers
 
     def tagged(*tags, &block)
       taggable_loggers = @loggers.select do |logger|

@@ -19,20 +19,20 @@ require 'thread'
 module LogStashLogger
   module SilencedLogging
     def self.extended(logger)
-      logger.class_eval do
+      class << logger
         attr_accessor :silencer
         alias_method :level_without_threadsafety, :level
         alias_method :level, :level_with_threadsafety
         alias_method :add_without_threadsafety, :add
         alias_method :add, :add_with_threadsafety
-      end
 
-      Logger::Severity.constants.each do |severity|
-        logger.class_eval <<-EOT, __FILE__, __LINE__ + 1
-          def #{severity.downcase}?                # def debug?
-            Logger::#{severity} >= level           #   DEBUG >= level
-          end                                      # end
-        EOT
+        Logger::Severity.constants.each do |severity|
+          instance_eval <<-EOT, __FILE__, __LINE__ + 1
+            def #{severity.downcase}?                # def debug?
+              Logger::#{severity} >= level           #   DEBUG >= level
+            end                                      # end
+          EOT
+        end
       end
 
       logger.instance_eval do
