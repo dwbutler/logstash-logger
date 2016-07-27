@@ -1,9 +1,9 @@
-require 'stud/buffer'
+require 'logstash-logger/buffer'
 
 module LogStashLogger
   module Device
     class Connectable < Base
-      include Stud::Buffer
+      include LogStashLogger::Buffer
 
       def initialize(opts = {})
         super
@@ -19,7 +19,7 @@ module LogStashLogger
         @buffer_group = nil
         @buffer_max_items = opts[:batch_events] || opts[:buffer_max_items]
         @buffer_max_interval = opts[:batch_timeout] || opts[:buffer_max_interval]
-        @drop_messages_on_flush_error = 
+        @drop_messages_on_flush_error =
           if opts.key?(:drop_messages_on_flush_error)
             opts.delete(:drop_messages_on_flush_error)
           else
@@ -33,13 +33,20 @@ module LogStashLogger
             true
           end
 
-        reset_buffer
+        @autoflush = opts.fetch(:autoflush, false)
+
+        buffer_initialize(
+          max_items: @buffer_max_items,
+          max_interval: @buffer_max_interval,
+          autoflush: @autoflush,
+          drop_messages_on_flush_error: @drop_messages_on_flush_error,
+          drop_messages_on_full_buffer: @drop_messages_on_full_buffer
+        )
       end
 
       def write(message)
         buffer_receive message, @buffer_group
         buffer_flush(force: true) if @sync
-      rescue
       end
 
       def flush(*args)
@@ -49,23 +56,10 @@ module LogStashLogger
           messages, group = *args
           write_batch(messages, group)
         end
-      rescue
-        if @drop_messages_on_flush_error
-          reset_buffer
-        else
-          cancel_flush
-        end
-        raise
       end
 
-      def on_flush_error(e)
-        raise e
-      end
-
-      def on_full_buffer_receive(args)
-        if @drop_messages_on_full_buffer
-          reset_buffer
-        end
+      def on_full_buffer_receive(data)
+        log_warning("Buffer Full - #{data}")
       end
 
       def close(opts = {})
@@ -116,37 +110,6 @@ module LogStashLogger
         log_error(e)
         close(flush: false)
         raise
-      end
-
-      private
-
-      def reset_buffer
-        buffer_initialize max_items: @buffer_max_items, max_interval: @buffer_max_interval
-        @buffer_state[:timer] = Thread.new do
-          loop do
-            sleep(@buffer_config[:max_interval])
-            begin
-              buffer_flush(:force => true)
-            rescue
-            end
-          end
-        end
-      end
-
-      def buffer_clear_outgoing
-        @buffer_state[:outgoing_items] = Hash.new { |h, k| h[k] = [] }
-        @buffer_state[:outgoing_count] = 0
-      end
-
-      def cancel_flush
-        @buffer_state[:flush_mutex].lock rescue false
-        @buffer_state[:outgoing_items].each do |group, items|
-          @buffer_state[:pending_items][group].concat items
-        end
-        @buffer_state[:pending_count] += @buffer_state[:outgoing_count]
-        buffer_clear_outgoing
-      ensure
-        @buffer_state[:flush_mutex].unlock rescue false
       end
     end
   end
