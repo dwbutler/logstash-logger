@@ -288,10 +288,12 @@ module LogStashLogger
     end
 
     def cancel_flush
-      @buffer_state[:outgoing_items].each do |group, items|
-        @buffer_state[:pending_items][group].concat items
+      @buffer_state[:pending_mutex].synchronize do
+        @buffer_state[:outgoing_items].each do |group, items|
+          @buffer_state[:pending_items][group].concat items
+        end
+        @buffer_state[:pending_count] += @buffer_state[:outgoing_count]
       end
-      @buffer_state[:pending_count] += @buffer_state[:outgoing_count]
       buffer_clear_outgoing
     end
   end
