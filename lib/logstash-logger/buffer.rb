@@ -177,7 +177,9 @@ module LogStashLogger
         @buffer_state[:pending_count] += 1
       end
 
-      buffer_flush(force: @buffer_config[:autoflush])
+      if @buffer_config[:autoflush]
+        buffer_flush(force: true)
+      end
     end
 
     # Try to flush events.
