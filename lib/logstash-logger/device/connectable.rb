@@ -33,12 +33,10 @@ module LogStashLogger
             true
           end
 
-        @autoflush = opts.fetch(:autoflush, false)
-
         buffer_initialize(
           max_items: @buffer_max_items,
           max_interval: @buffer_max_interval,
-          autoflush: @autoflush,
+          autoflush: @sync,
           drop_messages_on_flush_error: @drop_messages_on_flush_error,
           drop_messages_on_full_buffer: @drop_messages_on_full_buffer
         )
@@ -46,7 +44,6 @@ module LogStashLogger
 
       def write(message)
         buffer_receive message, @buffer_group
-        buffer_flush(force: true) if @sync
       end
 
       def flush(*args)
