@@ -1,9 +1,9 @@
-require 'stud/buffer'
+require 'logstash-logger/buffer'
 
 module LogStashLogger
   module Device
     class Connectable < Base
-      include Stud::Buffer
+      include LogStashLogger::Buffer
 
       def initialize(opts = {})
         super

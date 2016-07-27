@@ -19,7 +19,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_runtime_dependency 'logstash-event', '~> 1.2'
-  gem.add_runtime_dependency 'stud'
 
   gem.add_development_dependency 'rails'
   if RUBY_VERSION < '2'
