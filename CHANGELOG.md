@@ -1,3 +1,13 @@
+## 0.18.0
+
+This release removes the dependency on `stud` and vendors in a forked version
+of `Stud::Buffer`. This improves the buffering behavior of LogStashLogger by
+flushing all log messages in a background thread by default. This eliminates
+blocking behavior and exceptions bubbling up to the main process.
+
+- Fixes `Attempt to unlock a mutex which is not locked (ThreadError)`.
+  [#88](https://github.com/dwbutler/logstash-logger/issues/88)
+
 ## 0.17.0
 - Support for logger silencing. [#87](https://github.com/dwbutler/logstash-logger/pull/87)
 - Fixes Rails 5 support. [#86](https://github.com/dwbutler/logstash-logger/issues/86)
