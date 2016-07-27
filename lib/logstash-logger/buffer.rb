@@ -77,6 +77,9 @@ module LogStashLogger
     # * :max_items, Max number of items to buffer before flushing. Default 50.
     # * :max_interval, Max number of seconds to wait between flushes. Default 5.
     # * :logger, A logger to write log messages to. No default. Optional.
+    # * :autoflush, Whether to immediately flush all inbound messages. Default true.
+    # * :drop_messages_on_flush_error, Whether to drop messages when there is a flush error. Default false.
+    # * :drop_messages_on_full_buffer, Whether to drop messages when the buffer is full. Default false.
     #
     # @param [Hash] options
     def buffer_initialize(options={})
@@ -88,9 +91,17 @@ module LogStashLogger
         :max_items => options[:max_items] || 50,
         :max_interval => options[:max_interval] || 5,
         :logger => options[:logger] || nil,
+        :autoflush => options.fetch(:autoflush, true),
         :has_on_flush_error => self.class.method_defined?(:on_flush_error),
-        :has_on_full_buffer_receive => self.class.method_defined?(:on_full_buffer_receive)
+        :has_on_full_buffer_receive => self.class.method_defined?(:on_full_buffer_receive),
+        :drop_messages_on_flush_error => options.fetch(:drop_messages_on_flush_error, false),
+        :drop_messages_on_full_buffer => options.fetch(:drop_messages_on_full_buffer, false)
       }
+
+      reset_buffer
+    end
+
+    def reset_buffer
       @buffer_state = {
         # items accepted from including class
         :pending_items => {},
@@ -111,7 +122,10 @@ module LogStashLogger
         :timer => Thread.new do
           loop do
             sleep(@buffer_config[:max_interval])
-            buffer_flush(:force => true)
+            begin
+              buffer_flush(:force => true)
+            rescue
+            end
           end
         end
       }
@@ -150,7 +164,12 @@ module LogStashLogger
           :pending => @buffer_state[:pending_count],
           :outgoing => @buffer_state[:outgoing_count]
         ) if @buffer_config[:has_on_full_buffer_receive]
-        sleep 0.1
+
+        if @buffer_config[:drop_messages_on_full_buffer]
+          reset_buffer
+        else
+          sleep 0.1
+        end
       end
 
       @buffer_state[:pending_mutex].synchronize do
@@ -158,7 +177,7 @@ module LogStashLogger
         @buffer_state[:pending_count] += 1
       end
 
-      buffer_flush
+      buffer_flush if @buffer_state[:autoflush]
     end
 
     # Try to flush events.
@@ -227,6 +246,7 @@ module LogStashLogger
             events_size = events.size
             @buffer_state[:outgoing_count] -= events_size
             items_flushed += events_size
+            @buffer_state[:last_flush] = Time.now
 
           rescue => e
 
@@ -240,10 +260,13 @@ module LogStashLogger
               on_flush_error e
             end
 
-            sleep 1
-            retry
+            if @buffer_config[:drop_messages_on_flush_error]
+              reset_buffer
+            else
+              cancel_flush
+            end
+
           end
-          @buffer_state[:last_flush] = Time.now
         end
 
       ensure
@@ -257,6 +280,19 @@ module LogStashLogger
     def buffer_clear_pending
       @buffer_state[:pending_items] = Hash.new { |h, k| h[k] = [] }
       @buffer_state[:pending_count] = 0
+    end
+
+    def buffer_clear_outgoing
+      @buffer_state[:outgoing_items] = Hash.new { |h, k| h[k] = [] }
+      @buffer_state[:outgoing_count] = 0
+    end
+
+    def cancel_flush
+      @buffer_state[:outgoing_items].each do |group, items|
+        @buffer_state[:pending_items][group].concat items
+      end
+      @buffer_state[:pending_count] += @buffer_state[:outgoing_count]
+      buffer_clear_outgoing
     end
   end
 end
