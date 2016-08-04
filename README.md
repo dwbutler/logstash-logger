@@ -668,6 +668,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [fireboy1919](https://github.com/fireboy1919)
 * [Mike Gunderloy](https://github.com/ffmike)
 * [Vitaly Gorodetsky](https://github.com/vitalis)
+* [Courtland Caldwell](https://github.com/caldwecr)
 
 ## Contributing
 

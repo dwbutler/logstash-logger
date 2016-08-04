@@ -1,3 +1,7 @@
+## 0.18.1
+
+- Fixes usage of ActiveSupport without Rails. [#90](https://github.com/dwbutler/logstash-logger/pull/90)
+
 ## 0.18.0
 
 This release removes the dependency on `stud` and vendors in a forked version
