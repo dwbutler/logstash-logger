@@ -8,4 +8,4 @@ require 'logstash-logger/logger'
 require 'logstash-logger/formatter'
 require 'logstash-logger/configuration'
 
-require 'logstash-logger/railtie' if defined?(Rails) && defined?(Rails::Railtie)
+require 'logstash-logger/railtie' if defined?(Rails::Railtie)
