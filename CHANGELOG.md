@@ -1,3 +1,7 @@
+## 0.19.0
+
+- Flush buffered messages when exiting. [#92](https://github.com/dwbutler/logstash-logger/pull/92)
+
 ## 0.18.1
 
 - Fixes usage of ActiveSupport without Rails. [#90](https://github.com/dwbutler/logstash-logger/pull/90)
