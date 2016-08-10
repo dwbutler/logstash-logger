@@ -253,6 +253,7 @@ You can configure its behavior by passing the following options to LogStashLogge
 * :drop_messages_on_flush_error - Drop messages when there is a flush error. Defaults to false.
 * :drop_messages_on_full_buffer - Drop messages when the buffer is full. Defaults to true.
 * :sync - Flush buffer every time a message is received (blocking). Defaults to false.
+* :buffer_flush_at_exit - Flush messages when exiting the program. Defaults to true.
 
 You can turn buffering off by setting `sync = true`.
 

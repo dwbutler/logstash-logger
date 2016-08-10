@@ -33,12 +33,20 @@ module LogStashLogger
             true
           end
 
+        @buffer_flush_at_exit =
+          if opts.key?(:buffer_flush_at_exit)
+            opts.delete(:buffer_flush_at_exit)
+          else
+            true
+          end
+
         buffer_initialize(
           max_items: @buffer_max_items,
           max_interval: @buffer_max_interval,
           autoflush: @sync,
           drop_messages_on_flush_error: @drop_messages_on_flush_error,
-          drop_messages_on_full_buffer: @drop_messages_on_full_buffer
+          drop_messages_on_full_buffer: @drop_messages_on_full_buffer,
+          flush_at_exit: @buffer_flush_at_exit
         )
       end
 
