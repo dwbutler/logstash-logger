@@ -1,3 +1,7 @@
+## 0.19.1
+
+- Fixes compatibility with `ActiveRecord::SessionStore`. [#96](https://github.com/dwbutler/logstash-logger/pull/96)
+
 ## 0.19.0
 
 - Flush buffered messages when exiting. [#92](https://github.com/dwbutler/logstash-logger/pull/92)
