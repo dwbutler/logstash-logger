@@ -21,10 +21,10 @@ module LogStashLogger
     def self.extended(logger)
       class << logger
         attr_accessor :silencer
-        alias_method :level_without_threadsafety, :level
-        alias_method :level, :level_with_threadsafety
-        alias_method :add_without_threadsafety, :add
-        alias_method :add, :add_with_threadsafety
+        alias_method :level_without_thread_safety, :level
+        alias_method :level, :level_with_thread_safety
+        alias_method :add_without_thread_safety, :add
+        alias_method :add, :add_with_thread_safety
 
         Logger::Severity.constants.each do |severity|
           instance_eval <<-EOT, __FILE__, __LINE__ + 1
@@ -48,15 +48,15 @@ module LogStashLogger
       Thread.current[thread_hash_level_key] = level
     end
 
-    def level_with_threadsafety
-      thread_level || level_without_threadsafety
+    def level_with_thread_safety
+      thread_level || level_without_thread_safety
     end
 
-    def add_with_threadsafety(severity, message = nil, progname = nil, &block)
+    def add_with_thread_safety(severity, message = nil, progname = nil, &block)
       if (defined?(@logdev) && @logdev.nil?) || (severity || UNKNOWN) < level
         true
       else
-        add_without_threadsafety(severity, message, progname, &block)
+        add_without_thread_safety(severity, message, progname, &block)
       end
     end
 
