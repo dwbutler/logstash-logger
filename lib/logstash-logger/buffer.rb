@@ -120,20 +120,13 @@ module LogStashLogger
         :outgoing_count => 0,
 
         # ensure only 1 flush is operating at once
-        :flush_mutex => flush_mutex,
+        :flush_mutex =>    flush_mutex,
 
         # data for timed flushes
-        :last_flush => Time.now,
-        :timer => Thread.new do
-          loop do
-            sleep(@buffer_config[:max_interval])
-            begin
-              buffer_flush(:force => true)
-            rescue
-            end
-          end
-        end
+        :last_flush =>     Time.now,
+        :timer =>          flush_timer_thread
       }
+
 
       # events we've accumulated
       buffer_clear_pending
@@ -291,6 +284,19 @@ module LogStashLogger
 
     def flush_mutex
       @flush_mutex ||= Mutex.new
+    end
+
+    def flush_timer_thread
+      @flush_timer_thread ||=
+        Thread.new do
+          loop do
+            sleep(@buffer_config[:max_interval])
+            begin
+              buffer_flush(:force => true)
+            rescue
+            end
+          end
+        end
     end
 
     def buffer_clear_pending
