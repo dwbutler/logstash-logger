@@ -113,27 +113,20 @@ module LogStashLogger
         :pending_count => 0,
 
         # guard access to pending_items & pending_count
-        :pending_mutex => Mutex.new,
+        :pending_mutex => pending_mutex,
 
         # items which are currently being flushed
         :outgoing_items => {},
         :outgoing_count => 0,
 
         # ensure only 1 flush is operating at once
-        :flush_mutex => Mutex.new,
+        :flush_mutex =>    flush_mutex,
 
         # data for timed flushes
-        :last_flush => Time.now,
-        :timer => Thread.new do
-          loop do
-            sleep(@buffer_config[:max_interval])
-            begin
-              buffer_flush(:force => true)
-            rescue
-            end
-          end
-        end
+        :last_flush =>     Time.now,
+        :timer =>          flush_timer_thread
       }
+
 
       # events we've accumulated
       buffer_clear_pending
@@ -284,6 +277,28 @@ module LogStashLogger
     end
 
     private
+
+    def pending_mutex
+      @pending_mutex ||= Mutex.new
+    end
+
+    def flush_mutex
+      @flush_mutex ||= Mutex.new
+    end
+
+    def flush_timer_thread
+      @flush_timer_thread ||=
+        Thread.new do
+          loop do
+            sleep(@buffer_config[:max_interval])
+            begin
+              buffer_flush(:force => true)
+            rescue
+            end
+          end
+        end
+    end
+
     def buffer_clear_pending
       @buffer_state[:pending_items] = Hash.new { |h, k| h[k] = [] }
       @buffer_state[:pending_count] = 0
