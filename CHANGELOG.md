@@ -1,3 +1,10 @@
+## 0.19.2
+
+- Fixes mutex and memory leak issues when resetting buffer.
+[#97](https://github.com/dwbutler/logstash-logger/issues/97)
+[#98](https://github.com/dwbutler/logstash-logger/issues/98)
+[#99](https://github.com/dwbutler/logstash-logger/issues/99)
+
 ## 0.19.1
 
 - Fixes compatibility with `ActiveRecord::SessionStore`. [#96](https://github.com/dwbutler/logstash-logger/pull/96)
