@@ -63,12 +63,24 @@ module LogStashLogger
       end
 
       def write_one(message, topic=@topic)
-        kproducer = connection.producer
-        kproducer.produce(message, topic: topic)
-        kproducer.deliver_messages
+        write_messages_to_broker_and_deliver do |producer|
+          producer.produce(message, topic: topic)
+        end
+      end
+
+      def write_batch(messages, topic = @topic)
+        write_messages_to_broker_and_deliver do |producer|
+          messages.each {|message| producer.produce(message, topic: topic) }
+        end
       end
 
       private
+
+      def write_messages_to_broker_and_deliver(&block)
+        kproducer = connection.producer
+        block.call(kproducer) if block_given?
+        kproducer.deliver_messages
+      end
 
       def kafka_client_connection_hash
       { seed_brokers: @brokers,

@@ -174,11 +174,53 @@ describe LogStashLogger::Device::KafkaNew do
       connect_double = double("connection", producer: producer)
       instance = described_class.new(opts)
 
+      # NOTE: this is stubbing out the ruby-kafka API
       expect(instance).to receive(:connection).and_return(connect_double)
       expect(connect_double).to receive(:producer)
       expect(producer).to receive(:produce).and_return(true)
       expect(producer).to receive(:deliver_messages).and_return(true)
       instance.write_one("hello world")
+    end
+
+    it 'is capabable of writing to a different topic than instantiated' do
+      producer = double('producer', produce: lambda {|message, topic| "hi" })
+      connect_double = double("connection", producer: producer)
+      instance = described_class.new(opts)
+
+      message = 'hello world'
+      topic   = 'my topic'
+      # NOTE: this is stubbing out the ruby-kafka API
+      expect(instance).to receive(:connection).and_return(connect_double)
+      expect(connect_double).to receive(:producer)
+      expect(producer).to receive(:produce).
+                            with(message, topic: topic).
+                            and_return(true)
+      expect(producer).to receive(:deliver_messages).and_return(true)
+
+      instance.write_one(message, topic)
+    end
+  end
+
+  describe "writing a batch of messages to the broker" do
+    it "writes the messages to the topic" do
+      producer = double('producer', produce: lambda {|message, topic| "hi" })
+      connect_double = double("connection", producer: producer)
+      instance = described_class.new(opts)
+
+      messages = ['hello world', 'goodbye world']
+      topic   = 'my topic'
+      # NOTE: this is stubbing out the ruby-kafka API
+      expect(instance).to receive(:connection).and_return(connect_double)
+      expect(connect_double).to receive(:producer)
+      expect(producer).to receive(:produce).
+                            with(messages.first, topic: topic).
+                            and_return(true)
+      expect(producer).to receive(:produce).
+                            with(messages.last, topic: topic).
+                            and_return(true)
+      expect(producer).to receive(:deliver_messages).and_return(true)
+
+      instance.write_batch(messages, topic)
     end
   end
 end
