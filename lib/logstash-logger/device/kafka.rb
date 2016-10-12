@@ -12,10 +12,15 @@ module LogStashLogger
 
       attr_accessor :hosts, :topic, :producer, :backoff
 
-      def initialize(opts)
+      @@deprecation_message = <<-MSG
+          [DEPRECATION WARNING]
+          Poseidon client will be deprecated and requires different configuration
+          parameters (but they are similar). Update your Kafka configuration to
+          use :kafka_new to ensure forward compatibility
+        MSG
 
-        # TODO: improve this message and update README
-        warn "[DEPRECATED] Poseidon is deprecated, update client"
+      def initialize(opts)
+        warn @@deprecation_message
         super
         host = opts[:host] || DEFAULT_HOST
         port = opts[:port] || DEFAULT_PORT

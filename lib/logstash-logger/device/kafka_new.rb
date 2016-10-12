@@ -21,6 +21,7 @@ module LogStashLogger
         def invalid?
           !valid?
         end
+
         private
 
         def cert_params_as_hash
@@ -45,7 +46,6 @@ module LogStashLogger
 
       attr_reader :topic, :brokers, :cert_bundle, :kafka_tls_configurator,
         :client_id
-
 
       def initialize(opts = {}, kafka_tls_configurator = TLSConfiguration)
         require 'ruby-kafka'
