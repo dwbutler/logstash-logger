@@ -13,6 +13,9 @@ module LogStashLogger
       attr_accessor :hosts, :topic, :producer, :backoff
 
       def initialize(opts)
+
+        # TODO: improve this message and update README
+        warn "[DEPRECATED] Poseidon is deprecated, update client"
         super
         host = opts[:host] || DEFAULT_HOST
         port = opts[:port] || DEFAULT_PORT
