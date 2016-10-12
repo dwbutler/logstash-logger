@@ -43,24 +43,42 @@ module LogStashLogger
         end
       end
 
-      attr_reader :topic, :brokers, :cert_bundle, :kafka_tls_configurator
+      attr_reader :topic, :brokers, :cert_bundle, :kafka_tls_configurator,
+        :client_id
 
 
-      # TODO: support client_id
       def initialize(opts = {}, kafka_tls_configurator = TLSConfiguration)
         require 'ruby-kafka'
+        super(opts)
 
+        @client_id = opts[:client_id]
+        @topic = opts[:topic] || raise_no_topic_set!
         @kafka_tls_configurator = kafka_tls_configurator
         @brokers = make_brokers_array(opts[:brokers])
         make_cert_bundle(opts)
       end
 
-      def connect
-        connect_opts = @cert_bundle.merge({ seed_brokers: @brokers })
-        ::Kafka.new(connect_opts)
+      def connection
+        @connection ||= ::Kafka.new(kafka_client_connection_hash)
+      end
+
+      def write_one(message, topic=@topic)
+        kproducer = connection.producer
+        kproducer.produce(message, topic: topic)
+        kproducer.deliver_messages
       end
 
       private
+
+      def kafka_client_connection_hash
+      { seed_brokers: @brokers,
+        client_id: @client_id,
+      }.merge(@cert_bundle)
+      end
+
+      def raise_no_topic_set!
+        fail ArgumentError, "a topic must be configured"
+      end
 
       def make_brokers_array(opt)
         case opt

@@ -11,6 +11,8 @@ describe LogStashLogger::Device::KafkaNew::TLSConfiguration do
       }
     end
 
+
+
     context "when complete params are passed in" do
       let(:instance) { described_class.new(complete_bundle) }
 
@@ -58,14 +60,19 @@ describe LogStashLogger::Device::KafkaNew do
   include_context 'device'
 
   let(:broker_hosts) { "localhost:9300 localhost:9232" }
-  let(:instance) { LogStashLogger::Device::KafkaNew.new({brokers: broker_hosts}) }
+  let(:opts) do
+    { topic: 'hello-world',
+      brokers: broker_hosts,
+    }
+  end
+  let(:instance) { LogStashLogger::Device::KafkaNew.new(opts) }
 
   describe "initializing" do
     context "brokers" do
       context "when array" do
         it "sets the brokers array to @brokers" do
           brokers = %w(localhost:9300 localhost:9232)
-          instance = LogStashLogger::Device::KafkaNew.new({brokers: brokers})
+          instance = LogStashLogger::Device::KafkaNew.new(opts.merge({brokers: brokers}))
 
           expect(instance.brokers).to be_kind_of Array
           expect(instance.brokers.length).to eql(2)
@@ -73,7 +80,7 @@ describe LogStashLogger::Device::KafkaNew do
 
         it 'sets the brokers to an array if a string is passed in' do
           brokers = "localhost:9300 localhost:9232"
-          instance = LogStashLogger::Device::KafkaNew.new({brokers: brokers})
+          instance = LogStashLogger::Device::KafkaNew.new(opts.merge({brokers: brokers}))
           expect(instance.brokers).to be_kind_of Array
           expect(instance.brokers.length).to eql(2)
         end
@@ -82,11 +89,19 @@ describe LogStashLogger::Device::KafkaNew do
 
     context "topic" do
       it 'sets the topic to the option provided' do
-        instance = described
+        instance = described_class.new(topic: 'hello-world')
+        expect(instance.topic).to eql('hello-world')
+      end
+
+      it 'raises an exception if no topic is set' do
+        expect {
+          described_class.new(topic: nil)
+        }.to raise_error(ArgumentError)
       end
     end
 
-    context "cert bundle" do
+
+    context "Client Introspection" do
       # YUCK! ruby-kafka does not presently allow reading certain variables
       module ::Kafka
         class Client
@@ -94,63 +109,76 @@ describe LogStashLogger::Device::KafkaNew do
         end
       end
 
-
       module ::Kafka
         class ConnectionBuilder
-          attr_reader :ssl_context
+          attr_reader :ssl_context, :client_id
         end
       end
 
-      let(:complete_bundle) do
-        # NOTE these keys are obviously fake. We don't actually make connections
-        {
-          ssl_ca_cert: "----BEGIN CERT---- lkajdslkajdsjk ----END CERT---",
-          ssl_client_cert:      "----BEGIN CERT---- lkajdslkajdsjk ----END CERT---",
-          ssl_client_cert_key: "----PRIVATE---- lkajdslkajdsjk ----PRIVATE---",
-        }
-      end
-
-      context "no certs" do
-        it 'creates a connection without an ssl_context' do
-          connection = instance.connect
-          expect(connection.connection_builder.ssl_context).to be_nil
+      context "client_id" do
+        it 'sets a client_id when connecting if one is passed in to the options' do
+          instance = described_class.new(opts.merge(client_id: 'hello-world'))
+          expect(instance.client_id).to eql('hello-world')
+          expect(instance.connection.connection_builder.client_id).to eql('hello-world')
         end
       end
 
-      context "partial certs passed in" do
-        it 'fails if the complete cert suite is not passed in' do
-          [:ssl_ca_cert, :ssl_client_cert, :ssl_client_cert_key].each do |param|
-            opts = complete_bundle.merge(brokers: broker_hosts)
-            opts[param] = nil
-            expect {
-              LogStashLogger::Device::KafkaNew.new(opts).connect
-            }.to raise_error( ArgumentError )
+      context "cert bundle" do
+        let(:complete_bundle) do
+          # NOTE these keys are obviously fake. We don't actually make connections
+          {
+            ssl_ca_cert: "----BEGIN CERT---- lkajdslkajdsjk ----END CERT---",
+            ssl_client_cert:      "----BEGIN CERT---- lkajdslkajdsjk ----END CERT---",
+            ssl_client_cert_key: "----PRIVATE---- lkajdslkajdsjk ----PRIVATE---",
+          }
+        end
+
+        context "no certs" do
+          it 'creates a connection without an ssl_context' do
+            connection = instance.connection
+            expect(connection.connection_builder.ssl_context).to be_nil
           end
         end
-      end
 
-      context "complete cert bundle" do
+        context "partial certs passed in" do
+          it 'fails if the complete cert suite is not passed in' do
+            [:ssl_ca_cert, :ssl_client_cert, :ssl_client_cert_key].each do |param|
+              opts = complete_bundle.merge(brokers: broker_hosts)
+              opts[param] = nil
+              expect {
+                LogStashLogger::Device::KafkaNew.new(opts).connection
+              }.to raise_error( ArgumentError )
+            end
+          end
+        end
 
-        it 'correctly passes in the cert bundle to the Kafka Client' do
-          opts = complete_bundle.merge(brokers: broker_hosts)
+        context "complete cert bundle" do
 
-          expect_any_instance_of(::Kafka::Client).to receive(:build_ssl_context) 
-            .with(opts[:ssl_ca_cert], opts[:ssl_client_cert], opts[:ssl_client_cert_key])
-            .and_return(true)
+          it 'correctly passes in the cert bundle to the Kafka Client' do
+            certopts = complete_bundle.merge(opts)
 
-          LogStashLogger::Device::KafkaNew.new(opts).connect
+            expect_any_instance_of(::Kafka::Client).to receive(:build_ssl_context) 
+              .with(certopts[:ssl_ca_cert], certopts[:ssl_client_cert], certopts[:ssl_client_cert_key])
+              .and_return(true)
+
+            LogStashLogger::Device::KafkaNew.new(certopts).connection
+          end
         end
       end
     end
   end
 
-  describe "connecting" do
-    context "without certs" do
-      it "creates a connection object" do
-        # watch out for naming conflicts with poseidon!
-        # Both gems 'own' the namespace 'Kafka'
-        expect(instance.connect).to be_kind_of ::Kafka::Client
-      end
+  describe "writing single message to broker" do
+    it 'writes the message to the topic' do
+      producer = double('producer', produce: true)
+      connect_double = double("connection", producer: producer)
+      instance = described_class.new(opts)
+
+      expect(instance).to receive(:connection).and_return(connect_double)
+      expect(connect_double).to receive(:producer)
+      expect(producer).to receive(:produce).and_return(true)
+      expect(producer).to receive(:deliver_messages).and_return(true)
+      instance.write_one("hello world")
     end
   end
 end
