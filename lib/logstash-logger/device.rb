@@ -51,6 +51,7 @@ module LogStashLogger
         when :file then File
         when :redis then Redis
         when :kafka then Kafka
+        when :kafka_new then KafkaNew
         when :io then IO
         when :stdout then Stdout
         when :stderr then Stderr
