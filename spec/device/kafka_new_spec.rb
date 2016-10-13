@@ -11,8 +11,6 @@ describe LogStashLogger::Device::KafkaNew::TLSConfiguration do
       }
     end
 
-
-
     context "when complete params are passed in" do
       let(:instance) { described_class.new(complete_bundle) }
 
@@ -53,7 +51,6 @@ describe LogStashLogger::Device::KafkaNew::TLSConfiguration do
       expect(subject.invalid?).to be_falsey
     end
   end
-
 end
 
 describe LogStashLogger::Device::KafkaNew do
@@ -99,7 +96,6 @@ describe LogStashLogger::Device::KafkaNew do
         }.to raise_error(ArgumentError)
       end
     end
-
 
     context "Client Introspection" do
       # YUCK! ruby-kafka does not presently allow reading certain variables

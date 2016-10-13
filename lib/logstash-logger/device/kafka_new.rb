@@ -62,15 +62,17 @@ module LogStashLogger
         @connection ||= ::Kafka.new(kafka_client_connection_hash)
       end
 
-      def write_one(message, topic=@topic)
+      def write_one(message, topic=nil)
+        topic ||= @topic
         write_messages_to_broker_and_deliver do |producer|
           producer.produce(message, topic: topic)
         end
       end
 
-      def write_batch(messages, topic = @topic)
+      def write_batch(messages, topic=nil)
+        topic ||= @topic
         write_messages_to_broker_and_deliver do |producer|
-          messages.each {|message| producer.produce(message, topic: topic) }
+          messages.each {|msg| producer.produce(msg, topic: topic) }
         end
       end
 
@@ -83,9 +85,9 @@ module LogStashLogger
       end
 
       def kafka_client_connection_hash
-      { seed_brokers: @brokers,
-        client_id: @client_id,
-      }.merge(@cert_bundle)
+        { seed_brokers: @brokers,
+          client_id: @client_id,
+        }.merge(@cert_bundle)
       end
 
       def raise_no_topic_set!
