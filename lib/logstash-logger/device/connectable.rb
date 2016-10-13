@@ -5,6 +5,8 @@ module LogStashLogger
     class Connectable < Base
       include LogStashLogger::Buffer
 
+      attr_accessor :buffer_logger
+
       def initialize(opts = {})
         super
 
@@ -40,9 +42,12 @@ module LogStashLogger
             true
           end
 
+        @buffer_logger = opts[:buffer_logger]
+
         buffer_initialize(
           max_items: @buffer_max_items,
           max_interval: @buffer_max_interval,
+          logger: buffer_logger,
           autoflush: @sync,
           drop_messages_on_flush_error: @drop_messages_on_flush_error,
           drop_messages_on_full_buffer: @drop_messages_on_full_buffer,
