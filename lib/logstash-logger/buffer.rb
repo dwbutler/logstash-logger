@@ -225,14 +225,17 @@ module LogStashLogger
           buffer_clear_pending
         end
 
-        @buffer_config[:logger].debug("Flushing output",
-          :outgoing_count => @buffer_state[:outgoing_count],
-          :time_since_last_flush => time_since_last_flush,
-          :outgoing_events => @buffer_state[:outgoing_items],
-          :batch_timeout => @buffer_config[:max_interval],
-          :force => force,
-          :final => final
-        ) if @buffer_config[:logger]
+        @buffer_config[:logger].debug do
+          debug_output = {
+            :outgoing_count => @buffer_state[:outgoing_count],
+            :time_since_last_flush => time_since_last_flush,
+            :outgoing_events => @buffer_state[:outgoing_items],
+            :batch_timeout => @buffer_config[:max_interval],
+            :force => force,
+            :final => final
+          }
+          "Flushing output: #{debug_output}"
+        end if @buffer_config[:logger]
 
         @buffer_state[:outgoing_items].each do |group, events|
           begin
@@ -250,11 +253,14 @@ module LogStashLogger
 
           rescue => e
 
-            @buffer_config[:logger].warn("Failed to flush outgoing items",
-              :outgoing_count => @buffer_state[:outgoing_count],
-              :exception => e.class.name,
-              :backtrace => e.backtrace
-            ) if @buffer_config[:logger]
+            @buffer_config[:logger].warn do
+              warn_output = {
+                :outgoing_count => @buffer_state[:outgoing_count],
+                :exception => e.class.name,
+                :backtrace => e.backtrace
+              }
+              "Failed to flush outgoing items: #{warn_output}"
+            end if @buffer_config[:logger]
 
             if @buffer_config[:has_on_flush_error]
               on_flush_error e
