@@ -1,3 +1,6 @@
+## 0.20.0
+- Adds support for logging debug/error information for the connectable device's buffer. [#102](https://github.com/dwbutler/logstash-logger/pull/102)
+
 ## 0.19.2
 
 - Fixes mutex and memory leak issues when resetting buffer.
