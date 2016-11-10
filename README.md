@@ -47,7 +47,9 @@ file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync:
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
 syslog_logger = LogStashLogger.new(type: :syslog)
 redis_logger = LogStashLogger.new(type: :redis)
-kafka_logger = LogStashLogger.new(type: :kafka)
+** NOTE: The current kafka class will be deprecated in a future version.
+  For now, migrate to using kafka_new**
+kafka_logger = LogStashLogger.new(type: :kafka_new)
 stdout_logger = LogStashLogger.new(type: :stdout)
 stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
@@ -454,26 +456,37 @@ config.logstash.port = 6379
 
 #### Kafka
 
-Add the poseidon gem to your Gemfile:
+Add the ruby-kafka gem to your Gemfile:
 
-    gem 'poseidon'
+    gem 'ruby-kafka'
 
 ```ruby
+## NOTE: A future version of this gem will remove the current
+# implementation of the kafka client. This will be a breaking change. Use
+# kafka_new to ensure forward compatibility
 # Required
-config.logstash.type = :kafka
 
-# Optional, will default to the 'logstash' topic
-config.logstash.path = 'logstash'
+config.logstash.type = :kafka_new
 
-# Optional, will default to the 'logstash-logger' producer
-config.logstash.producer = 'logstash-logger'
+# Required
+config.logstash.topic = 'logstash-topic'
 
-# Optional, will default to localhost:9092 host/port
-config.logstash.hosts = ['localhost:9092']
+# Required, can be in one of two formats:
+# String format (splits on single space):
+config.logstash.brokers = 'localhost:9092 some-other-host.net:9300'
+# Array format
+config.logstash.brokers = %w(localhost:9092 some-other-host.net:9300)
 
-# Optional, will default to 1s backoff
-config.logstash.backoff = 1
+# Optional, defaults to 'ruby-kafka'
+config.logstash.client_id = 'logstash-client-alpha'
 
+# Optional, transmit over TLS
+# NOTE: either 0 or all 3 ssl_parameters must be provided for a
+# successful connection. An exception will be raised if 1 or 2 params
+# are povided
+config.logstash.ssl_ca_cert: ENV['CLOUDKAFKA_CA']
+config.logstash.ssl_client_cert: ENV['CLOUDKAFKA_CERT']
+config.logstash.ssl_client_cert_key: ENV['CLOUDKAFKA_PRIVATE_KEY']
 ```
 
 #### File
