@@ -72,7 +72,11 @@ module LogStashLogger
   end
 
   def self.build_multi_logger(opts)
-    loggers = opts[:outputs].map { |logger_opts| build_logger(logger_opts) }
+    output_configurations = opts.delete(:outputs)
+    loggers = output_configurations.map do |config|
+      logger_opts = opts.merge(config)
+      build_logger(logger_opts)
+    end
     MultiLogger.new(loggers)
   end
 
