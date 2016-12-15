@@ -37,6 +37,7 @@ module LogStashLogger
 
     def self.parse_uri_config(opts)
       if uri = opts[:uri]
+        require 'uri'
         parsed = ::URI.parse(uri)
         {type: parsed.scheme, host: parsed.host, port: parsed.port, path: parsed.path}
       end
