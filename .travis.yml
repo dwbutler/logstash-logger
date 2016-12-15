@@ -1,4 +1,6 @@
 language: ruby
+after_success:
+  bundle exec codeclimate-test-reporter
 rvm:
   - 1.9.3
   - 2.0.0
