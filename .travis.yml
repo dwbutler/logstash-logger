@@ -33,6 +33,7 @@ matrix:
       gemfile: gemfiles/rails_3.2.gemfile
   allow_failures:
     - rvm: rbx-3.9
+    - rvm: 2.4.0-rc1
 sudo: false
 cache: bundler
 addons:
