@@ -18,11 +18,5 @@ describe LogStashLogger do
         end
       end
     end
-
-    context "type: :syslog" do
-      it "returns a Syslog::Logger instance" do
-        expect(LogStashLogger.new(type: :syslog)).to be_a ::Syslog::Logger
-      end
-    end
   end
 end
