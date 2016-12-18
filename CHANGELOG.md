@@ -1,3 +1,7 @@
+## 0.20.1
+
+- Fixes missing require for URI [#107](https://github.com/dwbutler/logstash-logger/pull/107)
+
 ## 0.20.0
 - Adds support for logging debug/error information for the connectable device's buffer. [#102](https://github.com/dwbutler/logstash-logger/pull/102)
 
