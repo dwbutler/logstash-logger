@@ -1,3 +1,8 @@
+## 0.21.0
+
+- Support for merging top level configuration in MultiLogger and
+  MultiDelegator. [#108](https://github.com/dwbutler/logstash-logger/pull/108)
+
 ## 0.20.1
 
 - Fixes missing require for URI [#107](https://github.com/dwbutler/logstash-logger/pull/107)
