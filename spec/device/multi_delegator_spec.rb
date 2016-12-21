@@ -12,4 +12,20 @@ describe LogStashLogger::Device::MultiDelegator do
 
     subject.write("test")
   end
+
+  describe ".new" do
+    it "merges top level configuration to each output" do
+      logger = described_class.new(
+        port: 1234,
+        outputs: [
+          { type: :udp },
+          { type: :tcp }
+        ]
+      )
+
+      logger.devices.each do |device|
+        expect(device.port).to eq(1234)
+      end
+    end
+  end
 end

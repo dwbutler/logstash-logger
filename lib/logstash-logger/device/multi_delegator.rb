@@ -10,14 +10,16 @@ module LogStashLogger
 
       def initialize(opts)
         @io = self
-        @devices = create_devices(opts[:outputs])
+        @devices = create_devices(opts)
         self.class.delegate(:write, :close, :close!, :flush)
       end
 
       private
 
       def create_devices(opts)
-        opts.map do |device_opts|
+        output_configurations = opts.delete(:outputs)
+        output_configurations.map do |device_opts|
+          device_opts = opts.merge(device_opts)
           Device.new(device_opts)
         end
       end
