@@ -238,6 +238,17 @@ This configuration would result in the following output.
 }
 ```
 
+This block has full access to the event, so you can remove fields, modify
+existing fields, etc. For example, to remove the default timestamp:
+
+```ruby
+config = LogStashLogger.configure do |config|
+  config.customize_event do |event|
+    event.remove('@timestamp')
+  end
+end
+```
+
 ## Buffering / Automatic Retries
 
 For devices that establish a connection to a remote service, log messages are buffered internally
@@ -269,6 +280,9 @@ Please be aware of the following caveats to this behavior:
    immediately. In my testing, it took Ruby about 4 seconds to notice the receiving end was down
    and start raising exceptions. Since logstash listeners over TCP/UDP do not acknowledge received
    messages, it's not possible to know which log messages to re-send.
+ * When `sync` is turned off, Ruby may buffer data internally before writing to
+   the IO device. This is why you may not see messages written immediately to a
+   UDP or TCP socket, even though LogStashLogger's buffer is periodically flushed.
 
 ## Full Buffer
 
@@ -596,6 +610,14 @@ For a more detailed discussion of UDP vs TCP, I recommend reading this article:
 [UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
 
 ## Troubleshooting
+
+### Logstash never receives any logs
+If you are using a device backed by a Ruby IO object (such as a file, UDP socket, or TCP socket), please be aware that Ruby
+keeps its own internal buffer. Despite the fact that LogStashLogger buffers
+messages and flushes them periodically, the data written to the IO object can
+be buffered by Ruby internally indefinitely, and may not even write until the
+program terminates. If this bothers you or you need to see log messages
+immediately, your only recourse is to set the `sync: true` option.
 
 ### JSON::GeneratorError
 Your application is probably attempting to log data that is not encoded in a valid way. When this happens, Ruby's
