@@ -35,6 +35,10 @@ Gem::Specification.new do |gem|
     gem.add_development_dependency 'json', '~> 1.8'
   end
 
+  if RUBY_VERSION < '2.1'
+    gem.add_development_dependency 'nokogiri', '~> 1.6.8'
+  end
+
   gem.add_development_dependency 'rspec', '>= 3'
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'pry'
