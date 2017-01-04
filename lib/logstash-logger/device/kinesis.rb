@@ -70,6 +70,10 @@ module LogStashLogger
       def write_one(message)
         write_batch([message])
       end
+
+      def close!
+        @io = nil
+      end
     end
   end
 end
