@@ -15,6 +15,10 @@ describe LogStashLogger::Device::Kinesis do
     response.records = []
     expect(client).to receive(:put_records) { response }
     kinesis_device.write "foo"
+
+    expect(kinesis_device).to be_connected
+    kinesis_device.close!
+    expect(kinesis_device).not_to be_connected
   end
 
   it "it puts records with recoverable errors back in the buffer" do
