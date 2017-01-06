@@ -26,6 +26,7 @@ Gem::Specification.new do |gem|
   end
   gem.add_development_dependency 'redis'
   gem.add_development_dependency 'poseidon'
+  gem.add_development_dependency 'aws-sdk'
 
   if RUBY_VERSION < '2' || defined?(JRUBY_VERSION)
     gem.add_development_dependency 'SyslogLogger'
