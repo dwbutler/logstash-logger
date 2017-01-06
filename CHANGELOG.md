@@ -1,3 +1,7 @@
+## 0.22.0
+
+- Adds support for writing to Amazon Kinesis.  [#111](https://github.com/dwbutler/logstash-logger/pull/111)
+
 ## 0.21.0
 
 - Support for merging top level configuration in MultiLogger and
@@ -8,6 +12,7 @@
 - Fixes missing require for URI [#107](https://github.com/dwbutler/logstash-logger/pull/107)
 
 ## 0.20.0
+
 - Adds support for logging debug/error information for the connectable device's buffer. [#102](https://github.com/dwbutler/logstash-logger/pull/102)
 
 ## 0.19.2
