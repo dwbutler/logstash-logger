@@ -36,6 +36,7 @@ module LogStashLogger
       rescue => e
         log_error(e)
         log_warning("giving up")
+        close(flush: false)
       end
 
       def write_batch(messages, group = nil)
