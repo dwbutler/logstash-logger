@@ -2,6 +2,7 @@ language: ruby
 dist: trusty
 sudo: false
 cache: bundler
+before_install: gem install bundler -v 1.13.7
 after_success:
   bundle exec codeclimate-test-reporter
 rvm:
