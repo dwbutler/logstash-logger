@@ -1,9 +1,10 @@
 # LogStashLogger
 [![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master)
 
-LogStashLogger extends Ruby's `Logger` class to log directly to [logstash](http://logstash.net).
+LogStashLogger extends Ruby's `Logger` class to log directly to
+[Logstash](https://www.elastic.co/products/logstash).
 It supports writing to various outputs in logstash JSON format. This is an improvement over
-writing to a file or syslog since logstash can receive the structured data directly.
+writing to a file or syslog since Logstash can receive the structured data directly.
 
 ## Features
 
