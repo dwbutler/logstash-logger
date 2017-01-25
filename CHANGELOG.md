@@ -1,6 +1,10 @@
+## 0.22.1
+
+- Fixes compatibility with ActiveJob. [#112](https://github.com/dwbutler/logstash-logger/issues/112)
+
 ## 0.22.0
 
-- Adds support for writing to Amazon Kinesis.  [#111](https://github.com/dwbutler/logstash-logger/pull/111)
+- Adds support for writing to Amazon Kinesis. [#111](https://github.com/dwbutler/logstash-logger/pull/111)
 
 ## 0.21.0
 
