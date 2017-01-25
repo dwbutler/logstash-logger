@@ -2,7 +2,6 @@ language: ruby
 dist: trusty
 sudo: false
 cache: bundler
-before_install: gem uninstall bundler && gem install bundler -v 1.13.7
 after_success:
   bundle exec codeclimate-test-reporter
 rvm:
@@ -38,6 +37,8 @@ matrix:
   allow_failures:
     - rvm: rubinius-3
     - rvm: 2.4.0
+    - rvm: jruby-19mode
+    - rvm: jruby-9.1.5.0
 addons:
   code_climate:
     repo_token: 4d712355fa2863c0f33f413eeede4e52cc221c4bc989a692d97574b1f6010b69
