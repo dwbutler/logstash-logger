@@ -9,6 +9,11 @@ module LogStashLogger
     class Base < ::Logger::Formatter
       include ::LogStashLogger::TaggedLogging::Formatter
 
+      def initialize(customize_event: nil)
+        @customize_event = customize_event
+        super()
+      end
+
       def call(severity, time, progname, message)
         @event = build_event(message, severity, time)
       end
@@ -44,6 +49,8 @@ module LogStashLogger
         current_tags.each { |tag| event.tag(tag) }
 
         LogStashLogger.configuration.customize_event_block.call(event) if LogStashLogger.configuration.customize_event_block.respond_to?(:call)
+
+        @customize_event.call(event) if @customize_event
 
         # In case Time#to_json has been overridden
         if event.timestamp.is_a?(Time)
