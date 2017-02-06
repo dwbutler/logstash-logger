@@ -115,4 +115,14 @@ describe LogStashLogger do
     expect(listener_event["test1"]).to eq("response1")
   end
 
+  describe 'customize_event on instance' do
+    let!(:customize_event) { ->(event){ event['custom'] = 'custom' } }
+    let!(:logger) { LogStashLogger.new(host: host, port: port, type: connection_type, sync: true, customize_event: customize_event)}
+
+    specify 'logger produce messages with custom field' do
+      logger.info('test')
+      expect(listener_event['custom']).to eq('custom')
+    end
+  end
+
 end

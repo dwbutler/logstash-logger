@@ -250,6 +250,11 @@ config = LogStashLogger.configure do |config|
 end
 ```
 
+The same behavior can be reached by set customize_event on initialize: 
+```ruby
+LogStashLogger.new(customize_event: ->(event){ event['other_field'] = 'other_field' })
+``` 
+
 ## Buffering / Automatic Retries
 
 For devices that establish a connection to a remote service, log messages are buffered internally
