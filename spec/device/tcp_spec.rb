@@ -33,7 +33,7 @@ describe LogStashLogger::Device::TCP do
       ssl_tcp_device.write('test')
     end
 
-    it "returns false for #use_ssl?" do
+    it "returns true for #use_ssl?" do
       expect(ssl_tcp_device.use_ssl?).to be_truthy
     end
 
