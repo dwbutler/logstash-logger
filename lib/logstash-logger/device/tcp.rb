@@ -43,14 +43,10 @@ module LogStashLogger
 
       def ssl_connect
         non_ssl_connect
-        if @ssl_context
-          @io = OpenSSL::SSL::SSLSocket.new(@io, ssl_context)
-          @io.connect
+        @io = OpenSSL::SSL::SSLSocket.new(@io, ssl_context)
+        @io.connect
+        if ssl_context && ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE
           @io.post_connection_check(@host)
-        else
-          warn "[DEPRECATION] 'LogStashLogger::Device::Socket' should be instantiated with a SSL context for hostname verification."
-          @io = OpenSSL::SSL::SSLSocket.new(@io)
-          @io.connect
         end
       end
 

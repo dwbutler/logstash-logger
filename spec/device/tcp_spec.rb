@@ -37,17 +37,18 @@ describe LogStashLogger::Device::TCP do
       expect(ssl_tcp_device.use_ssl?).to be_truthy
     end
 
-    it 'provides a warning about using a SSL context' do
-      expect(ssl_tcp_device).to receive(:warn).with("[DEPRECATION] 'LogStashLogger::Device::Socket' should be instantiated with a SSL context for hostname verification.")
-      ssl_tcp_device.connect
-    end
-
     context 'with a provided SSL context' do
-      let(:ssl_context) { 'test_ssl_context' }
+      let(:ssl_context) { double('test_ssl_context', verify_mode: OpenSSL::SSL::VERIFY_PEER) }
       let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, sync: true, ssl_context: ssl_context) }
 
       it "checks ssl certificate validity" do
         expect(ssl_socket).to receive(:post_connection_check).with(HOST)
+        ssl_tcp_device.connect
+      end
+
+      it "does not check host validity of certificate" do
+        expect(ssl_context).to receive(:verify_mode) { OpenSSL::SSL::VERIFY_NONE }
+        expect(ssl_socket).not_to receive(:post_connection_check).with(HOST)
         ssl_tcp_device.connect
       end
 
