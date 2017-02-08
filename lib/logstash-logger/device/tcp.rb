@@ -9,8 +9,9 @@ module LogStashLogger
         super
 
         @ssl_certificate = opts[:ssl_certificate]
-        @use_ssl = !!(@ssl_certificate || opts[:use_ssl] || opts[:ssl_enable])
         @ssl_context = opts.fetch(:ssl_context, nil)
+        @use_ssl = !!(@ssl_certificate || opts[:ssl_context])
+        @use_ssl = opts[:ssl_enable] if opts.has_key? :ssl_enable
       end
 
       def use_ssl?
