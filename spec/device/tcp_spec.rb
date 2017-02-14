@@ -37,20 +37,44 @@ describe LogStashLogger::Device::TCP do
       expect(ssl_tcp_device.use_ssl?).to be_truthy
     end
 
+    context 'hostname validation' do
+      let(:ssl_context) { double('test_ssl_context', verify_mode: OpenSSL::SSL::VERIFY_PEER) }
+      let(:ssl_tcp_options) { { type: :tcp, port: port, sync: true, ssl_context: ssl_context } }
+
+      context 'is enabled by default' do
+        let(:ssl_tcp_device) { LogStashLogger::Device.new(ssl_tcp_options) }
+
+        it 'validates' do
+          expect(ssl_tcp_device.send(:verify_hostname?)).to be_truthy
+          expect(ssl_socket).to receive(:post_connection_check).with HOST
+          ssl_tcp_device.connect
+        end
+      end
+
+      context 'is disabled explicitly' do
+        let(:ssl_tcp_device) { LogStashLogger::Device.new(ssl_tcp_options.merge(verify_hostname: false)) }
+
+        it 'does not validate' do
+          expect(ssl_tcp_device.send(:verify_hostname?)).to be_falsey
+          expect(ssl_socket).not_to receive(:post_connection_check)
+          ssl_tcp_device.connect
+        end
+      end
+
+      context 'is implicitly enabled by providing a hostname' do
+        let(:hostname) { 'www.example.com' }
+        let(:ssl_tcp_device) { LogStashLogger::Device.new(ssl_tcp_options.merge(verify_hostname: hostname)) }
+
+        it 'validates with supplied hostname' do
+          expect(ssl_socket).to receive(:post_connection_check).with hostname
+          ssl_tcp_device.connect
+        end
+      end
+    end
+
     context 'with a provided SSL context' do
       let(:ssl_context) { double('test_ssl_context', verify_mode: OpenSSL::SSL::VERIFY_PEER) }
       let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, sync: true, ssl_context: ssl_context) }
-
-      it "checks ssl certificate validity" do
-        expect(ssl_socket).to receive(:post_connection_check).with(HOST)
-        ssl_tcp_device.connect
-      end
-
-      it "does not check host validity of certificate" do
-        expect(ssl_context).to receive(:verify_mode) { OpenSSL::SSL::VERIFY_NONE }
-        expect(ssl_socket).not_to receive(:post_connection_check).with(HOST)
-        ssl_tcp_device.connect
-      end
 
       it 'creates the socket using that context' do
         expect(OpenSSL::SSL::SSLSocket).to receive(:new).with(tcp_socket, ssl_context)
