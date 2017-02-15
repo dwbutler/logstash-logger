@@ -9,12 +9,19 @@ module LogStashLogger
         super
 
         @ssl_certificate = opts[:ssl_certificate]
-        @use_ssl = !!(@ssl_certificate || opts[:use_ssl] || opts[:ssl_enable])
         @ssl_context = opts.fetch(:ssl_context, nil)
+        @use_ssl = !!(@ssl_certificate || opts[:ssl_context])
+        @use_ssl = opts[:ssl_enable] if opts.has_key? :ssl_enable
+        @verify_hostname = opts.fetch(:verify_hostname, true)
+      end
+
+      def ssl_context
+        return unless use_ssl?
+        @ssl_context || certificate_context
       end
 
       def use_ssl?
-        @use_ssl || !@ssl_certificate.nil?
+        @use_ssl
       end
 
       def connect
@@ -37,15 +44,34 @@ module LogStashLogger
 
       def ssl_connect
         non_ssl_connect
-        #openssl_cert = OpenSSL::X509::Certificate.new(::File.read(@ssl_certificate))
-        if @ssl_context
-          @io = OpenSSL::SSL::SSLSocket.new(@io, @ssl_context)
-          @io.connect
-          @io.post_connection_check(@host)
+        @io = OpenSSL::SSL::SSLSocket.new(@io, ssl_context)
+        # support ruby 2.4.0+ hostname validation
+        @io.hostname = hostname if @io.respond_to?(:hostname=)
+        @io.connect
+        verify_hostname!
+      end
+
+      def certificate_context
+        return unless @ssl_certificate
+        @certificate_context ||= OpenSSL::SSL::SSLContext.new.tap do |ctx|
+          ctx.set_params(cert: @ssl_certificate)
+        end
+      end
+
+      def verify_hostname?
+        return false unless ssl_context
+        !! @verify_hostname
+      end
+
+      def verify_hostname!
+        @io.post_connection_check(hostname) if verify_hostname?
+      end
+
+      def hostname
+        if String === @verify_hostname
+          @verify_hostname
         else
-          warn "[DEPRECATION] 'LogStashLogger::Device::Socket' should be instantiated with a SSL context for hostname verification."
-          @io = OpenSSL::SSL::SSLSocket.new(@io)
-          @io.connect
+          @host
         end
       end
     end

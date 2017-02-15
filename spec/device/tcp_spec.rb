@@ -33,27 +33,78 @@ describe LogStashLogger::Device::TCP do
       ssl_tcp_device.write('test')
     end
 
-    it "returns false for #use_ssl?" do
+    it "returns true for #use_ssl?" do
       expect(ssl_tcp_device.use_ssl?).to be_truthy
     end
 
-    it 'provides a warning about using a SSL context' do
-      expect(ssl_tcp_device).to receive(:warn).with("[DEPRECATION] 'LogStashLogger::Device::Socket' should be instantiated with a SSL context for hostname verification.")
-      ssl_tcp_device.connect
+    context 'hostname validation' do
+      let(:ssl_context) { double('test_ssl_context', verify_mode: OpenSSL::SSL::VERIFY_PEER) }
+      let(:ssl_tcp_options) { { type: :tcp, port: port, sync: true, ssl_context: ssl_context } }
+
+      context 'is enabled by default' do
+        let(:ssl_tcp_device) { LogStashLogger::Device.new(ssl_tcp_options) }
+
+        it 'validates' do
+          expect(ssl_tcp_device.send(:verify_hostname?)).to be_truthy
+          expect(ssl_socket).to receive(:post_connection_check).with HOST
+          ssl_tcp_device.connect
+        end
+      end
+
+      context 'is disabled explicitly' do
+        let(:ssl_tcp_device) { LogStashLogger::Device.new(ssl_tcp_options.merge(verify_hostname: false)) }
+
+        it 'does not validate' do
+          expect(ssl_tcp_device.send(:verify_hostname?)).to be_falsey
+          expect(ssl_socket).not_to receive(:post_connection_check)
+          ssl_tcp_device.connect
+        end
+      end
+
+      context 'is implicitly enabled by providing a hostname' do
+        let(:hostname) { 'www.example.com' }
+        let(:ssl_tcp_device) { LogStashLogger::Device.new(ssl_tcp_options.merge(verify_hostname: hostname)) }
+
+        it 'validates with supplied hostname' do
+          expect(ssl_socket).to receive(:post_connection_check).with hostname
+          ssl_tcp_device.connect
+        end
+      end
     end
 
     context 'with a provided SSL context' do
-      let(:ssl_context) { 'test_ssl_context' }
-      let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true, sync: true, ssl_context: ssl_context) }
-
-      it "checks ssl certificate validity" do
-        expect(ssl_socket).to receive(:post_connection_check).with(HOST)
-        ssl_tcp_device.connect
-      end
+      let(:ssl_context) { double('test_ssl_context', verify_mode: OpenSSL::SSL::VERIFY_PEER) }
+      let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, sync: true, ssl_context: ssl_context) }
 
       it 'creates the socket using that context' do
         expect(OpenSSL::SSL::SSLSocket).to receive(:new).with(tcp_socket, ssl_context)
         ssl_tcp_device.connect
+      end
+
+      it 'implicitly sets @use_ssl to true' do
+        expect(ssl_tcp_device.use_ssl?).to be_truthy
+      end
+
+      context 'and :ssl_enable explicitly set to false' do
+        let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, sync: true, ssl_enable: false, ssl_context: ssl_context) }
+
+        it 'explicitly sets @use_ssl to false' do
+          expect(ssl_tcp_device.use_ssl?).to be_falsey
+        end
+      end
+    end
+
+    context 'without a provided SSL context' do
+      it 'ssl_context returns nil' do
+        expect(ssl_tcp_device.ssl_context).to be_nil
+      end
+    end
+
+    context 'only providing a certificate file' do
+      let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true, sync: true, ssl_certificate: '/path/to/cert.pem') }
+
+      it 'implicitly uses a context with the configured certificate' do
+        expect(ssl_tcp_device.ssl_context.cert).to eq('/path/to/cert.pem')
       end
     end
   end

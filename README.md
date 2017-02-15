@@ -186,12 +186,13 @@ You can also enable SSL without a certificate:
 LogStashLogger.new(type: :tcp, port: 5228, ssl_enable: true)
 ```
 
-You can also specify an SSL context. This can be used to disable host verification.
+Specify an SSL context to have more control over the behavior. For example,
+set the verify mode:
 
 ```ruby
 ctx = OpenSSL::SSL::SSLContext.new
 ctx.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
-LogStashLogger.new(type: :tcp, port: 5228, ssl_enable: true, ssl_context: ctx)
+LogStashLogger.new(type: :tcp, port: 5228, ssl_context: ctx)
 ```
 
 The following Logstash configuration is required for SSL:
@@ -208,6 +209,45 @@ input {
   }
 }
 ```
+
+### Hostname Validation
+
+Ruby 2.4.0 will validate the hostname upon connection when configuring the SSL
+context with `:verify_mode`, `:verify_hostname` and
+`OpenSSL::SSL::SSLSocket#hostname=`.
+
+LogStashLogger will set `OpenSSL::SSL::SSLSocket#hostname` to the value of
+`:verify_hostname`.
+
+
+
+```ruby
+ctx_params = {
+  cert:            '/path/to/cert.pem',
+  verify_mode:     OpenSSL::SSL::VERIFY_PEER,
+  verify_hostname: true
+}
+ctx = OpenSSL::SSL::SSLContext.new
+ctx.set_params(ctx_params)
+
+LogStashLogger.new(type: :tcp, port: 5228, ssl_context: ctx, verify_hostname: 'www.example.com')
+```
+
+To have LogStashLogger perform hostname validation with older Ruby versions:
+
+```ruby
+ctx_params = {
+  cert:        '/path/to/cert.pem',
+  verify_mode: OpenSSL::SSL::VERIFY_PEER
+}
+ctx = OpenSSL::SSL::SSLContext.new
+ctx.set_params(ctx_params)
+
+LogStashLogger.new(type: :tcp, port: 5228, ssl_context: ctx, verify_hostname: 'www.example.com')
+```
+
+If you supply a falsey value to `:verify_hostname`, hostname validation will be
+skipped.
 
 ## Custom Log Fields
 
