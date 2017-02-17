@@ -9,11 +9,16 @@ module LogStashLogger
         super
 
         @ssl_certificate = opts[:ssl_certificate]
-        @use_ssl = !!(@ssl_certificate || opts[:use_ssl] || opts[:ssl_enable])
+        @use_ssl =
+          if opts[:ssl_enable] == false || opts[:use_ssl] == false
+            false
+          else
+            !@ssl_certificate.nil? || opts[:use_ssl] || opts[:ssl_enable] || false
+          end
       end
 
       def use_ssl?
-        @use_ssl || !@ssl_certificate.nil?
+        @use_ssl
       end
 
       def connect
