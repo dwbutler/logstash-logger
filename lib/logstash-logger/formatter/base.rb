@@ -25,7 +25,9 @@ module LogStashLogger
                   when LogStash::Event
                     data.clone
                   when Hash
-                    event_data = data.merge("@timestamp".freeze => time)
+                    event_data = data.clone
+                    event_data['message'.freeze] = event_data.delete(:message) if event_data.key?(:message)
+                    event_data['@timestamp'.freeze] = time
                     LogStash::Event.new(event_data)
                   else
                     LogStash::Event.new("message".freeze => msg2str(data), "@timestamp".freeze => time)
@@ -37,7 +39,7 @@ module LogStashLogger
         event['host'.freeze] ||= HOST
 
         current_tags.each { |tag| event.tag(tag) }
-        
+
         LogStashLogger.configuration.customize_event_block.call(event) if LogStashLogger.configuration.customize_event_block.respond_to?(:call)
 
         # In case Time#to_json has been overridden
@@ -48,7 +50,7 @@ module LogStashLogger
         if LogStashLogger.configuration.max_message_size
           event['message'.freeze] = event['message'.freeze].byteslice(0, LogStashLogger.configuration.max_message_size)
         end
-        
+
         event
       end
     end
