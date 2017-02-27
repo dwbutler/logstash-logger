@@ -3,7 +3,7 @@ module LogStashLogger
     class JsonLines < Base
       def call(severity, time, progname, message)
         super
-        "#{@event.to_json}\n"
+        "#{LogStashLogger::Encoder.instance.call(@event)}\n"
       end
     end
   end
