@@ -26,29 +26,30 @@ module LogStashLogger
 
       def connect
         if use_ssl?
-          ssl_connect
-        else
-          non_ssl_connect
+          io.connect
+          verify_hostname!
         end
+        io
+      end
 
-        @io
+      def io
+        @io ||= if use_ssl?
+          ssl_io
+        else
+          tcp_io
+        end
       end
 
       protected
 
-      def non_ssl_connect
-        @io = TCPSocket.new(@host, @port).tap do |socket|
+      def tcp_io
+        TCPSocket.new(@host, @port).tap do |socket|
           socket.sync = sync unless sync.nil?
         end
       end
 
-      def ssl_connect
-        non_ssl_connect
-        @io = OpenSSL::SSL::SSLSocket.new(@io, ssl_context)
-        # support ruby 2.4.0+ hostname validation
-        @io.hostname = hostname if @io.respond_to?(:hostname=)
-        @io.connect
-        verify_hostname!
+      def ssl_io
+        OpenSSL::SSL::SSLSocket.new(tcp_io, ssl_context)
       end
 
       def certificate_context
