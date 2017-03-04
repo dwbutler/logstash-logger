@@ -25,6 +25,10 @@ describe LogStashLogger::Device::TCP do
     it "returns false for #use_ssl?" do
       expect(tcp_device.use_ssl?).to be_falsey
     end
+
+    it "exposes the TCP socket via #io" do
+      expect(tcp_device.io).to eq tcp_socket
+    end
   end
 
   context "when using SSL" do
@@ -35,6 +39,10 @@ describe LogStashLogger::Device::TCP do
 
     it "returns true for #use_ssl?" do
       expect(ssl_tcp_device.use_ssl?).to be_truthy
+    end
+
+    it "exposes the SSL socket via #io" do
+      expect(ssl_tcp_device.io).to eq ssl_socket
     end
 
     context 'hostname validation' do

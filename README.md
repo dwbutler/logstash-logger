@@ -210,44 +210,52 @@ input {
 }
 ```
 
-### Hostname Validation
+### Hostname Verification
 
-Ruby 2.4.0 will validate the hostname upon connection when configuring the SSL
-context with `:verify_mode`, `:verify_hostname` and
-`OpenSSL::SSL::SSLSocket#hostname=`.
+Hostname verification is enabled by default. Without further configuration,
+the hostname supplied to `:host` will be used to verify the server's certificate
+identity.
 
-LogStashLogger will set `OpenSSL::SSL::SSLSocket#hostname` to the value of
-`:verify_hostname`.
+If you don't pass an `:ssl_context` or pass a falsey value to the
+`:verify_hostname` option, hostname verification will not occur.
 
+#### Examples
 
-
-```ruby
-ctx_params = {
-  cert:            '/path/to/cert.pem',
-  verify_mode:     OpenSSL::SSL::VERIFY_PEER,
-  verify_hostname: true
-}
-ctx = OpenSSL::SSL::SSLContext.new
-ctx.set_params(ctx_params)
-
-LogStashLogger.new(type: :tcp, port: 5228, ssl_context: ctx, verify_hostname: 'www.example.com')
-```
-
-To have LogStashLogger perform hostname validation with older Ruby versions:
+**Verify the hostname from the `:host` option**
 
 ```ruby
-ctx_params = {
-  cert:        '/path/to/cert.pem',
-  verify_mode: OpenSSL::SSL::VERIFY_PEER
-}
 ctx = OpenSSL::SSL::SSLContext.new
-ctx.set_params(ctx_params)
+ctx.cert = '/path/to/cert.pem'
+ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER
 
-LogStashLogger.new(type: :tcp, port: 5228, ssl_context: ctx, verify_hostname: 'www.example.com')
+LogStashLogger.new \
+  type: :tcp,
+  host: 'logstash.example.com'
+  port: 5228,
+  ssl_context: ctx
 ```
 
-If you supply a falsey value to `:verify_hostname`, hostname validation will be
-skipped.
+**Verify a hostname different from the `:host` option**
+
+```ruby
+LogStashLogger.new \
+  type: :tcp,
+  host: '1.2.3.4'
+  port: 5228,
+  ssl_context: ctx,
+  verify_hostname: 'server.example.com'
+```
+
+**Explicitly disable hostname verification**
+
+```ruby
+LogStashLogger.new \
+  type: :tcp,
+  host: '1.2.3.4'
+  port: 5228,
+  ssl_context: ctx,
+  verify_hostname: false
+```
 
 ## Custom Log Fields
 
