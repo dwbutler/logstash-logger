@@ -13,6 +13,11 @@ module LogStashLogger
         @host = opts[:host] || DEFAULT_HOST
       end
 
+      def flush(*args)
+        super
+        @io.flush
+      end
+
       def unrecoverable_error?(e)
         e.is_a?(Errno::EMSGSIZE) || super
       end

@@ -9,9 +9,11 @@ describe LogStashLogger::Device::TCP do
   before(:each) do
     allow(TCPSocket).to receive(:new) { tcp_socket }
     allow(tcp_socket).to receive(:sync=)
+    allow(tcp_socket).to receive(:flush)
 
     allow(OpenSSL::SSL::SSLSocket).to receive(:new) { ssl_socket }
     allow(ssl_socket).to receive(:connect)
+    allow(ssl_socket).to receive(:flush)
   end
 
   context "when not using SSL" do
