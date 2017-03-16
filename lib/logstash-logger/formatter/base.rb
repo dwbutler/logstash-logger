@@ -9,7 +9,7 @@ module LogStashLogger
     class Base < ::Logger::Formatter
       include ::LogStashLogger::TaggedLogging::Formatter
 
-      def initialize(customize_event: nil)
+      def initialize(customize_event = nil)
         @customize_event = customize_event
         super()
       end
