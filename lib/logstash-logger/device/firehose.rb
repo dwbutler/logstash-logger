@@ -1,3 +1,4 @@
+require 'aws-sdk'
 require 'logstash-logger/device/aws_stream'
 
 module LogStashLogger
