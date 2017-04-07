@@ -9,7 +9,7 @@ writing to a file or syslog since Logstash can receive the structured data direc
 ## Features
 
 * Can write directly to a logstash listener over a UDP or TCP/SSL connection.
-* Can write to a file, Redis, Kafka, Kinesis, a unix socket, syslog, stdout, or stderr.
+* Can write to a file, Redis, Kafka, Kinesis, Firehose, a unix socket, syslog, stdout, or stderr.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
 * Writes in logstash JSON format, but supports other formats as well.
@@ -503,6 +503,30 @@ Add the aws-sdk gem to your Gemfile:
 config.logstash.type = :kinesis
 
 # Optional, will default to the 'logstash' stream
+config.logstash.stream = 'my-stream-name'
+
+# Optional, will default to 'us-east-1'
+config.logstash.aws_region = 'us-west-2'
+
+# Optional, will default to the AWS_ACCESS_KEY_ID environment variable
+config.logstash.aws_access_key_id = 'ASKASKHLD12341'
+
+# Optional, will default to the AWS_SECRET_ACCESS_KEY environment variable
+config.logstash.aws_secret_access_key = 'ASKASKHLD1234123412341234'
+
+```
+
+#### Firehose
+
+Add the aws-sdk gem to your Gemfile:
+
+    gem 'aws-sdk'
+
+```ruby
+# Required
+config.logstash.type = :firehose
+
+# Optional, will default to the 'logstash' delivery stream
 config.logstash.stream = 'my-stream-name'
 
 # Optional, will default to 'us-east-1'
