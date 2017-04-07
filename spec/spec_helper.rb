@@ -62,6 +62,7 @@ RSpec.shared_context 'device' do
   let(:redis_device) { LogStashLogger::Device.new(type: :redis, sync: true) }
   let(:kafka_device) { LogStashLogger::Device.new(type: :kafka, sync: true) }
   let(:kinesis_device) { LogStashLogger::Device.new(type: :kinesis, sync: true) }
+  let(:firehose_device) { LogStashLogger::Device.new(type: :firehose, sync: true) }
 
   let(:outputs) { [{type: :stdout}, {type: :io, io: io}] }
   let(:multi_delegator_device) { LogStashLogger::Device.new(type: :multi_delegator, outputs: outputs) }

@@ -3,16 +3,14 @@ require 'logstash-logger/device/aws_stream'
 
 module LogStashLogger
   module Device
-    class Kinesis < Connectable
+    class Firehose < Connectable
       include Device::AwsStream
 
       DEFAULT_REGION = 'us-east-1'
       DEFAULT_STREAM = 'logstash'
       RECOVERABLE_ERROR_CODES = [
         "ServiceUnavailable",
-        "Throttling",
-        "RequestExpired",
-        "ProvisionedThroughputExceededException"
+        "InternalFailure"
       ]
 
       attr_accessor :aws_region, :stream
@@ -26,35 +24,34 @@ module LogStashLogger
       end
 
       def connect
-        @io = ::Aws::Kinesis::Client.new(
+        @io = ::Aws::Firehose::Client.new(
           region: @aws_region,
           credentials: ::Aws::Credentials.new(@access_key_id, @secret_access_key)
         )
       end
 
       def write_batch(messages, group = nil)
-        kinesis_records = messages.map do |message|
+        firehose_records = messages.map do |message|
           {
             data: message,
-            partition_key: SecureRandom.uuid
           }
         end
 
         with_connection do
-          resp = @io.put_records({
-            records: kinesis_records,
-            stream_name: @stream
+          resp = @io.put_record_batch({
+            records: firehose_records,
+            delivery_stream_name: @stream
           })
 
           # Put any failed records back into the buffer
-          if resp.failed_record_count != 0
-            resp.records.each_with_index do |record, index|
+          if resp.failed_put_count != 0
+            resp.request_responses.each_with_index do |record, index|
               if RECOVERABLE_ERROR_CODES.include?(record.error_code)
-                log_warning("Failed to post record to kinesis with error: #{record.error_code} #{record.error_message}")
+                log_warning("Failed to post record to firehose with error: #{record.error_code} #{record.error_message}")
                 log_warning("Retrying")
-                write(kinesis_records[index][:data])
+                write(firehose_records[index][:data])
               elsif !record.error_code.nil? && record.error_code != ''
-                log_error("Failed to post record to kinesis with error: #{record.error_code} #{record.error_message}")
+                log_error("Failed to post record to firehose with error: #{record.error_code} #{record.error_message}")
               end
             end
           end
