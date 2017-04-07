@@ -10,7 +10,8 @@ module LogStashLogger
       DEFAULT_STREAM = 'logstash'
       RECOVERABLE_ERROR_CODES = [
         "ServiceUnavailable",
-        "InternalFailure"
+        "InternalFailure",
+        "ServiceUnavailableException"
       ]
 
       attr_accessor :aws_region, :stream
