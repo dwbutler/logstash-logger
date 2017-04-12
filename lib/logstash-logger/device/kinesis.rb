@@ -4,16 +4,17 @@ require 'logstash-logger/device/aws_stream'
 module LogStashLogger
   module Device
     class Kinesis < AwsStream
+      KINESIS_ERROR_CODES = [
+        "ServiceUnavailable",
+        "Throttling",
+        "RequestExpired",
+        "ProvisionedThroughputExceededException"
+      ].freeze
 
       def initialize(opts)
         super
         @stream_class = ::Aws::Kinesis::Client
-        @recoverable_error_codes = [
-          "ServiceUnavailable",
-          "Throttling",
-          "RequestExpired",
-          "ProvisionedThroughputExceededException"
-        ].freeze
+        @recoverable_error_codes = KINESIS_ERROR_CODES
       end
 
       def transform_message(message)

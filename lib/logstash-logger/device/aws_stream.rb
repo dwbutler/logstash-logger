@@ -16,7 +16,7 @@ module LogStashLogger
         @aws_region = opts[:aws_region] || DEFAULT_REGION
         @stream = opts[:stream] || DEFAULT_STREAM
         @stream_class = nil
-        @recoverable_error_code = []
+        @recoverable_error_codes = []
       end
 
       def transform_message(message)
@@ -61,11 +61,11 @@ module LogStashLogger
           if !is_successful_response(resp)
             get_response_records(resp).each_with_index do |record, index|
               if @recoverable_error_codes.include?(record.error_code)
-                log_warning("Failed to post record to #{@stream_class.name} with error: #{record.error_code} #{record.error_message}")
+                log_warning("Failed to post record using #{@stream_class.name} with error: #{record.error_code} #{record.error_message}")
                 log_warning("Retrying")
                 write(records[index][:data])
               elsif !record.error_code.nil? && record.error_code != ''
-                log_error("Failed to post record to #{@stream_class.name} with error: #{record.error_code} #{record.error_message}")
+                log_error("Failed to post record using #{@stream_class.name} with error: #{record.error_code} #{record.error_message}")
               end
             end
           end
