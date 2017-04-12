@@ -35,12 +35,6 @@ module LogStashLogger
         end
       end
 
-      def write_batch(messages, group = nil)
-        messages.each do |message|
-          @io.write(message)
-        end
-      end
-
       def flush
         @io && @io.flush
       end
