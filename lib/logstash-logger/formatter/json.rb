@@ -3,7 +3,7 @@ module LogStashLogger
     class Json < Base
       def call(severity, time, progname, message)
         super
-        @event.to_json
+        LogStashLogger::Encoder.instance.call(@event)
       end
     end
   end
