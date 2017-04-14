@@ -23,8 +23,8 @@ describe LogStashLogger::Device::Kinesis do
 
   it "it puts records with recoverable errors back in the buffer" do
     failed_record = ::Aws::Firehose::Types::PutRecordBatchResponseEntry.new
-    failed_record.error_code = "ServiceUnavailable"
-    failed_record.error_message = "ServiceUnavailable"
+    failed_record.error_code = "InternalFailure"
+    failed_record.error_message = "InternalFailure"
     response = ::Aws::Firehose::Types::PutRecordBatchOutput.new
     response.failed_put_count = 1
     response.request_responses = [failed_record]

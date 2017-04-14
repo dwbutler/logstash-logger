@@ -7,7 +7,14 @@ module LogStashLogger
       DEFAULT_REGION = 'us-east-1'
       DEFAULT_STREAM = 'logstash'
 
-      attr_accessor :aws_region, :stream, :stream_class, :recoverable_error_codes
+      @stream_class = nil
+      @recoverable_error_codes = []
+
+      class << self
+        attr_accessor :stream_class, :recoverable_error_codes
+      end
+
+      attr_accessor :aws_region, :stream
 
       def initialize(opts)
         super
@@ -15,8 +22,6 @@ module LogStashLogger
         @secret_access_key = opts[:aws_secret_access_key] || ENV['AWS_SECRET_ACCESS_KEY']
         @aws_region = opts[:aws_region] || DEFAULT_REGION
         @stream = opts[:stream] || DEFAULT_STREAM
-        @stream_class = nil
-        @recoverable_error_codes = []
       end
 
       def transform_message(message)
@@ -36,7 +41,7 @@ module LogStashLogger
       end
 
       def connect
-        @io = @stream_class.new(
+        @io = self.class.stream_class.new(
           region: @aws_region,
           credentials: ::Aws::Credentials.new(@access_key_id, @secret_access_key)
         )
@@ -60,12 +65,12 @@ module LogStashLogger
           # Put any failed records back into the buffer
           if !is_successful_response(resp)
             get_response_records(resp).each_with_index do |record, index|
-              if @recoverable_error_codes.include?(record.error_code)
-                log_warning("Failed to post record using #{@stream_class.name} with error: #{record.error_code} #{record.error_message}")
+              if self.class.recoverable_error_codes.include?(record.error_code)
+                log_warning("Failed to post record using #{self.class.stream_class.name} with error: #{record.error_code} #{record.error_message}")
                 log_warning("Retrying")
                 write(records[index][:data])
               elsif !record.error_code.nil? && record.error_code != ''
-                log_error("Failed to post record using #{@stream_class.name} with error: #{record.error_code} #{record.error_message}")
+                log_error("Failed to post record using #{self.class.stream_class.name} with error: #{record.error_code} #{record.error_message}")
               end
             end
           end

@@ -4,17 +4,12 @@ require 'logstash-logger/device/aws_stream'
 module LogStashLogger
   module Device
     class Firehose < AwsStream
-      FIREHOSE_ERROR_CODES = [
+      @stream_class = ::Aws::Firehose::Client
+      @recoverable_error_codes = [
         "ServiceUnavailable",
         "InternalFailure",
         "ServiceUnavailableException"
       ].freeze
-
-      def initialize(opts)
-        super
-        @stream_class = ::Aws::Firehose::Client
-        @recoverable_error_codes = FIREHOSE_ERROR_CODES
-      end
 
       def transform_message(message)
         {
