@@ -1,3 +1,8 @@
+## 0.23.0
+
+- Adds support for SSL host verification to the TCP device. [#114](https://github.com/dwbutler/logstash-logger/pull/114)
+- Fixes `NoMethodError` when `nil` tags are used in tagged logging. [#123](https://github.com/dwbutler/logstash-logger/issues/123)
+
 ## 0.22.1
 
 - Fixes compatibility with ActiveJob. [#112](https://github.com/dwbutler/logstash-logger/issues/112)
