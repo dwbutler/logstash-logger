@@ -9,9 +9,13 @@ module LogStashLogger
         super
 
         @ssl_certificate = opts[:ssl_certificate]
-        @ssl_context = opts.fetch(:ssl_context, nil)
+        @ssl_context = opts[:ssl_context]
         @use_ssl = !!(@ssl_certificate || opts[:ssl_context])
         @use_ssl = opts[:ssl_enable] if opts.has_key? :ssl_enable
+        if opts.has_key?(:use_ssl)
+          @use_ssl = opts[:use_ssl]
+          warn "[LogStashLogger] The use_ssl option is deprecated. Use ssl_enable instead."
+        end
         @verify_hostname = opts.fetch(:verify_hostname, true)
       end
 
