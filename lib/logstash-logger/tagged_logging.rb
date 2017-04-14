@@ -19,7 +19,7 @@ module LogStashLogger
       end
 
       def push_tags(*tags)
-        tags.flatten.reject(&:empty?).tap do |new_tags|
+        tags.flatten.reject{ |t| t.nil? || t.empty? }.tap do |new_tags|
           current_tags.concat new_tags
         end
       end
