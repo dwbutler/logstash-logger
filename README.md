@@ -186,6 +186,15 @@ You can also enable SSL without a certificate:
 LogStashLogger.new(type: :tcp, port: 5228, ssl_enable: true)
 ```
 
+Specify an SSL context to have more control over the behavior. For example,
+set the verify mode:
+
+```ruby
+ctx = OpenSSL::SSL::SSLContext.new
+ctx.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
+LogStashLogger.new(type: :tcp, port: 5228, ssl_context: ctx)
+```
+
 The following Logstash configuration is required for SSL:
 
 ```ruby
@@ -199,6 +208,53 @@ input {
     ssl_key => "/path/to/key.key"
   }
 }
+```
+
+### Hostname Verification
+
+Hostname verification is enabled by default. Without further configuration,
+the hostname supplied to `:host` will be used to verify the server's certificate
+identity.
+
+If you don't pass an `:ssl_context` or pass a falsey value to the
+`:verify_hostname` option, hostname verification will not occur.
+
+#### Examples
+
+**Verify the hostname from the `:host` option**
+
+```ruby
+ctx = OpenSSL::SSL::SSLContext.new
+ctx.cert = '/path/to/cert.pem'
+ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER
+
+LogStashLogger.new \
+  type: :tcp,
+  host: 'logstash.example.com'
+  port: 5228,
+  ssl_context: ctx
+```
+
+**Verify a hostname different from the `:host` option**
+
+```ruby
+LogStashLogger.new \
+  type: :tcp,
+  host: '1.2.3.4'
+  port: 5228,
+  ssl_context: ctx,
+  verify_hostname: 'server.example.com'
+```
+
+**Explicitly disable hostname verification**
+
+```ruby
+LogStashLogger.new \
+  type: :tcp,
+  host: '1.2.3.4'
+  port: 5228,
+  ssl_context: ctx,
+  verify_hostname: false
 ```
 
 ## Custom Log Fields
