@@ -394,7 +394,7 @@ end
 
 ## Rails Integration
 
-Verified to work with both Rails 3, 4, and 5.
+Supports Rails 4 and 5.
 
 By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.
 
@@ -690,11 +690,11 @@ end
 
 Verified to work with:
 
-* MRI Ruby 1.9.3, 2.0, 2.1, 2.2, 2.3
-* JRuby 1.7, 9.0
+* MRI Ruby 2.2, 2.3, 2.4
+* JRuby 9.0
 * Rubinius
 
-Ruby 1.8.7 is not supported.
+Ruby versions < 2.2 are EOL'ed and no longer supported.
 
 ## What type of logger should I use?
 

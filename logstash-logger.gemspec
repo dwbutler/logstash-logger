@@ -21,23 +21,12 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'logstash-event', '~> 1.2'
 
   gem.add_development_dependency 'rails'
-  if RUBY_VERSION < '2'
-    gem.add_development_dependency 'mime-types', '< 3'
-  end
   gem.add_development_dependency 'redis'
   gem.add_development_dependency 'poseidon'
   gem.add_development_dependency 'aws-sdk'
 
-  if RUBY_VERSION < '2' || defined?(JRUBY_VERSION)
+  if defined?(JRUBY_VERSION)
     gem.add_development_dependency 'SyslogLogger'
-  end
-
-  if RUBY_VERSION < '2'
-    gem.add_development_dependency 'json', '~> 1.8'
-  end
-
-  if RUBY_VERSION < '2.1'
-    gem.add_development_dependency 'nokogiri', '~> 1.6.8'
   end
 
   gem.add_development_dependency 'rspec', '>= 3'
