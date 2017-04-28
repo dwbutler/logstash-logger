@@ -13,6 +13,7 @@ module LogStashLogger
     autoload :Redis, 'logstash-logger/device/redis'
     autoload :Kafka, 'logstash-logger/device/kafka'
     autoload :Kinesis, 'logstash-logger/device/kinesis'
+    autoload :Firehose, 'logstash-logger/device/firehose'
     autoload :File, 'logstash-logger/device/file'
     autoload :IO, 'logstash-logger/device/io'
     autoload :Stdout, 'logstash-logger/device/stdout'
@@ -53,6 +54,7 @@ module LogStashLogger
         when :redis then Redis
         when :kafka then Kafka
         when :kinesis then Kinesis
+        when :firehose then Firehose
         when :io then IO
         when :stdout then Stdout
         when :stderr then Stderr
