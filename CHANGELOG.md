@@ -1,3 +1,7 @@
+## 0.24.0
+
+- Adds support for AWS Firehose. [#121](https://github.com/dwbutler/logstash-logger/pull/121)
+
 ## 0.23.0
 
 - Adds support for SSL host verification to the TCP device. [#114](https://github.com/dwbutler/logstash-logger/pull/114)
