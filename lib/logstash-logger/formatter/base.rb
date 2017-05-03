@@ -27,6 +27,9 @@ module LogStashLogger
                   when Hash
                     event_data = data.clone
                     event_data['message'.freeze] = event_data.delete(:message) if event_data.key?(:message)
+                    event_data['tags'.freeze] = event_data.delete(:tags) if event_data.key?(:tags)
+                    event_data['source'.freeze] = event_data.delete(:source) if event_data.key?(:source)
+                    event_data['type'.freeze] = event_data.delete(:type) if event_data.key?(:type)
                     event_data['@timestamp'.freeze] = time
                     LogStash::Event.new(event_data)
                   else
