@@ -1,3 +1,7 @@
+## 0.24.1
+
+- Fixes logging of a hash with symbol keys. [#116](https://github.com/dwbutler/logstash-logger/pull/116)
+
 ## 0.24.0
 
 - Adds support for AWS Firehose. [#121](https://github.com/dwbutler/logstash-logger/pull/121)

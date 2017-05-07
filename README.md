@@ -803,6 +803,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Craig Read](https://github.com/Catharz)
 * [glaszig](https://github.com/glaszig)
 * [Bin Lan](https://github.com/lanxx019)
+* [Joao Fernandes](https://github.com/jcmfernandes)
 
 ## Contributing
 
