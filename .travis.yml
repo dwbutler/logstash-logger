@@ -5,40 +5,24 @@ cache: bundler
 after_success:
   bundle exec codeclimate-test-reporter
 rvm:
-  - 1.9.3
-  - 2.0.0
-  - 2.1.9
-  - 2.2.6
-  - 2.3.3
-  - 2.4.0
-  - jruby-19mode
+  - 2.2.7
+  - 2.3.4
+  - 2.4.1
   - jruby-9.1.5.0
   - rubinius-3
 gemfile:
-  - gemfiles/rails_3.2.gemfile
   - gemfiles/rails_4.0.gemfile
   - gemfiles/rails_4.1.gemfile
   - gemfiles/rails_4.2.gemfile
   - gemfiles/rails_5.0.gemfile
+  - gemfiles/rails_5.1.gemfile
 matrix:
-  exclude:
-    - rvm: 1.9.3
-      gemfile: gemfiles/rails_5.0.gemfile
-    - rvm: jruby-19mode
-      gemfile: gemfiles/rails_5.0.gemfile
-    - rvm: 2.0.0
-      gemfile: gemfiles/rails_5.0.gemfile
-    - rvm: 2.1.9
-      gemfile: gemfiles/rails_5.0.gemfile
-    - rvm: 2.2.5
-      gemfile: gemfiles/rails_3.2.gemfile
-    - rvm: 2.3.1
-      gemfile: gemfiles/rails_3.2.gemfile
   allow_failures:
     - rvm: rubinius-3
-    - rvm: 2.4.0
-    - rvm: jruby-19mode
-    - rvm: jruby-9.1.5.0
+    - rvm: 2.4.1
+      gemfile: gemfiles/rails_4.0.gemfile
+    - rvm: 2.4.1
+      gemfile: gemfiles/rails_4.1.gemfile
 addons:
   code_climate:
     repo_token: 4d712355fa2863c0f33f413eeede4e52cc221c4bc989a692d97574b1f6010b69
