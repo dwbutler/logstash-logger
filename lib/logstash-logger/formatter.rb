@@ -1,8 +1,8 @@
 require 'logstash-logger/formatter/base'
 
 module LogStashLogger
-	module Formatter
-		DEFAULT_FORMATTER = :json_lines
+  module Formatter
+    DEFAULT_FORMATTER = :json_lines
 
     autoload :LogStashEvent, 'logstash-logger/formatter/logstash_event'
     autoload :Json, 'logstash-logger/formatter/json'
@@ -10,11 +10,11 @@ module LogStashLogger
     autoload :Cee, 'logstash-logger/formatter/cee'
     autoload :CeeSyslog, 'logstash-logger/formatter/cee_syslog'
 
-		def self.new(formatter_type)
-    	build_formatter(formatter_type)
+    def self.new(formatter_type, customize_event = nil)
+      build_formatter(formatter_type, customize_event)
     end
 
-    def self.build_formatter(formatter_type)
+    def self.build_formatter(formatter_type, customize_event)
       formatter_type ||= DEFAULT_FORMATTER
 
       formatter = if custom_formatter_instance?(formatter_type)
@@ -22,7 +22,7 @@ module LogStashLogger
       elsif custom_formatter_class?(formatter_type)
         formatter_type.new
       else
-        formatter_klass(formatter_type).new
+        formatter_klass(formatter_type).new(customize_event)
       end
 
       formatter.send(:extend, ::LogStashLogger::TaggedLogging::Formatter)
@@ -47,5 +47,5 @@ module LogStashLogger
     def self.custom_formatter_class?(formatter_type)
       formatter_type.is_a?(Class) && formatter_type.method_defined?(:call)
     end
-	end
+  end
 end
