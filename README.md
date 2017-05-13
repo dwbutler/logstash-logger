@@ -1,5 +1,5 @@
 # LogStashLogger
-[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master)[![Gem Version](https://badge.fury.io/rb/logstash-logger.svg)](https://badge.fury.io/rb/logstash-logger)
+[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master) [![Gem Version](https://badge.fury.io/rb/logstash-logger.svg)](https://badge.fury.io/rb/logstash-logger)
 
 LogStashLogger extends Ruby's `Logger` class to log directly to
 [Logstash](https://www.elastic.co/products/logstash).
@@ -767,7 +767,7 @@ for other fields.
 
 ## Breaking changes
 
-## Version 0.25+
+### Version 0.25+
 
 Rails 3.2, MRI Ruby < 2.2, and JRuby 1.7 are no longer supported, since they have been
 EOL'ed. If you are on an older version of Ruby, you will need to use 0.24 or below.
