@@ -1,5 +1,5 @@
 # LogStashLogger
-[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master)
+[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master)[![Gem Version](https://badge.fury.io/rb/logstash-logger.svg)](https://badge.fury.io/rb/logstash-logger)
 
 LogStashLogger extends Ruby's `Logger` class to log directly to
 [Logstash](https://www.elastic.co/products/logstash).
@@ -306,7 +306,9 @@ config = LogStashLogger.configure do |config|
 end
 ```
 
-The same behavior can be reached by set customize_event on initialize: 
+You can also customize events on a per-logger basis by passing a callable object
+(lambda or proc) to the `customize_event` option when creating a logger:
+
 ```ruby
 LogStashLogger.new(customize_event: ->(event){ event['other_field'] = 'other_field' })
 ``` 
@@ -695,8 +697,8 @@ end
 
 Verified to work with:
 
-* MRI Ruby 2.2, 2.3, 2.4
-* JRuby 9.0
+* MRI Ruby 2.2 - 2.4
+* JRuby 9.x
 * Rubinius
 
 Ruby versions < 2.2 are EOL'ed and no longer supported.
@@ -765,6 +767,11 @@ for other fields.
 
 ## Breaking changes
 
+## Version 0.25+
+
+Rails 3.2, MRI Ruby < 2.2, and JRuby 1.7 are no longer supported, since they have been
+EOL'ed. If you are on an older version of Ruby, you will need to use 0.24 or below.
+
 ### Version 0.5+
  * The `source` event key has been replaced with `host` to better match the latest logstash.
  * The `(host, port, type)` constructor has been deprecated in favor of an options hash constructor.
@@ -809,6 +816,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [glaszig](https://github.com/glaszig)
 * [Bin Lan](https://github.com/lanxx019)
 * [Joao Fernandes](https://github.com/jcmfernandes)
+* [CoolElvis](https://github.com/coolelvis)
 
 ## Contributing
 

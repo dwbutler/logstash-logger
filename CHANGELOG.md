@@ -1,3 +1,8 @@
+## 0.25.0
+
+- Drops support for Rails 3.2, MRI Ruby < 2.2, and JRuby 1.7, since these have been EOL'ed.
+- Adds support for customizing events on a per-logger level. [#113](https://github.com/dwbutler/logstash-logger/pull/113)
+
 ## 0.24.1
 
 - Fixes logging of a hash with symbol keys. [#116](https://github.com/dwbutler/logstash-logger/pull/116)
