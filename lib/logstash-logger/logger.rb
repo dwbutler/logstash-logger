@@ -64,8 +64,9 @@ module LogStashLogger
   private
 
   def self.build_default_logger(opts)
+    logger_class = opts.delete(:logger_class) || ::Logger
     device = Device.new(opts)
-    ::Logger.new(device).tap do |logger|
+    logger_class.new(device).tap do |logger|
       logger.instance_variable_set(:@device, device)
       extend_logger(logger)
     end
