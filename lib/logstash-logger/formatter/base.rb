@@ -57,7 +57,7 @@ module LogStashLogger
           event.timestamp = event.timestamp.iso8601(3)
         end
 
-        if LogStashLogger.configuration.max_message_size
+        if LogStashLogger.configuration.max_message_size && event['message']
           event['message'.freeze] = event['message'.freeze].byteslice(0, LogStashLogger.configuration.max_message_size)
         end
 
