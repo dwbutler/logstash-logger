@@ -1,3 +1,7 @@
+## 0.25.1
+
+- Skip message truncating when there is no message field. [#130](https://github.com/dwbutler/logstash-logger/pull/130)
+
 ## 0.25.0
 
 - Drops support for Rails 3.2, MRI Ruby < 2.2, and JRuby 1.7, since these have been EOL'ed.
