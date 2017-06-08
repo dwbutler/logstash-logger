@@ -68,5 +68,36 @@ describe LogStashLogger::Formatter::Base do
         expect(event.timestamp).to eq(time.iso8601(3))
       end
     end
+
+    describe "long messages" do
+
+      context "message field is present" do
+        let(:message) { long_message }
+
+        it "truncates long messages when max_message_size is set" do
+          LogStashLogger.configure do |config|
+            config.max_message_size = 2000
+          end
+
+          expect(event['message'].size).to eq(2000)
+        end
+      end
+
+      context "event without message field" do
+        let(:message) do
+          { 'test_field' => 'test', 'foo' => 'bar' }
+        end
+
+        it "still works" do
+          LogStashLogger.configure do |config|
+            config.max_message_size = 2000
+          end
+
+          expect(event['message']).to eq(nil)
+          expect(event['test_field']).to eq('test')
+          expect(event['foo']).to eq('bar')
+        end
+      end
+    end
   end
 end
