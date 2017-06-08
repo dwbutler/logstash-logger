@@ -94,7 +94,7 @@ module LogStashLogger
 
   def self.extend_logger(logger)
     logger.extend(self)
-    logger.extend(TaggedLogging)
-    logger.extend(SilencedLogging)
+    logger.extend(TaggedLogging) unless logger.respond_to?(:tagged)
+    logger.extend(SilencedLogging) unless logger.respond_to?(:silence)
   end
 end
