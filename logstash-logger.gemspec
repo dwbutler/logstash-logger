@@ -34,4 +34,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'pry'
   gem.add_development_dependency 'wwtd'
   gem.add_development_dependency 'appraisal'
+  gem.add_development_dependency 'rubocop', '0.4.6'
 end
