@@ -57,10 +57,15 @@ module LogStashLogger
       end
 
       def certificate_context
-        return unless @ssl_certificate
+        return unless certificate
         @certificate_context ||= OpenSSL::SSL::SSLContext.new.tap do |ctx|
-          ctx.set_params(cert: @ssl_certificate)
+          ctx.set_params(cert: certificate)
         end
+      end
+
+      def certificate
+        return unless @ssl_certificate
+        @certificate ||= OpenSSL::X509::Certificate.new(File.open(@ssl_certificate))
       end
 
       def verify_hostname?
