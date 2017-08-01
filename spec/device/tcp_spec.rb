@@ -109,10 +109,11 @@ describe LogStashLogger::Device::TCP do
     end
 
     context 'only providing a certificate file' do
-      let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true, sync: true, ssl_certificate: '/path/to/cert.pem') }
+      let(:cert_path) { 'spec/support/sample.crt' }
+      let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true, sync: true, ssl_certificate: cert_path) }
 
       it 'implicitly uses a context with the configured certificate' do
-        expect(ssl_tcp_device.ssl_context.cert).to eq('/path/to/cert.pem')
+        expect(ssl_tcp_device.ssl_context.cert).to be_a(OpenSSL::X509::Certificate)
       end
     end
   end

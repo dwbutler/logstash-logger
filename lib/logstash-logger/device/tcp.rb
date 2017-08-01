@@ -65,7 +65,7 @@ module LogStashLogger
 
       def certificate
         return unless @ssl_certificate
-        @certificate ||= OpenSSL::X509::Certificate.new(File.open(@ssl_certificate))
+        @certificate ||= OpenSSL::X509::Certificate.new(::File.open(@ssl_certificate))
       end
 
       def verify_hostname?
