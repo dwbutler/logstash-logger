@@ -3,6 +3,28 @@ require 'logstash-logger'
 describe LogStashLogger::Formatter::Base do
   include_context "formatter"
 
+  describe "#call" do
+    context "when event is not cancelled" do
+      it "returns a formatted message" do
+        expect(subject).to receive(:format_event).once.with(instance_of(LogStash::Event)).and_call_original
+        expect(subject.call(severity, time, progname, message)).to be_a(LogStash::Event)
+      end
+    end
+
+    context "when event is cancelled" do
+      before(:each) do
+        LogStashLogger.configure do |config|
+          config.customize_event(&:cancel)
+        end
+      end
+
+      it "returns `nil`" do
+        expect(subject).not_to receive(:format_event)
+        expect(subject.call(severity, time, progname, message)).to be_nil
+      end
+    end
+  end
+
   describe "#build_event" do
     let(:event) { formatted_message }
 
