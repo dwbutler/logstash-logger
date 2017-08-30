@@ -399,6 +399,15 @@ logger.silence(temporary_level) do
 end
 ```
 
+## Custom Logger Class
+
+By default, LogStashLogger creates a logger that extends Ruby's built in `Logger` class.
+If you require a different logger implementation, you can use a different class
+by passing in the class with the `logger_class` option.
+
+Note that for syslog, the `Syslog::Logger` class is required and cannot be
+changed.
+
 ## Rails Integration
 
 Supports Rails 4 and 5.
@@ -818,6 +827,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Joao Fernandes](https://github.com/jcmfernandes)
 * [CoolElvis](https://github.com/coolelvis)
 * [Sergey Pyankov](https://github.com/esergion)
+* [Alec Hoey](https://github.com/alechoey)
 
 ## Contributing
 
