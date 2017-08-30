@@ -828,6 +828,7 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [CoolElvis](https://github.com/coolelvis)
 * [Sergey Pyankov](https://github.com/esergion)
 * [Alec Hoey](https://github.com/alechoey)
+* [Alexey Krasnoperov](https://github.com/AlexeyKrasnoperov)
 
 ## Contributing
 

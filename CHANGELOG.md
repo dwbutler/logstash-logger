@@ -1,6 +1,7 @@
 ## Master
 
 - Allow user configuration of the logger class. [#129](https://github.com/dwbutler/logstash-logger/pull/129)
+- Fix: Allow type to be a string for multi_logger and syslog. [#131](https://github.com/dwbutler/logstash-logger/pull/131)
 
 ## 0.25.1
 

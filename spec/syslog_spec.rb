@@ -24,11 +24,9 @@ describe LogStashLogger do
     end
   end
 
-  context 'When logger type is a string' do
+  context 'when logger type is a string' do
     subject { LogStashLogger.new(type: 'syslog', program_name: program_name, facility: facility) }
 
-    it 'creates syslog logger even if type is not a symbol' do
-      expect(subject).to be_a(LogStashLogger)
-    end
+    it { is_expected.to be_a Syslog::Logger }
   end
 end

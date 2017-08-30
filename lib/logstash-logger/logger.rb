@@ -48,7 +48,7 @@ module LogStashLogger
   def self.build_logger(opts)
     formatter = Formatter.new(opts.delete(:formatter), customize_event: opts.delete(:customize_event))
 
-    logger_type = opts[:type].is_a?(String) ? opts[:type].to_sym : opts[:type]
+    logger_type = opts[:type].to_s.to_sym
     logger = case logger_type
     when :multi_logger
       build_multi_logger(opts)
