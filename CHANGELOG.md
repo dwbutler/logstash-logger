@@ -1,3 +1,7 @@
+## Master
+
+- Allow user configuration of the logger class. [#129](https://github.com/dwbutler/logstash-logger/pull/129)
+
 ## 0.25.1
 
 - Skip message truncating when there is no message field. [#130](https://github.com/dwbutler/logstash-logger/pull/130)
