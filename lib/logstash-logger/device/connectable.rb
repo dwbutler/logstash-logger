@@ -56,7 +56,7 @@ module LogStashLogger
       end
 
       def write(message)
-        buffer_receive message, @buffer_group
+        buffer_receive(message, @buffer_group) unless message.nil?
       end
 
       def flush(*args)
