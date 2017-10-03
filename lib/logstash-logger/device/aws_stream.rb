@@ -1,4 +1,8 @@
-require 'aws-sdk'
+begin
+  require 'aws-sdk-core'
+rescue LoadError
+  require 'aws-sdk'
+end
 
 module LogStashLogger
   module Device
