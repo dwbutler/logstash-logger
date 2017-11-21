@@ -309,7 +309,7 @@ module LogStashLogger
     def reset_flush_timer_thread
       unless @flush_timer_thread.nil?
         @flush_timer_thread.kill
-      @flush_timer_thread = nil
+        @flush_timer_thread = nil
       end
     end
 
