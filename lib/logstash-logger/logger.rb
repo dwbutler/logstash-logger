@@ -19,6 +19,10 @@ module LogStashLogger
       def flush
         !!(@device.flush if @device.respond_to?(:flush))
       end
+
+      def reset
+        @device.reset if @device.respond_to?(:reset)
+      end
     end
   end
 

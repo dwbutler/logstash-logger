@@ -107,6 +107,8 @@ module LogStashLogger
     end
 
     def reset_buffer
+      reset_flush_timer_thread
+
       @buffer_state = {
         # items accepted from including class
         :pending_items => {},
@@ -126,7 +128,6 @@ module LogStashLogger
         :last_flush =>     Time.now,
         :timer =>          flush_timer_thread
       }
-
 
       # events we've accumulated
       buffer_clear_pending
@@ -303,6 +304,13 @@ module LogStashLogger
             end
           end
         end
+    end
+
+    def reset_flush_timer_thread
+      unless @flush_timer_thread.nil?
+        @flush_timer_thread.kill
+      @flush_timer_thread = nil
+      end
     end
 
     def buffer_clear_pending
