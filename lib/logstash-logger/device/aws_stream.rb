@@ -4,7 +4,6 @@ module LogStashLogger
   module Device
     class AwsStream < Connectable
 
-      DEFAULT_REGION = 'us-east-1'
       DEFAULT_STREAM = 'logstash'
 
       @stream_class = nil
@@ -18,9 +17,9 @@ module LogStashLogger
 
       def initialize(opts)
         super
-        @access_key_id = opts[:aws_access_key_id] || ENV['AWS_ACCESS_KEY_ID']
-        @secret_access_key = opts[:aws_secret_access_key] || ENV['AWS_SECRET_ACCESS_KEY']
-        @aws_region = opts[:aws_region] || DEFAULT_REGION
+        @access_key_id = opts[:aws_access_key_id]
+        @secret_access_key = opts[:aws_secret_access_key]
+        @aws_region = opts[:aws_region]
         @stream = opts[:stream] || DEFAULT_STREAM
       end
 
@@ -41,10 +40,10 @@ module LogStashLogger
       end
 
       def connect
-        @io = self.class.stream_class.new(
-          region: @aws_region,
-          credentials: ::Aws::Credentials.new(@access_key_id, @secret_access_key)
-        )
+        client_opts = {}
+        client_opts[:credentials] = Aws::Credentials.new(@access_key_id, @secret_access_key) unless @access_key_id == nil || @secret_access_key == nil
+        client_opts[:region] = @aws_region unless @aws_region == nil
+        @io = self.class.stream_class.new(client_opts)
       end
 
       def with_connection

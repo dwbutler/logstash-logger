@@ -35,10 +35,6 @@ describe LogStashLogger::Device::Kinesis do
     kinesis_device.write_one "foo"
   end
 
-  it "defaults the AWS region to us-east-1" do
-    expect(kinesis_device.aws_region).to eq('us-east-1')
-  end
-
   it "defaults the kinesis stream to logstash" do
     expect(kinesis_device.stream).to eq('logstash')
   end
