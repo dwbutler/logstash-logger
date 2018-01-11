@@ -15,7 +15,7 @@ module LogStashLogger
       end
 
       def write(message)
-        write_one(message)
+        write_one(message) unless message.nil?
       end
 
       def write_one(message)

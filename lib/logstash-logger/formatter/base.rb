@@ -14,11 +14,12 @@ module LogStashLogger
         super()
       end
 
-      def call(severity, time, progname, message)
-        @event = build_event(message, severity, time)
+      def call(severity, time, _progname, message)
+        event = build_event(message, severity, time)
+        format_event(event) unless event.cancelled?
       end
 
-      protected
+      private
 
       def build_event(message, severity, time)
         data = message
@@ -61,6 +62,10 @@ module LogStashLogger
           event['message'.freeze] = event['message'.freeze].byteslice(0, LogStashLogger.configuration.max_message_size)
         end
 
+        event
+      end
+
+      def format_event(event)
         event
       end
     end

@@ -7,7 +7,7 @@ describe LogStashLogger::Formatter::CeeSyslog do
     let(:facility) { "facility" }
 
     before do
-      allow(subject).to receive(:facility).and_return(facility)
+      allow(subject).to receive(:build_facility).and_return(facility)
     end
 
     it "outputs a facility before the @cee" do
@@ -21,7 +21,7 @@ describe LogStashLogger::Formatter::CeeSyslog do
     end
   end
 
-  describe "#facility" do
+  describe "#build_facility" do
     let(:host) { Socket.gethostname }
 
     before do
@@ -29,14 +29,14 @@ describe LogStashLogger::Formatter::CeeSyslog do
     end
 
     it "includes hostname and progname" do
-      expect(subject.send(:facility)).to match(/\A#{host}\s#{progname}\z/)
+      expect(subject.send(:build_facility, host)).to match(/\A#{host}\s#{progname}\z/)
     end
 
     context "without progname" do
       let(:progname) { nil }
 
       it "only includes hostname" do
-        expect(subject.send(:facility)).to match(/\A#{host}\z/)
+        expect(subject.send(:build_facility, host)).to match(/\A#{host}\z/)
       end
     end
   end

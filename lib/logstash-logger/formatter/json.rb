@@ -1,9 +1,10 @@
 module LogStashLogger
   module Formatter
     class Json < Base
-      def call(severity, time, progname, message)
-        super
-        @event.to_json
+      private
+
+      def format_event(event)
+        event.to_json
       end
     end
   end
