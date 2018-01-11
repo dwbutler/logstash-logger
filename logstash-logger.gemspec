@@ -23,7 +23,8 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rails'
   gem.add_development_dependency 'redis'
   gem.add_development_dependency 'poseidon'
-  gem.add_development_dependency 'aws-sdk'
+  gem.add_development_dependency 'aws-sdk-kinesis'
+  gem.add_development_dependency 'aws-sdk-firehose'
 
   if defined?(JRUBY_VERSION)
     gem.add_development_dependency 'SyslogLogger'
