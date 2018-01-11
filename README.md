@@ -609,13 +609,13 @@ config.logstash.type = :firehose
 # Optional, will default to the 'logstash' delivery stream
 config.logstash.stream = 'my-stream-name'
 
-# Optional, will default to 'us-east-1'
+# Optional, will default to AWS default region config chain
 config.logstash.aws_region = 'us-west-2'
 
-# Optional, will default to the AWS_ACCESS_KEY_ID environment variable
+# Optional, will default to AWS default credential provider chain
 config.logstash.aws_access_key_id = 'ASKASKHLD12341'
 
-# Optional, will default to the AWS_SECRET_ACCESS_KEY environment variable
+# Optional, will default to AWS default credential provider chain
 config.logstash.aws_secret_access_key = 'ASKASKHLD1234123412341234'
 
 ```
