@@ -1,7 +1,11 @@
-## Master
+## 0.26.0
 
 - Allow user configuration of the logger class. [#129](https://github.com/dwbutler/logstash-logger/pull/129)
 - Fix: Allow type to be a string for multi_logger and syslog. [#131](https://github.com/dwbutler/logstash-logger/pull/131)
+- Fix: Cancelled events are being logged. [#133](https://github.com/dwbutler/logstash-logger/issues/133)
+- Fix: Expose method to reset logger state. [#138](https://github.com/dwbutler/logstash-logger/pull/138)
+- Use specific AWS SDK gems. [#136](https://github.com/dwbutler/logstash-logger/pull/136)
+- Adds support for using the default AWS credential provider chain. [#141](https://github.com/dwbutler/logstash-logger/pull/141)
 
 ## 0.25.1
 

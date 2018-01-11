@@ -568,10 +568,10 @@ config.logstash.backoff = 1
 
 Add the aws-sdk gem to your Gemfile:
 
-    # aws-sdk < 3.0
+    # aws-sdk >= 3.0
     gem 'aws-sdk-kinesis'
 
-    # aws-sdk >= 3.0
+    # aws-sdk < 3.0
     gem 'aws-sdk'
 
 ```ruby
@@ -596,10 +596,10 @@ config.logstash.aws_secret_access_key = 'ASKASKHLD1234123412341234'
 
 Add the aws-sdk gem to your Gemfile:
 
-    # aws-sdk < 3.0
+    # aws-sdk >= 3.0
     gem 'aws-sdk-firehose'
 
-    # aws-sdk >= 3.0
+    # aws-sdk < 3.0
     gem 'aws-sdk'
 
 ```ruby
@@ -707,6 +707,36 @@ before_filter :track_load_balancer_session_id
 
 def track_load_balancer_session_id
   RequestStore.store[:load_balancer_session_id] = request.headers["X-LOADBALANCER-SESSIONID"]
+end
+```
+
+## Cleaning up resources when forking
+
+If your application forks (as is common with many web servers) you will need to
+manage cleaning up resources on your LogStashLogger instances. The instance method
+`#reset` is available for this purpose. Here is sample configuration for
+several common web servers used with Rails:
+
+Passenger:
+```ruby
+::PhusionPassenger.on_event(:starting_worker_process) do |forked|
+  Rails.logger.reset
+end
+```
+
+Puma:
+```ruby
+# In config/puma.rb
+on_worker_boot do
+  Rails.logger.reset
+end
+```
+
+Unicorn
+```ruby
+# In config/unicorn.rb
+after_fork do |server, worker|
+  Rails.logger.reset
 end
 ```
 
@@ -837,6 +867,9 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Sergey Pyankov](https://github.com/esergion)
 * [Alec Hoey](https://github.com/alechoey)
 * [Alexey Krasnoperov](https://github.com/AlexeyKrasnoperov)
+* [Gabriel de Oliveira](https://github.com/gdeoliveira)
+* [Vladislav Syabruk](https://github.com/SeTeM)
+* [Matus Vacula](https://github.com/matus-vacula)
 
 ## Contributing
 
