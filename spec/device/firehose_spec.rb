@@ -1,6 +1,6 @@
 require 'logstash-logger'
 
-describe LogStashLogger::Device::Kinesis do
+describe LogStashLogger::Device::Firehose do
   include_context 'device'
 
   let(:client) { double("Aws::Firehose::Client") }

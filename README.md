@@ -568,6 +568,10 @@ config.logstash.backoff = 1
 
 Add the aws-sdk gem to your Gemfile:
 
+    # aws-sdk < 3.0
+    gem 'aws-sdk-kinesis'
+
+    # aws-sdk >= 3.0
     gem 'aws-sdk'
 
 ```ruby
@@ -592,6 +596,10 @@ config.logstash.aws_secret_access_key = 'ASKASKHLD1234123412341234'
 
 Add the aws-sdk gem to your Gemfile:
 
+    # aws-sdk < 3.0
+    gem 'aws-sdk-firehose'
+
+    # aws-sdk >= 3.0
     gem 'aws-sdk'
 
 ```ruby

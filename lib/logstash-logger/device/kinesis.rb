@@ -1,4 +1,9 @@
-require 'aws-sdk'
+begin
+  require 'aws-sdk-kinesis'
+rescue LoadError
+  require 'aws-sdk'
+end
+
 require 'logstash-logger/device/aws_stream'
 
 module LogStashLogger
