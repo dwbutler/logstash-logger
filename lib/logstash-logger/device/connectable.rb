@@ -107,6 +107,11 @@ module LogStashLogger
         fail NotImplementedError
       end
 
+      def reset
+        reset_buffer
+        close(flush: false)
+      end
+
       def reconnect
         close(flush: false)
         connect

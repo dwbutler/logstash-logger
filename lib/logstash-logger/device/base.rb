@@ -39,6 +39,10 @@ module LogStashLogger
         @io && @io.flush
       end
 
+      def reset
+        close
+      end
+
       def close(opts = {})
         close!
       rescue => e
