@@ -53,7 +53,9 @@ module LogStashLogger
       end
 
       def ssl_io
-        OpenSSL::SSL::SSLSocket.new(tcp_io, ssl_context)
+        ssl_context ?
+          OpenSSL::SSL::SSLSocket.new(tcp_io, ssl_context) :
+          OpenSSL::SSL::SSLSocket.new(tcp_io)
       end
 
       def certificate_context
