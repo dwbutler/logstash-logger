@@ -1,3 +1,8 @@
+## 0.26.1
+
+ - Fix: Support for SSL with the TCP device without an SSL context in Ruby
+   2.4+. [#144](https://github.com/dwbutler/logstash-logger/issues/144)
+
 ## 0.26.0
 
 - Allow user configuration of the logger class. [#129](https://github.com/dwbutler/logstash-logger/pull/129)
