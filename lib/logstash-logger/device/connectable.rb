@@ -7,6 +7,13 @@ module LogStashLogger
 
       attr_accessor :buffer_logger
 
+      def self.opts_from_uri(uri)
+        params = Hash[CGI.parse(uri.query.to_s).map {|k,v| [k,v.first]}]
+        super.dup.tap do |opts|
+          opts[:buffer_max_items] = params["buffer_max_items"].to_i if params["buffer_max_items"]
+        end
+      end
+
       def initialize(opts = {})
         super
 
