@@ -9,9 +9,9 @@ module LogStashLogger
 
       def self.opts_from_uri(uri)
         params = Hash[CGI.parse(uri.query.to_s).map {|k,v| [k,v.first]}]
-        super.merge({
-          buffer_max_items: params["buffer_max_items"] ? params["buffer_max_items"].to_i : nil,
-        })
+        super.dup.tap do |opts|
+          opts[:buffer_max_items] = params["buffer_max_items"].to_i if params["buffer_max_items"]
+        end
       end
 
       def initialize(opts = {})
