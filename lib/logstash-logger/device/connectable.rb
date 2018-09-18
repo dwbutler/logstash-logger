@@ -8,7 +8,7 @@ module LogStashLogger
       attr_accessor :buffer_logger
 
       def self.opts_from_uri(uri)
-        params = Hash[CGI.parse(uri.query).map {|k,v| [k,v.first]}]
+        params = Hash[CGI.parse(uri.query.to_s).map {|k,v| [k,v.first]}]
         super.merge({
           buffer_max_items: params["buffer_max_items"] ? params["buffer_max_items"].to_i : nil,
         })
