@@ -41,7 +41,11 @@ module LogStashLogger
       if uri = opts[:uri]
         require 'uri'
         parsed = ::URI.parse(uri)
-        {type: parsed.scheme, host: parsed.host, port: parsed.port, path: parsed.path}
+        type = parsed.scheme
+
+        device_klass_for(type).
+          opts_from_uri(parsed).
+          merge({type: type})
       end
     end
 

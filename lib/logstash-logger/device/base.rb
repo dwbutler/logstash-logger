@@ -5,6 +5,10 @@ module LogStashLogger
       attr_accessor :sync
       attr_accessor :error_logger
 
+      def self.opts_from_uri(uri)
+        {host: uri.host, port: uri.port, path: uri.path}
+      end
+
       def initialize(opts={})
         @sync = opts[:sync]
         @error_logger = opts.fetch(:error_logger, LogStashLogger.configuration.default_error_logger)
