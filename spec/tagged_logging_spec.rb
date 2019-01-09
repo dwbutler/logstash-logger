@@ -28,5 +28,20 @@ describe LogStashLogger do
 
       logger.info(message)
     end
+
+    context 'when tag is an integer' do
+      let(:tag) { 10 }
+
+      it "puts the integer into the tags array on the logstash event" do
+        expect(logdev).to receive(:write) do |event_string|
+          event = JSON.parse(event_string)
+          expect(event['tags']).to match_array([10])
+        end
+
+        logger.tagged(tag) do
+          logger.info(message)
+        end
+      end
+    end
   end
 end
