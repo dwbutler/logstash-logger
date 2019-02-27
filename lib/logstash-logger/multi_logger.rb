@@ -70,7 +70,7 @@ module LogStashLogger
     def method_missing(name, *args, &block)
       @loggers.each do |logger|
         if logger.respond_to?(name)
-          logger.send(name, args, &block)
+          logger.send(name, *args, &block)
         end
       end
     end
