@@ -20,7 +20,7 @@ module LogStashLogger
       formatter = if custom_formatter_instance?(formatter_type)
         formatter_type
       elsif custom_formatter_class?(formatter_type)
-        formatter_type.new
+        initialize_custom_formatter_klass(formatter_type, customize_event)
       else
         formatter_klass(formatter_type).new(customize_event: customize_event)
       end
@@ -46,6 +46,14 @@ module LogStashLogger
 
     def self.custom_formatter_class?(formatter_type)
       formatter_type.is_a?(Class) && formatter_type.method_defined?(:call)
+    end
+
+    def self.initialize_custom_formatter_klass(formatter_klass, customize_event)
+      if formatter_klass.instance_method(:initialize).parameters.include?([:key, :customize_event])
+        formatter_klass.new(customize_event: customize_event)
+      else
+        formatter_klass.new
+      end
     end
 	end
 end
