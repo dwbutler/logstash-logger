@@ -124,7 +124,8 @@ module LogStashLogger
       rescue => e
         log_error(e)
         close(flush: false)
-        raise
+        # DO NOT RAISE AN EXCEPTION IF YOU CANNOT LOG
+        #raise
       end
     end
   end
