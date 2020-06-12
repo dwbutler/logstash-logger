@@ -101,6 +101,7 @@ module LogStashLogger
         logger.add(severity, message, progname, &block)
       end
     end
+    alias log add
 
     def <<(msg)
       @loggers.each do |logger|
