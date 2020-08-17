@@ -257,6 +257,24 @@ LogStashLogger.new \
   verify_hostname: false
 ```
 
+## HTTP
+Supports rudimentary writes (buffered, non-persistent connections) to the[ Logstash HTTP Input](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-http.html):
+```ruby
+input {
+  http {
+    port => 8080
+  }
+}
+```
+
+```ruby
+LogStashLogger.new \
+  type: :http,
+  url: 'http://localhost:8080'
+```
+
+Note the parameter is `url` and not `uri`.  Relies on [Net:HTTP](https://ruby-doc.org/stdlib-2.7.1/libdoc/net/http/rdoc/Net/HTTP.html#class-Net::HTTP-label-HTTPS) to auto-detect SSL usage from the scheme.
+
 ## Custom Log Fields
 
 `LogStashLogger` by default will log a JSON object with the format below.
