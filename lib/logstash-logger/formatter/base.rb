@@ -68,6 +68,14 @@ module LogStashLogger
       def format_event(event)
         event
       end
+
+      def force_utf8_encoding(event)
+        new_event = event.dup
+        new_data = {}
+        new_event.instance_variable_get(:@data).each { |k, v| new_data[k] = v.to_s.force_encoding('UTF-8') }
+        new_event.instance_variable_set(:@data, new_data)
+        new_event
+      end
     end
   end
 end

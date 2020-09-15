@@ -25,6 +25,21 @@ describe LogStashLogger::Formatter::Base do
     end
   end
 
+  describe '#force_utf8_encoding' do
+    let(:event) { LogStash::Event.new("message" => "foo".force_encoding('ASCII-8BIT')) }
+
+    it 'returns a new event' do
+      expect(subject.send(:force_utf8_encoding, event)).not_to eq(event)
+    end
+
+    it 'forces all event data to UTF-8 encoding' do
+      updated_event_data = subject.send(:force_utf8_encoding, event).instance_variable_get(:@data)
+      updated_event_data.each_value do |value|
+        expect(value.encoding.name).to eq('UTF-8')
+      end
+    end
+  end
+
   describe "#build_event" do
     let(:event) { formatted_message }
 
