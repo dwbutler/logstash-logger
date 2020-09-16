@@ -7,6 +7,7 @@ module LogStashLogger
     HOST = ::Socket.gethostname
 
     class Base < ::Logger::Formatter
+      FAILED_TO_FORMAT_MSG = 'Failed to format log event'
       attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
 
@@ -19,6 +20,9 @@ module LogStashLogger
       def call(severity, time, _progname, message)
         event = build_event(message, severity, time)
         format_event(event) unless event.cancelled?
+      rescue StandardError => e
+        log_error(e)
+        FAILED_TO_FORMAT_MSG
       end
 
       private

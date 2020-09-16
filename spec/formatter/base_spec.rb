@@ -23,6 +23,22 @@ describe LogStashLogger::Formatter::Base do
         expect(subject.call(severity, time, progname, message)).to be_nil
       end
     end
+
+    context "when exception is raised" do
+      before do
+        allow(subject).to receive(:error_logger).and_return(Logger.new('/dev/null'))
+        allow(subject).to receive(:format_event).and_throw
+      end
+
+      it "logs an exception" do
+        expect(subject).to receive(:log_error)
+        subject.call(severity, time, progname, message)
+      end
+
+      it "retruns a failed to format message" do
+        expect(subject.call(severity, time, progname, message)).to eq(LogStashLogger::Formatter::Base::FAILED_TO_FORMAT_MSG)
+      end
+    end
   end
 
   describe '#force_utf8_encoding' do
