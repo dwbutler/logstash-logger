@@ -7,10 +7,12 @@ module LogStashLogger
     HOST = ::Socket.gethostname
 
     class Base < ::Logger::Formatter
+      attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
 
-      def initialize(customize_event: nil)
+      def initialize(customize_event: nil, error_logger: LogStashLogger.configuration.default_error_logger)
         @customize_event = customize_event
+        @error_logger = error_logger
         super()
       end
 
@@ -73,6 +75,10 @@ module LogStashLogger
         original_message = event.instance_variable_get(:@data)['message']
         event.message = original_message.force_encoding('UTF-8')
         event
+      end
+
+      def log_error(e)
+        error_logger.error "[#{self.class}] #{e.class} - #{e.message}"
       end
     end
   end
