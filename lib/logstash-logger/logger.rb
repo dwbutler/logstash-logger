@@ -50,7 +50,9 @@ module LogStashLogger
   end
 
   def self.build_logger(opts)
-    formatter = Formatter.new(opts.delete(:formatter), customize_event: opts.delete(:customize_event))
+    formatter = Formatter.new(opts.delete(:formatter),
+                              customize_event: opts.delete(:customize_event),
+                              error_logger: opts.fetch(:error_logger, LogStashLogger.configuration.default_error_logger))
 
     logger_type = opts[:type].to_s.to_sym
     logger = case logger_type
