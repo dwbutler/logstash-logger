@@ -35,14 +35,15 @@ describe LogStashLogger::Formatter::Base do
         subject.call(severity, time, progname, message)
       end
 
-      it "retruns a failed to format message" do
+      it "returns a failed to format message" do
         expect(subject.call(severity, time, progname, message)).to eq(LogStashLogger::Formatter::Base::FAILED_TO_FORMAT_MSG)
       end
     end
   end
 
   describe '#force_utf8_encoding' do
-    let(:event) { LogStash::Event.new("message" => "foo".force_encoding('ASCII-8BIT')) }
+    let(:message) { "foo x\xc3x".force_encoding('ASCII-8BIT').freeze }
+    let(:event) { LogStash::Event.new("message" => message) }
 
     it 'returns the same event' do
       expect(subject.send(:force_utf8_encoding, event)).to eq(event)
@@ -52,6 +53,20 @@ describe LogStashLogger::Formatter::Base do
       subject.send(:force_utf8_encoding, event)
       updated_event_data = event.instance_variable_get(:@data)
       expect(updated_event_data['message'].encoding.name).to eq('UTF-8')
+    end
+
+    context 'frozen message string' do
+      let(:message) { "foo x\xc3x".dup.force_encoding('ASCII-8BIT').freeze }
+
+      it 'returns the same event' do
+        expect(subject.send(:force_utf8_encoding, event)).to eq(event)
+      end
+
+      it 'forces the event message to UTF-8 encoding' do
+        subject.send(:force_utf8_encoding, event)
+        updated_event_data = event.instance_variable_get(:@data)
+        expect(updated_event_data['message'].encoding.name).to eq('UTF-8')
+      end
     end
   end
 

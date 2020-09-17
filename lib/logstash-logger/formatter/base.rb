@@ -77,7 +77,7 @@ module LogStashLogger
 
       def force_utf8_encoding(event)
         original_message = event.instance_variable_get(:@data)['message']
-        event.message = original_message.force_encoding(Encoding::UTF_8).scrub
+        event.message = original_message.dup.force_encoding(Encoding::UTF_8).scrub
         event
       end
 
