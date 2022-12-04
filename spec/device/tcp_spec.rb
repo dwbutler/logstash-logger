@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger::Device::TCP do
@@ -16,32 +18,32 @@ describe LogStashLogger::Device::TCP do
     allow(ssl_tcp_device).to receive(:warn)
   end
 
-  context "when not using SSL" do
-    it "writes to a TCP socket" do
+  context 'when not using SSL' do
+    it 'writes to a TCP socket' do
       expect(tcp_socket).to receive(:write)
       tcp_device.write('test')
     end
 
-    it "returns false for #use_ssl?" do
+    it 'returns false for #use_ssl?' do
       expect(tcp_device.use_ssl?).to be_falsey
     end
 
-    it "exposes the TCP socket via #io" do
+    it 'exposes the TCP socket via #io' do
       expect(tcp_device.io).to eq tcp_socket
     end
   end
 
-  context "when using SSL" do
-    it "writes to an SSL TCP socket" do
+  context 'when using SSL' do
+    it 'writes to an SSL TCP socket' do
       expect(ssl_socket).to receive(:write)
       ssl_tcp_device.write('test')
     end
 
-    it "returns true for #use_ssl?" do
+    it 'returns true for #use_ssl?' do
       expect(ssl_tcp_device.use_ssl?).to be_truthy
     end
 
-    it "exposes the SSL socket via #io" do
+    it 'exposes the SSL socket via #io' do
       expect(ssl_tcp_device.io).to eq ssl_socket
     end
 

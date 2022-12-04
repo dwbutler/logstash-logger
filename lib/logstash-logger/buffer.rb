@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Forked from https://github.com/jordansissel/ruby-stud/blob/master/lib/stud/buffer.rb
 
 module LogStashLogger
@@ -84,7 +86,7 @@ module LogStashLogger
     # @param [Hash] options
     def buffer_initialize(options={})
       if ! self.class.method_defined?(:flush)
-        raise ArgumentError, "Any class including Stud::Buffer must define a flush() method."
+        raise ArgumentError, 'Any class including Stud::Buffer must define a flush() method.'
       end
 
       @buffer_config = {

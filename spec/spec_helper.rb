@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'pry'
 require 'securerandom'
 
@@ -9,7 +11,7 @@ if ENV['CI']=='true'
 end
 
 RSpec.configure do |config|
-  config.order = "random"
+  config.order = 'random'
 
   config.before(:suite) do
     puts "Testing with #{CONNECTION_TYPE.to_s.upcase} socket type"
@@ -78,16 +80,16 @@ RSpec.shared_context 'device' do
     )
   end
 
-  let(:udp_uri) { "udp://localhost:5228" }
-  let(:tcp_uri) { "tcp://localhost:5229" }
-  let(:unix_uri) { "unix:///some/path/to/socket" }
+  let(:udp_uri) { 'udp://localhost:5228' }
+  let(:tcp_uri) { 'tcp://localhost:5229' }
+  let(:unix_uri) { 'unix:///some/path/to/socket' }
   let(:file_uri) { "file://#{file.path}" }
-  let(:redis_uri) { "redis://localhost:6379" }
-  let(:kafka_uri) { "kafka://localhost:9092" }
-  let(:stdout_uri) { "stdout://localhost" }
-  let(:stderr_uri) { "stderr://localhost" }
+  let(:redis_uri) { 'redis://localhost:6379' }
+  let(:kafka_uri) { 'kafka://localhost:9092' }
+  let(:stdout_uri) { 'stdout://localhost' }
+  let(:stderr_uri) { 'stderr://localhost' }
 
-  let(:invalid_uri_config) { {uri: "non parsable uri"} }
+  let(:invalid_uri_config) { {uri: 'non parsable uri'} }
   let(:udp_uri_config)     { {uri: udp_uri} }
   let(:tcp_uri_config)     { {uri: tcp_uri} }
   let(:unix_uri_config)    { {uri: unix_uri} }
@@ -99,10 +101,10 @@ RSpec.shared_context 'device' do
 end
 
 RSpec.shared_context 'formatter' do
-  let(:severity) { "DEBUG" }
+  let(:severity) { 'DEBUG' }
   let(:time) { Time.now }
-  let(:progname) { "ruby" }
-  let(:message) { "foo" }
+  let(:progname) { 'ruby' }
+  let(:message) { 'foo' }
   let(:long_message) { SecureRandom.hex(65537) }
   let(:hostname) { Socket.gethostname }
   let(:formatted_message) do

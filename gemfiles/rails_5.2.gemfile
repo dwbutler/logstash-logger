@@ -2,7 +2,8 @@
 
 source 'https://rubygems.org'
 
-gemspec
-
 gem 'codecov', require: false, group: :test
 gem 'codeclimate-test-reporter', group: :test, require: nil
+gem 'rails', '~> 5.2.0'
+
+gemspec path: '../'

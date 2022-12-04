@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger::Device::Balancer do
@@ -11,16 +13,16 @@ describe LogStashLogger::Device::Balancer do
       allow(subject.devices).to receive(:sample) { io }
     end
 
-    it "writes to one device" do
+    it 'writes to one device' do
       expect(io).to receive(:write).once
       expect($stdout).to_not receive(:write)
-      subject.write("log message")
+      subject.write('log message')
     end
   end
 
   describe '#flush, #close' do
     [:flush, :close].each do |method_name|
-      it "call on all devices" do
+      it 'call on all devices' do
         subject.devices.each do |device|
           expect(device).to receive(method_name).once
         end

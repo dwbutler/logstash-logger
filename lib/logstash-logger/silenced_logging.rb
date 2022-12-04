@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Adapted from:
 # https://github.com/rails/activerecord-session_store/blob/master/lib/active_record/session_store/extension/logger_silencer.rb
 # https://github.com/rails/rails/pull/16885

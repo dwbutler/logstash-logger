@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger::Device::Stderr do
@@ -6,7 +8,7 @@ describe LogStashLogger::Device::Stderr do
   it 'writes to stderr' do
     expect(subject.to_io).to eq stderr
     expect(stderr).to receive(:write).once
-    subject.write("test")
+    subject.write('test')
   end
 
   it 'ignores #close' do

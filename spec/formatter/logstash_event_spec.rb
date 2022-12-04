@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger::Formatter::LogStashEvent do
-  include_context "formatter"
+  include_context 'formatter'
 
-  it "outputs a LogStash::Event" do
+  it 'outputs a LogStash::Event' do
     expect(formatted_message).to be_a LogStash::Event
-    expect(formatted_message["message"]).to eq(message)
+    expect(formatted_message['message']).to eq(message)
   end
 end

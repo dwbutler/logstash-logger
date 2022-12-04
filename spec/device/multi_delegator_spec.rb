@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger::Device::MultiDelegator do
@@ -6,15 +8,15 @@ describe LogStashLogger::Device::MultiDelegator do
   # Create a MultiDelegator writing to both STDOUT and a StringIO
   subject { multi_delegator_device }
 
-  it "writes to all outputs" do
+  it 'writes to all outputs' do
     expect($stdout).to receive(:write).once
     expect(io).to receive(:write).once
 
-    subject.write("test")
+    subject.write('test')
   end
 
-  describe ".new" do
-    it "merges top level configuration to each output" do
+  describe '.new' do
+    it 'merges top level configuration to each output' do
       logger = described_class.new(
         port: 1234,
         outputs: [

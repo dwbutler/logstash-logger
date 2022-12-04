@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'socket'
 
 module LogStashLogger
@@ -5,7 +7,7 @@ module LogStashLogger
     class Unix < Connectable
       def initialize(opts={})
         super
-        @path = opts[:path] || fail(ArgumentError, "Path is required")
+        @path = opts[:path] || fail(ArgumentError, 'Path is required')
       end
 
       def connect

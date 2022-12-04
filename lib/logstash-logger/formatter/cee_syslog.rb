@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module LogStashLogger
   module Formatter
     class CeeSyslog < Cee
@@ -15,7 +17,7 @@ module LogStashLogger
       end
 
       def format_event(event)
-        "#{build_facility(event["host".freeze])}:#{super}\n"
+        "#{build_facility(event["host"])}:#{super}\n"
       end
     end
   end

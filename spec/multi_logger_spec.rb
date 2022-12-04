@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger::MultiLogger do
@@ -8,29 +10,29 @@ describe LogStashLogger::MultiLogger do
 
   it { is_expected.to be_a LogStashLogger::MultiLogger }
 
-  it "has multiple loggers" do
+  it 'has multiple loggers' do
     expect(subject.loggers.count).to eq(2)
   end
 
-  it "has one logger per output" do
+  it 'has one logger per output' do
     expect(subject.loggers[0].device).to be_a LogStashLogger::Device::Stdout
     expect(subject.loggers[1].device).to be_a LogStashLogger::Device::IO
   end
 
-  it "allows a different formatter for each logger" do
+  it 'allows a different formatter for each logger' do
     expect(subject.loggers[0].formatter.class).to eq ::Logger::Formatter
     expect(subject.loggers[1].formatter.class).to eq LogStashLogger::Formatter::JsonLines
   end
 
-  it "logs to all loggers" do
+  it 'logs to all loggers' do
     subject.loggers.each do |logger|
-      expect(logger).to receive(:info).with("test")
+      expect(logger).to receive(:info).with('test')
     end
 
-    subject.info("test")
+    subject.info('test')
   end
 
-  it "supports silenced logging" do
+  it 'supports silenced logging' do
     subject.loggers.each do |logger|
       expect(logger).to receive(:silence).and_call_original
       expect(logger.device).to receive(:write).once
@@ -43,7 +45,7 @@ describe LogStashLogger::MultiLogger do
     end
   end
 
-  it "supports tagged logging" do
+  it 'supports tagged logging' do
     subject.loggers.each do |logger|
       expect(logger).to receive(:tagged).with('tag').and_call_original
       expect(logger.device).to receive(:write) do |event_string|

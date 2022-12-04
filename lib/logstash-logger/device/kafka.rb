@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'poseidon'
 
 module LogStashLogger
@@ -32,13 +34,13 @@ module LogStashLogger
         yield
       rescue ::Poseidon::Errors::ChecksumError, Poseidon::Errors::UnableToFetchMetadata => e
         log_error(e)
-        log_warning("reconnect/retry")
+        log_warning('reconnect/retry')
         sleep backoff if backoff
         reconnect
         retry
       rescue => e
         log_error(e)
-        log_warning("giving up")
+        log_warning('giving up')
         close(flush: false)
       end
 

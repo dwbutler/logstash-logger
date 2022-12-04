@@ -1,17 +1,19 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger::Device::Kafka do
   include_context 'device'
 
-  let(:producer) { double("Poseidon::Producer") }
+  let(:producer) { double('Poseidon::Producer') }
 
   before(:each) do
     allow(Poseidon::Producer).to receive(:new) { producer }
   end
 
-  it "writes to a Kafka topic" do
+  it 'writes to a Kafka topic' do
     expect(producer).to receive(:send_messages)
-    kafka_device.write "foo"
+    kafka_device.write 'foo'
   end
 
   it "defaults the Kafka hosts to ['localhost:9092']" do
@@ -26,7 +28,7 @@ describe LogStashLogger::Device::Kafka do
     expect(kafka_device.producer).to eq('logstash-logger')
   end
 
-  it "defaults the Kafka backoff to 1" do
+  it 'defaults the Kafka backoff to 1' do
     expect(kafka_device.backoff).to eq(1)
   end
 end

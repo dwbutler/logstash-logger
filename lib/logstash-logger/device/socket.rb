@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'socket'
 
 module LogStashLogger
@@ -9,7 +11,7 @@ module LogStashLogger
 
       def initialize(opts)
         super
-        @port = opts[:port] || fail(ArgumentError, "Port is required")
+        @port = opts[:port] || fail(ArgumentError, 'Port is required')
         @host = opts[:host] || DEFAULT_HOST
       end
 

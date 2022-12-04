@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module LogStashLogger
   class << self
     def configure(&block)

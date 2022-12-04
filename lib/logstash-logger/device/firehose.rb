@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 begin
   require 'aws-sdk-firehose'
 rescue LoadError
@@ -11,9 +13,9 @@ module LogStashLogger
     class Firehose < AwsStream
       @stream_class = ::Aws::Firehose::Client
       @recoverable_error_codes = [
-        "ServiceUnavailable",
-        "InternalFailure",
-        "ServiceUnavailableException"
+        'ServiceUnavailable',
+        'InternalFailure',
+        'ServiceUnavailableException'
       ].freeze
 
       def transform_message(message)

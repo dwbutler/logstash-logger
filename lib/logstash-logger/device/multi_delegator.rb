@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Container to allow writes to multiple devices
 
 # Code originally from:

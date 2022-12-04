@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'fileutils'
 
 module LogStashLogger
@@ -5,7 +7,7 @@ module LogStashLogger
     class File < Base
       def initialize(opts)
         super
-        @path = opts[:path] || fail(ArgumentError, "Path is required")
+        @path = opts[:path] || fail(ArgumentError, 'Path is required')
         open
       end
 

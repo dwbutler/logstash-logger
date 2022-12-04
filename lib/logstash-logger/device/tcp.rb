@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'openssl'
 
 module LogStashLogger
@@ -14,7 +16,7 @@ module LogStashLogger
         @use_ssl = opts[:ssl_enable] if opts.has_key? :ssl_enable
         if opts.has_key?(:use_ssl)
           @use_ssl = opts[:use_ssl]
-          warn "[LogStashLogger] The use_ssl option is deprecated. Use ssl_enable instead."
+          warn '[LogStashLogger] The use_ssl option is deprecated. Use ssl_enable instead.'
         end
         @verify_hostname = opts.fetch(:verify_hostname, true)
       end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 begin
   require 'aws-sdk-core'
 rescue LoadError
@@ -55,7 +57,7 @@ module LogStashLogger
         yield
       rescue => e
         log_error(e)
-        log_warning("giving up")
+        log_warning('giving up')
         close(flush: false)
       end
 
@@ -70,7 +72,7 @@ module LogStashLogger
             get_response_records(resp).each_with_index do |record, index|
               if self.class.recoverable_error_codes.include?(record.error_code)
                 log_warning("Failed to post record using #{self.class.stream_class.name} with error: #{record.error_code} #{record.error_message}")
-                log_warning("Retrying")
+                log_warning('Retrying')
                 write(records[index][:data])
               elsif !record.error_code.nil? && record.error_code != ''
                 log_error("Failed to post record using #{self.class.stream_class.name} with error: #{record.error_code} #{record.error_message}")

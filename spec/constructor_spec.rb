@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger do
@@ -7,7 +9,7 @@ describe LogStashLogger do
     end
 
     context 'type: :multi_logger' do
-      it "returns an instance of LogStashLogger::MultiLogger" do
+      it 'returns an instance of LogStashLogger::MultiLogger' do
         expect(LogStashLogger.new(type: :multi_logger)).to be_a LogStashLogger::MultiLogger
       end
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 begin
   require 'aws-sdk-kinesis'
 rescue LoadError
@@ -11,10 +13,10 @@ module LogStashLogger
     class Kinesis < AwsStream
       @stream_class = ::Aws::Kinesis::Client
       @recoverable_error_codes = [
-        "ServiceUnavailable",
-        "Throttling",
-        "RequestExpired",
-        "ProvisionedThroughputExceededException"
+        'ServiceUnavailable',
+        'Throttling',
+        'RequestExpired',
+        'ProvisionedThroughputExceededException'
       ].freeze
 
       def transform_message(message)

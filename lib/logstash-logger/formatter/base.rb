@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logger'
 require 'socket'
 require 'time'
@@ -23,7 +25,7 @@ module LogStashLogger
 
       def build_event(message, severity, time)
         data = message
-        if data.is_a?(String) && data.start_with?('{'.freeze)
+        if data.is_a?(String) && data.start_with?('{')
           data = (JSON.parse(message) rescue nil) || message
         end
 
@@ -32,20 +34,20 @@ module LogStashLogger
                     data.clone
                   when Hash
                     event_data = data.clone
-                    event_data['message'.freeze] = event_data.delete(:message) if event_data.key?(:message)
-                    event_data['tags'.freeze] = event_data.delete(:tags) if event_data.key?(:tags)
-                    event_data['source'.freeze] = event_data.delete(:source) if event_data.key?(:source)
-                    event_data['type'.freeze] = event_data.delete(:type) if event_data.key?(:type)
-                    event_data['@timestamp'.freeze] = time
+                    event_data['message'] = event_data.delete(:message) if event_data.key?(:message)
+                    event_data['tags'] = event_data.delete(:tags) if event_data.key?(:tags)
+                    event_data['source'] = event_data.delete(:source) if event_data.key?(:source)
+                    event_data['type'] = event_data.delete(:type) if event_data.key?(:type)
+                    event_data['@timestamp'] = time
                     LogStash::Event.new(event_data)
                   else
-                    LogStash::Event.new("message".freeze => msg2str(data), "@timestamp".freeze => time)
+                    LogStash::Event.new('message' => msg2str(data), '@timestamp' => time)
                 end
 
-        event['severity'.freeze] ||= severity
+        event['severity'] ||= severity
         #event.type = progname
 
-        event['host'.freeze] ||= HOST
+        event['host'] ||= HOST
 
         current_tags.each { |tag| event.tag(tag) }
 
@@ -59,7 +61,7 @@ module LogStashLogger
         end
 
         if LogStashLogger.configuration.max_message_size && event['message']
-          event['message'.freeze] = event['message'.freeze].byteslice(0, LogStashLogger.configuration.max_message_size)
+          event['message'] = event['message'].byteslice(0, LogStashLogger.configuration.max_message_size)
         end
 
         event

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module LogStashLogger
   module Device
     class Base
@@ -23,7 +25,7 @@ module LogStashLogger
       rescue => e
         if unrecoverable_error?(e)
           log_error(e)
-          log_warning("unrecoverable error, aborting write")
+          log_warning('unrecoverable error, aborting write')
         else
           raise
         end

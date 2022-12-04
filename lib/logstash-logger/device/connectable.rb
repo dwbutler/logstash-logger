@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logstash-logger/buffer'
 
 module LogStashLogger
@@ -11,11 +13,11 @@ module LogStashLogger
         super
 
         if opts[:batch_events]
-          warn "The :batch_events option is deprecated. Please use :buffer_max_items instead"
+          warn 'The :batch_events option is deprecated. Please use :buffer_max_items instead'
         end
 
         if opts[:batch_timeout]
-          warn "The :batch_timeout option is deprecated. Please use :buffer_max_interval instead"
+          warn 'The :batch_timeout option is deprecated. Please use :buffer_max_interval instead'
         end
 
         @buffer_group = nil

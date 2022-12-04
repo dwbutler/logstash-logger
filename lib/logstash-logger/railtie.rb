@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails/railtie'
 
 module LogStashLogger
@@ -31,7 +33,7 @@ module LogStashLogger
     end
 
     if logger_options.type == :file
-      logger_options.path ||= app.config.paths["log"].first
+      logger_options.path ||= app.config.paths['log'].first
     end
 
     if app.config.respond_to?(:autoflush_log)

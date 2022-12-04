@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module LogStashLogger
   module Device
     class Stderr < IO

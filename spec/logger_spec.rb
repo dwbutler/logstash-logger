@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'logstash-logger'
 
 describe LogStashLogger do
@@ -86,7 +88,7 @@ describe LogStashLogger do
 
     logger.info(data.dup)
 
-    expect(listener_event['message']).to eq(data["message"])
+    expect(listener_event['message']).to eq(data['message'])
     expect(listener_event['severity']).to eq(data['severity'])
     expect(listener_event['foo']).to eq(data['foo'])
     expect(listener_event['host']).to eq(hostname)
@@ -106,13 +108,13 @@ describe LogStashLogger do
   it 'allows event to be customized via configuration' do
     LogStashLogger.configure do |config|
       config.customize_event do |event|
-        event["test1"] = "response1"
+        event['test1'] = 'response1'
       end
     end
 
-    logger.info("test")
+    logger.info('test')
 
-    expect(listener_event["test1"]).to eq("response1")
+    expect(listener_event['test1']).to eq('response1')
   end
 
   describe 'customize_event on instance' do

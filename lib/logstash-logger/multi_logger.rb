@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Adapted from https://github.com/ffmike/multilogger
 module LogStashLogger
   class MultiLogger < ::Logger
