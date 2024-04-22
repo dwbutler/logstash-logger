@@ -30,6 +30,7 @@ module LogStashLogger
 
       def connect
         if use_ssl?
+          io.hostname = hostname
           io.connect
           verify_hostname!
         end

@@ -12,6 +12,7 @@ describe LogStashLogger::Device::TCP do
 
     allow(OpenSSL::SSL::SSLSocket).to receive(:new) { ssl_socket }
     allow(ssl_socket).to receive(:connect)
+    allow(ssl_socket).to receive(:hostname=)
     allow(ssl_socket).to receive(:post_connection_check)
     allow(ssl_tcp_device).to receive(:warn)
   end
