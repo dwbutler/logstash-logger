@@ -4,7 +4,9 @@ require 'time'
 
 module LogStashLogger
   module Formatter
-    HOST = ::Socket.gethostname
+    HOST = {
+      'hostname' => ::Socket.gethostname,
+  }.freeze
 
     class Base < ::Logger::Formatter
       include ::LogStashLogger::TaggedLogging::Formatter

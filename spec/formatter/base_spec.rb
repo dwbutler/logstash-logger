@@ -81,7 +81,7 @@ describe LogStashLogger::Formatter::Base do
       end
 
       it "adds host" do
-        expect(event['host']).to eq(hostname)
+        expect(event['host']['hostname']).to eq(hostname)
       end
     end
 
