@@ -25,6 +25,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'poseidon'
   gem.add_development_dependency 'aws-sdk-kinesis'
   gem.add_development_dependency 'aws-sdk-firehose'
+  gem.add_development_dependency 'syslog'
 
   if defined?(JRUBY_VERSION)
     gem.add_development_dependency 'SyslogLogger'
@@ -36,6 +37,8 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'wwtd'
   gem.add_development_dependency 'appraisal'
   gem.add_development_dependency 'rubocop'
+  gem.add_development_dependency 'rubocop-performance'
+  gem.add_development_dependency 'rubocop-rails'
 
   gem.required_ruby_version = '>= 3.2'
 end

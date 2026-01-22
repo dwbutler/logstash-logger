@@ -1,3 +1,7 @@
+require:
+  - rubocop-performance
+  - rubocop-rails
+
 AllCops:
   DisabledByDefault: true
 
