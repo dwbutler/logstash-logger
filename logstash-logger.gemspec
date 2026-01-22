@@ -36,4 +36,6 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'wwtd'
   gem.add_development_dependency 'appraisal'
   gem.add_development_dependency 'rubocop'
+
+  gem.required_ruby_version = '>= 3.2'
 end

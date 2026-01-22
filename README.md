@@ -410,7 +410,7 @@ changed.
 
 ## Rails Integration
 
-Supports Rails 4.2 and 5.x.
+Supports Rails 7.2, 8.0, and 8.1.
 
 By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.
 
@@ -499,11 +499,7 @@ config.logstash.path = '/tmp/sock'
 
 #### Syslog
 
-If you're on Ruby 1.9, add `Syslog::Logger` v2 to your Gemfile:
-
-    gem 'SyslogLogger', '2.0'
-
-If you're on Ruby 2+, `Syslog::Logger` is already built into the standard library.
+`Syslog::Logger` is built into the standard library for Ruby 3.2+.
 
 ```ruby
 # Required
@@ -744,10 +740,10 @@ end
 
 Verified to work with:
 
-* MRI Ruby 2.3 - 2.5
-* JRuby 9.x
+* MRI Ruby 3.2, 3.3, 3.4, 4.0
+* JRuby 9.x (when compatible with Ruby 3.2+)
 
-Ruby versions < 2.2 are EOL'ed and no longer supported.
+Ruby versions < 3.2 are EOL'ed and no longer supported.
 
 ## What type of logger should I use?
 
@@ -812,6 +808,10 @@ you set the max message size significantly less than 65535 bytes to make room
 for other fields.
 
 ## Breaking changes
+
+### Version 0.27+
+
+MRI Ruby < 3.2 is no longer supported, since it has been EOL'ed. If you are on an older version of Ruby, you will need to use 0.26 or below.
 
 ### Version 0.25+
 
