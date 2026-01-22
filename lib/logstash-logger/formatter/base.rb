@@ -4,7 +4,10 @@ require 'time'
 
 module LogStashLogger
   module Formatter
-    HOST = ::Socket.gethostname
+    HOST = {
+      'hostname' => ::Socket.gethostname,
+      'ip' => Socket.ip_address_list.reject(&:ipv4_loopback?).reject(&:ipv6_loopback?).map(&:ip_address)
+  }.freeze
 
     class Base < ::Logger::Formatter
       include ::LogStashLogger::TaggedLogging::Formatter

@@ -22,21 +22,21 @@ describe LogStashLogger::Formatter::CeeSyslog do
   end
 
   describe "#build_facility" do
-    let(:host) { Socket.gethostname }
+    let(:host) { { 'hostname' => Socket.gethostname } }
 
     before do
       formatted_message
     end
 
     it "includes hostname and progname" do
-      expect(subject.send(:build_facility, host)).to match(/\A#{host}\s#{progname}\z/)
+      expect(subject.send(:build_facility, host)).to match(/\A#{host['hostname']}\s#{progname}\z/)
     end
 
     context "without progname" do
       let(:progname) { nil }
 
       it "only includes hostname" do
-        expect(subject.send(:build_facility, host)).to match(/\A#{host}\z/)
+        expect(subject.send(:build_facility, host)).to match(/\A#{host['hostname']}\z/)
       end
     end
   end
