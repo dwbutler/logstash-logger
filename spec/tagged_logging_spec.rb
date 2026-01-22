@@ -28,5 +28,18 @@ describe LogStashLogger do
 
       logger.info(message)
     end
+
+    it "allows non-string tags" do
+      numeric_tag = 123
+      expect(logdev).to receive(:write) do |event_string|
+        event = JSON.parse(event_string)
+        expect(event['tags']).to match_array([numeric_tag])
+        expect(event['message']).to eq(message)
+      end
+
+      logger.tagged(numeric_tag) do
+        logger.info(message)
+      end
+    end
   end
 end
