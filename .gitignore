@@ -19,3 +19,4 @@ tmp
 .idea/
 log/
 .ruby-version
+vendor/

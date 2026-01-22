@@ -1,5 +1,5 @@
 # LogStashLogger
-[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master) [![Gem Version](https://badge.fury.io/rb/logstash-logger.svg)](https://badge.fury.io/rb/logstash-logger)
+[![Build Status](https://github.com/dwbutler/logstash-logger/workflows/Ruby%20tests/badge.svg)](https://github.com/dwbutler/logstash-logger/actions) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master) [![Gem Version](https://badge.fury.io/rb/logstash-logger.svg)](https://badge.fury.io/rb/logstash-logger)
 
 LogStashLogger extends Ruby's `Logger` class to log directly to
 [Logstash](https://www.elastic.co/products/logstash).
@@ -257,6 +257,24 @@ LogStashLogger.new \
   verify_hostname: false
 ```
 
+## HTTP
+Supports rudimentary writes (buffered, non-persistent connections) to the[ Logstash HTTP Input](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-http.html):
+```ruby
+input {
+  http {
+    port => 8080
+  }
+}
+```
+
+```ruby
+LogStashLogger.new \
+  type: :http,
+  url: 'http://localhost:8080'
+```
+
+Note the parameter is `url` and not `uri`.  Relies on [Net:HTTP](https://ruby-doc.org/stdlib-2.7.1/libdoc/net/http/rdoc/Net/HTTP.html#class-Net::HTTP-label-HTTPS) to auto-detect SSL usage from the scheme.
+
 ## Custom Log Fields
 
 `LogStashLogger` by default will log a JSON object with the format below.
@@ -410,7 +428,7 @@ changed.
 
 ## Rails Integration
 
-Supports Rails 4.2 and 5.x.
+Supports Rails 7.2, 8.0, and 8.1.
 
 By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.
 
@@ -499,11 +517,7 @@ config.logstash.path = '/tmp/sock'
 
 #### Syslog
 
-If you're on Ruby 1.9, add `Syslog::Logger` v2 to your Gemfile:
-
-    gem 'SyslogLogger', '2.0'
-
-If you're on Ruby 2+, `Syslog::Logger` is already built into the standard library.
+`Syslog::Logger` is built into the standard library for Ruby 3.2+.
 
 ```ruby
 # Required
@@ -744,11 +758,10 @@ end
 
 Verified to work with:
 
-* MRI Ruby 2.2 - 2.5
-* JRuby 9.x
-* Rubinius
+* MRI Ruby 3.2, 3.3, 3.4, 4.0
+* JRuby 9.x (when compatible with Ruby 3.2+)
 
-Ruby versions < 2.2 are EOL'ed and no longer supported.
+Ruby versions < 3.2 are EOL'ed and no longer supported.
 
 ## What type of logger should I use?
 
@@ -813,6 +826,10 @@ you set the max message size significantly less than 65535 bytes to make room
 for other fields.
 
 ## Breaking changes
+
+### Version 0.27+
+
+MRI Ruby < 3.2 is no longer supported, since it has been EOL'ed. If you are on an older version of Ruby, you will need to use 0.26 or below.
 
 ### Version 0.25+
 

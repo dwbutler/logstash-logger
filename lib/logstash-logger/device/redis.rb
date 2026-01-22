@@ -13,6 +13,7 @@ module LogStashLogger
         @buffer_group = @list
 
         normalize_path(opts)
+        delete_unknown_keywords(opts)
 
         @redis_options = opts
       end
@@ -64,6 +65,12 @@ module LogStashLogger
         end
       end
 
+      def delete_unknown_keywords(opts)
+        # due to restrictions in redis client version >= 5
+        # Continous error is being logged for unknown keywords, at present there is only one i.e. :sync
+        # to prevent that adding following line :)
+        opts.delete(:sync)
+      end
     end
   end
 end

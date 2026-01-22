@@ -63,5 +63,12 @@ describe LogStashLogger::MultiLogger do
     end
 
     subject.reset
+
+  it "delegates #log to loggers" do
+    subject.loggers.each do |logger|
+      expect(logger).to receive(:add).with(::Logger::DEBUG, "test", nil)
+    end
+
+    subject.log(::Logger::DEBUG, "test")
   end
 end

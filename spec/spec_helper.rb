@@ -3,10 +3,6 @@ require 'securerandom'
 
 require 'simplecov'
 SimpleCov.start
-if ENV['CI']=='true'
-  require 'codecov'
-  SimpleCov.formatter = SimpleCov::Formatter::Codecov
-end
 
 RSpec.configure do |config|
   config.order = "random"
@@ -53,6 +49,7 @@ RSpec.shared_context 'device' do
   let(:tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, sync: true) }
   let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true, sync: true) }
   let(:unix_device) { LogStashLogger::Device.new(type: :unix, path: '/tmp/logstash', sync: true) }
+  let(:http_device) { LogStashLogger::Device.new(type: :http, url: 'http://localhost', sync: true) }
 
   let(:file) { Tempfile.new('test') }
   let(:file_device) { LogStashLogger::Device.new(type: :file, path: file.path)}
