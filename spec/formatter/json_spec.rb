@@ -30,4 +30,30 @@ describe LogStashLogger::Formatter::Json do
       expect(json_message["message"]).to eq(message.force_encoding(Encoding::UTF_8).scrub)
     end
   end
+
+  context "timestamp ordering" do
+    let(:message) { { message: 'test', foo: 'bar' } }
+
+    it "places @timestamp first in JSON output" do
+      timestamp_index = formatted_message.index('"@timestamp"')
+      message_index = formatted_message.index('"message"')
+
+      expect(timestamp_index).not_to be_nil
+      expect(message_index).not_to be_nil
+      expect(timestamp_index).to be < message_index
+    end
+  end
+
+  context "key ordering" do
+    let(:message) { { foo: 'bar', baz: 'qux' } }
+
+    it "preserves custom field order in JSON output" do
+      foo_index = formatted_message.index('"foo"')
+      baz_index = formatted_message.index('"baz"')
+
+      expect(foo_index).not_to be_nil
+      expect(baz_index).not_to be_nil
+      expect(foo_index).to be < baz_index
+    end
+  end
 end

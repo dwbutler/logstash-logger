@@ -40,15 +40,24 @@ module LogStashLogger
                   when LogStash::Event
                     data.clone
                   when Hash
-                    event_data = data.clone
-                    event_data['message'.freeze] = event_data.delete(:message) if event_data.key?(:message)
-                    event_data['tags'.freeze] = event_data.delete(:tags) if event_data.key?(:tags)
-                    event_data['source'.freeze] = event_data.delete(:source) if event_data.key?(:source)
-                    event_data['type'.freeze] = event_data.delete(:type) if event_data.key?(:type)
-                    event_data['@timestamp'.freeze] = time
+                    event_data = { '@timestamp'.freeze => time }
+                    data.each do |key, value|
+                      case key
+                      when :message, 'message'
+                        event_data['message'.freeze] = value
+                      when :tags, 'tags'
+                        event_data['tags'.freeze] = value
+                      when :source, 'source'
+                        event_data['source'.freeze] = value
+                      when :type, 'type'
+                        event_data['type'.freeze] = value
+                      else
+                        event_data[key] = value
+                      end
+                    end
                     LogStash::Event.new(event_data)
                   else
-                    LogStash::Event.new("message".freeze => msg2str(data), "@timestamp".freeze => time)
+                    LogStash::Event.new("@timestamp".freeze => time, "message".freeze => msg2str(data))
                 end
 
         event['severity'.freeze] ||= severity
