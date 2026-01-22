@@ -10,16 +10,22 @@ module LogStashLogger
   }.freeze
 
     class Base < ::Logger::Formatter
+      FAILED_TO_FORMAT_MSG = 'Failed to format log event'
+      attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
 
-      def initialize(customize_event: nil)
+      def initialize(customize_event: nil, error_logger: LogStashLogger.configuration.default_error_logger)
         @customize_event = customize_event
+        @error_logger = error_logger
         super()
       end
 
       def call(severity, time, _progname, message)
         event = build_event(message, severity, time)
         format_event(event) unless event.cancelled?
+      rescue StandardError => e
+        log_error(e)
+        FAILED_TO_FORMAT_MSG
       end
 
       private
@@ -70,6 +76,16 @@ module LogStashLogger
 
       def format_event(event)
         event
+      end
+
+      def force_utf8_encoding(event)
+        original_message = event.instance_variable_get(:@data)['message']
+        event.message = original_message.dup.force_encoding(Encoding::UTF_8).scrub
+        event
+      end
+
+      def log_error(e)
+        error_logger.error "[#{self.class}] #{e.class} - #{e.message}"
       end
     end
   end
