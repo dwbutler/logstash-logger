@@ -1,0 +1,51 @@
+name: Ruby tests
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['2.3', '2.4', '2.5', 'jruby-9.3']
+        rails: ['4.2', '5.0', '5.1']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+      
+      - name: Install gems and setup appraisal
+        run: |
+          bundle install
+          bundle exec appraisal install
+      
+      - name: Run tests with Rails ${{ matrix.rails }}
+        env:
+          CI: true
+        run: |
+          bundle exec appraisal rails-${{ matrix.rails }} rake default
+      
+      - name: Upload coverage to Codecov
+        if: matrix.ruby == '2.5' && matrix.rails == '5.1'
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
