@@ -57,6 +57,13 @@ describe LogStashLogger::MultiLogger do
     end
   end
 
+  it "can call .reset on each logger" do
+    subject.loggers.each do |logger|
+      expect(logger).to receive(:reset).and_call_original
+    end
+
+    subject.reset
+
   it "delegates #log to loggers" do
     subject.loggers.each do |logger|
       expect(logger).to receive(:add).with(::Logger::DEBUG, "test", nil)
