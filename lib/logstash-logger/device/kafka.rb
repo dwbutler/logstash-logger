@@ -1,64 +1,114 @@
-require 'poseidon'
-
 module LogStashLogger
   module Device
     class Kafka < Connectable
+      class TLSConfiguration
+        attr_reader :ssl_ca_cert, :ssl_client_cert, :ssl_client_cert_key
 
-      DEFAULT_HOST = 'localhost'
-      DEFAULT_PORT = 9092
-      DEFAULT_TOPIC = 'logstash'
-      DEFAULT_PRODUCER = 'logstash-logger'
-      DEFAULT_BACKOFF = 1
+        def initialize(opts = {})
+          @ssl_ca_cert = opts[:ssl_ca_cert]
+          @ssl_client_cert = opts[:ssl_client_cert]
+          @ssl_client_cert_key = opts[:ssl_client_cert_key]
+        end
 
-      attr_accessor :hosts, :topic, :producer, :backoff
+        def cert_bundle
+          @cert_bundle ||= all_cert_params? ? cert_params_as_hash : {}
+        end
 
-      @@deprecation_message = <<-MSG
-          [DEPRECATION WARNING]
-          Poseidon client will be deprecated and requires different configuration
-          parameters (but they are similar). Update your Kafka configuration to
-          use :kafka_new to ensure forward compatibility
-        MSG
+        def valid?
+          all_cert_params? || no_cert_params?
+        end
 
-      def initialize(opts)
-        warn @@deprecation_message
-        super
-        host = opts[:host] || DEFAULT_HOST
-        port = opts[:port] || DEFAULT_PORT
-        @hosts = opts[:hosts] || host.split(',').map { |h| "#{h}:#{port}" }
-        @topic = opts[:path] || DEFAULT_TOPIC
-        @producer = opts[:producer] || DEFAULT_PRODUCER
-        @backoff = opts[:backoff] || DEFAULT_BACKOFF
-        @buffer_group = @topic
-      end
+        def invalid?
+          !valid?
+        end
 
-      def connect
-        @io = ::Poseidon::Producer.new(@hosts, @producer)
-      end
+        private
 
-      def with_connection
-        connect unless connected?
-        yield
-      rescue ::Poseidon::Errors::ChecksumError, Poseidon::Errors::UnableToFetchMetadata => e
-        log_error(e)
-        log_warning("reconnect/retry")
-        sleep backoff if backoff
-        reconnect
-        retry
-      rescue => e
-        log_error(e)
-        log_warning("giving up")
-        close(flush: false)
-      end
+        def cert_params_as_hash
+          { ssl_ca_cert: @ssl_ca_cert,
+            ssl_client_cert: @ssl_client_cert,
+            ssl_client_cert_key: @ssl_client_cert_key,
+          }
+        end
 
-      def write_batch(messages, topic = nil)
-        topic ||= @topic
-        with_connection do
-          @io.send_messages messages.map { |message| Poseidon::MessageToSend.new(topic, message) }
+        def all_cert_params?
+          cert_params_as_hash.values.compact.length == valid_cert_params_length
+        end
+
+        def no_cert_params?
+          cert_params_as_hash.values.compact.empty?
+        end
+
+        def valid_cert_params_length
+          cert_params_as_hash.keys.length
         end
       end
 
-      def write_one(message, topic = nil)
-        write_batch([message], topic)
+      attr_reader :topic, :brokers, :cert_bundle, :kafka_tls_configurator,
+        :client_id
+
+      def initialize(opts = {}, kafka_tls_configurator = TLSConfiguration)
+        require 'ruby-kafka'
+        super(opts)
+
+        @client_id = opts[:client_id]
+        @topic = opts[:topic] || raise_no_topic_set!
+        @kafka_tls_configurator = kafka_tls_configurator
+        @brokers = make_brokers_array(opts[:brokers])
+        make_cert_bundle(opts)
+      end
+
+      def connection
+        @connection ||= ::Kafka.new(kafka_client_connection_hash)
+      end
+
+      def write_one(message, topic=nil)
+        topic ||= @topic
+        write_messages_to_broker_and_deliver do |producer|
+          producer.produce(message, topic: topic)
+        end
+      end
+
+      def write_batch(messages, topic=nil)
+        topic ||= @topic
+        write_messages_to_broker_and_deliver do |producer|
+          messages.each {|msg| producer.produce(msg, topic: topic) }
+        end
+      end
+
+      private
+
+      def write_messages_to_broker_and_deliver(&block)
+        kproducer = connection.producer
+        block.call(kproducer) if block_given?
+        kproducer.deliver_messages
+      end
+
+      def kafka_client_connection_hash
+        { seed_brokers: @brokers,
+          client_id: @client_id,
+        }.merge(@cert_bundle)
+      end
+
+      def raise_no_topic_set!
+        fail ArgumentError, "a topic must be configured"
+      end
+
+      def make_brokers_array(opt)
+        case opt
+        when Array
+          opt
+        when String
+          opt.split("\s")
+        end
+      end
+
+      def make_cert_bundle(opts)
+        tls_conf = kafka_tls_configurator.new(opts)
+        if tls_conf.invalid?
+          fail ArgumentError, "all ssl parameters (ssl_ca_cert, ssl_client_cert and ssl_client_cert_key) are required or do use any of them to not use TLS"
+        end
+        @cert_bundle ||= tls_conf.cert_bundle
       end
     end
   end

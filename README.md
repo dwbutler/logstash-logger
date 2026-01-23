@@ -47,9 +47,7 @@ file_logger = LogStashLogger.new(type: :file, path: 'log/development.log', sync:
 unix_logger = LogStashLogger.new(type: :unix, path: '/tmp/sock')
 syslog_logger = LogStashLogger.new(type: :syslog)
 redis_logger = LogStashLogger.new(type: :redis)
-** NOTE: The current kafka class will be deprecated in a future version.
-  For now, migrate to using kafka_new**
-kafka_logger = LogStashLogger.new(type: :kafka_new)
+kafka_logger = LogStashLogger.new(type: :kafka)
 stdout_logger = LogStashLogger.new(type: :stdout)
 stderr_logger = LogStashLogger.new(type: :stderr)
 io_logger = LogStashLogger.new(type: :io, io: io)
@@ -461,12 +459,8 @@ Add the ruby-kafka gem to your Gemfile:
     gem 'ruby-kafka'
 
 ```ruby
-## NOTE: A future version of this gem will remove the current
-# implementation of the kafka client. This will be a breaking change. Use
-# kafka_new to ensure forward compatibility
 # Required
-
-config.logstash.type = :kafka_new
+config.logstash.type = :kafka
 
 # Required
 config.logstash.topic = 'logstash-topic'

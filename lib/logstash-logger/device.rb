@@ -12,7 +12,6 @@ module LogStashLogger
     autoload :Unix, 'logstash-logger/device/unix'
     autoload :Redis, 'logstash-logger/device/redis'
     autoload :Kafka, 'logstash-logger/device/kafka'
-    autoload :KafkaNew, 'logstash-logger/device/kafka_new'
     autoload :File, 'logstash-logger/device/file'
     autoload :IO, 'logstash-logger/device/io'
     autoload :Stdout, 'logstash-logger/device/stdout'
@@ -51,7 +50,6 @@ module LogStashLogger
         when :file then File
         when :redis then Redis
         when :kafka then Kafka
-        when :kafka_new then KafkaNew
         when :io then IO
         when :stdout then Stdout
         when :stderr then Stderr
