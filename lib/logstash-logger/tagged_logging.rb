@@ -19,7 +19,9 @@ module LogStashLogger
       end
 
       def push_tags(*tags)
-        tags.flatten.reject { |tag| tag.nil? || (tag.respond_to?(:empty?) && tag.empty?) }.tap do |new_tags|
+        non_empty_tags = tags.flatten.compact.reject { |t| t.respond_to?(:empty?) && t.empty? }
+
+        non_empty_tags.tap do |new_tags|
           current_tags.concat new_tags
         end
       end

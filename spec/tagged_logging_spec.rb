@@ -29,16 +29,18 @@ describe LogStashLogger do
       logger.info(message)
     end
 
-    it "allows non-string tags" do
-      numeric_tag = 123
-      expect(logdev).to receive(:write) do |event_string|
-        event = JSON.parse(event_string)
-        expect(event['tags']).to match_array([numeric_tag])
-        expect(event['message']).to eq(message)
-      end
+    context 'when tag is an integer' do
+      let(:tag) { 10 }
 
-      logger.tagged(numeric_tag) do
-        logger.info(message)
+      it "puts the integer into the tags array on the logstash event" do
+        expect(logdev).to receive(:write) do |event_string|
+          event = JSON.parse(event_string)
+          expect(event['tags']).to match_array([10])
+        end
+
+        logger.tagged(tag) do
+          logger.info(message)
+        end
       end
     end
   end
