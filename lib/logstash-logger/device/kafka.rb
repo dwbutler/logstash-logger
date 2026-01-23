@@ -52,7 +52,7 @@ module LogStashLogger
         super(opts)
 
         @client_id = opts[:client_id]
-        @topic = opts[:topic] || raise_no_topic_set!
+        @topic = normalize_topic(opts[:topic])
         @buffer_group = @topic
         @kafka_tls_configurator = kafka_tls_configurator
         @brokers = make_brokers_array(opts[:brokers])
@@ -123,6 +123,12 @@ module LogStashLogger
 
       def raise_no_brokers_set!
         fail ArgumentError, "brokers must be configured"
+      end
+
+      def normalize_topic(topic)
+        normalized = topic.to_s.strip
+        return raise_no_topic_set! if normalized.empty?
+        normalized
       end
 
       def make_brokers_array(opt)

@@ -112,6 +112,12 @@ describe LogStashLogger::Device::Kafka do
           described_class.new(topic: nil)
         }.to raise_error(ArgumentError)
       end
+
+      it 'raises an exception if the topic is blank' do
+        expect {
+          described_class.new(topic: "  ", brokers: brokers)
+        }.to raise_error(ArgumentError)
+      end
     end
 
     context "Client Introspection" do
@@ -156,10 +162,11 @@ describe LogStashLogger::Device::Kafka do
         context "partial certs passed in" do
           it 'fails if the complete cert suite is not passed in' do
             [:ssl_ca_cert, :ssl_client_cert, :ssl_client_cert_key].each do |param|
-              opts = complete_bundle.merge(brokers: broker_hosts)
-              opts[param] = nil
+              base_opts = opts
+              invalid_opts = complete_bundle.merge(base_opts)
+              invalid_opts[param] = nil
               expect {
-                LogStashLogger::Device::Kafka.new(opts).connection
+                LogStashLogger::Device::Kafka.new(invalid_opts).connection
               }.to raise_error( ArgumentError )
             end
           end
