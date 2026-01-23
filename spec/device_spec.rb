@@ -38,6 +38,19 @@ describe LogStashLogger::Device do
       it { is_expected.to eq({type: 'udp', host: 'localhost', port: 5228, path: ''}) }
     end
 
+    context "when uri includes buffer_max_items" do
+      let(:uri_config) { {uri: "udp://localhost:5228?buffer_max_items=75"} }
+      it do
+        expect(parse_uri_config).to eq({
+          type: 'udp',
+          host: 'localhost',
+          port: 5228,
+          path: '',
+          buffer_max_items: 75,
+        })
+      end
+    end
+
     context "when uri is invalid" do
       let(:uri_config) { invalid_uri_config }
       specify { expect { parse_uri_config }.to raise_error(URI::InvalidURIError) }
