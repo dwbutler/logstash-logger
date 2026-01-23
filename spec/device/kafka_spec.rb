@@ -62,14 +62,14 @@ describe LogStashLogger::Device::Kafka do
       brokers: broker_hosts,
     }
   end
-  let(:instance) { LogStashLogger::Device::KafkaNew.new(opts) }
+  let(:instance) { LogStashLogger::Device::Kafka.new(opts) }
 
   describe "initializing" do
     context "brokers" do
       context "when array" do
         it "sets the brokers array to @brokers" do
           brokers = %w(localhost:9300 localhost:9232)
-          instance = LogStashLogger::Device::KafkaNew.new(opts.merge({brokers: brokers}))
+          instance = LogStashLogger::Device::Kafka.new(opts.merge({brokers: brokers}))
 
           expect(instance.brokers).to be_kind_of Array
           expect(instance.brokers.length).to eql(2)
@@ -77,7 +77,7 @@ describe LogStashLogger::Device::Kafka do
 
         it 'sets the brokers to an array if a string is passed in' do
           brokers = "localhost:9300 localhost:9232"
-          instance = LogStashLogger::Device::KafkaNew.new(opts.merge({brokers: brokers}))
+          instance = LogStashLogger::Device::Kafka.new(opts.merge({brokers: brokers}))
           expect(instance.brokers).to be_kind_of Array
           expect(instance.brokers.length).to eql(2)
         end
@@ -142,7 +142,7 @@ describe LogStashLogger::Device::Kafka do
               opts = complete_bundle.merge(brokers: broker_hosts)
               opts[param] = nil
               expect {
-                LogStashLogger::Device::KafkaNew.new(opts).connection
+                LogStashLogger::Device::Kafka.new(opts).connection
               }.to raise_error( ArgumentError )
             end
           end
@@ -153,11 +153,16 @@ describe LogStashLogger::Device::Kafka do
           it 'correctly passes in the cert bundle to the Kafka Client' do
             certopts = complete_bundle.merge(opts)
 
-            expect_any_instance_of(::Kafka::Client).to receive(:build_ssl_context) 
-              .with(certopts[:ssl_ca_cert], certopts[:ssl_client_cert], certopts[:ssl_client_cert_key])
-              .and_return(true)
+            ssl_context = double("ssl_context")
+            expect(::Kafka::SslContext).to receive(:build)
+              .with(hash_including(
+                ca_cert: certopts[:ssl_ca_cert],
+                client_cert: certopts[:ssl_client_cert],
+                client_cert_key: certopts[:ssl_client_cert_key],
+              ))
+              .and_return(ssl_context)
 
-            LogStashLogger::Device::KafkaNew.new(certopts).connection
+            LogStashLogger::Device::Kafka.new(certopts).connection
           end
         end
       end

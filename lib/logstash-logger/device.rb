@@ -42,8 +42,19 @@ module LogStashLogger
       if uri = opts[:uri]
         require 'uri'
         parsed = ::URI.parse(uri)
+        if parsed.scheme == 'kafka'
+          return parse_kafka_uri(parsed)
+        end
         {type: parsed.scheme, host: parsed.host, port: parsed.port, path: parsed.path}
       end
+    end
+
+    def self.parse_kafka_uri(parsed)
+      brokers = parsed.host
+      brokers = "#{brokers}:#{parsed.port}" if parsed.port
+      topic = parsed.path.to_s.sub(%r{\A/}, '')
+      topic = 'logstash' if topic.empty?
+      {type: 'kafka', brokers: brokers, topic: topic}
     end
 
     def self.device_klass_for(type)

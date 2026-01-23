@@ -59,7 +59,7 @@ module LogStashLogger
       end
 
       def connection
-        @connection ||= ::Kafka.new(kafka_client_connection_hash)
+        @connection ||= ::Kafka.new(**kafka_client_connection_hash)
       end
 
       def write_one(message, topic=nil)
@@ -95,12 +95,16 @@ module LogStashLogger
       end
 
       def make_brokers_array(opt)
-        case opt
-        when Array
-          opt
-        when String
-          opt.split("\s")
-        end
+        brokers =
+          case opt
+          when Array
+            opt.flatten
+          when String
+            opt.split(/\s+/)
+          else
+            []
+          end
+        brokers.compact.map(&:to_s).reject(&:empty?)
       end
 
       def make_cert_bundle(opts)
