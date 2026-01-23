@@ -83,15 +83,34 @@ module LogStashLogger
       private
 
       def write_messages_to_broker_and_deliver(&block)
-        kproducer = connection.producer
+        kproducer = producer
         block.call(kproducer) if block_given?
         kproducer.deliver_messages
+      end
+
+      def close!
+        begin
+          if @producer
+            if @producer.respond_to?(:shutdown)
+              @producer.shutdown
+            elsif @producer.respond_to?(:close)
+              @producer.close
+            end
+          end
+        ensure
+          @producer = nil
+          super
+        end
       end
 
       def kafka_client_connection_hash
         { seed_brokers: @brokers,
           client_id: @client_id,
         }.merge(@cert_bundle)
+      end
+
+      def producer
+        @producer ||= connection.producer
       end
 
       def raise_no_topic_set!

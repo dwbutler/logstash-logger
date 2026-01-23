@@ -244,6 +244,34 @@ describe LogStashLogger::Device::Kafka do
     end
   end
 
+  describe "producer lifecycle" do
+    it "memoizes the producer across writes" do
+      producer = double('producer', produce: true, deliver_messages: true)
+      connection = double("connection", producer: producer)
+      instance = described_class.new(opts)
+
+      expect(instance).to receive(:connection).and_return(connection)
+      expect(connection).to receive(:producer).once.and_return(producer)
+
+      instance.write_one("hello world")
+      instance.write_one("goodbye world")
+    end
+
+    it "shuts down the producer on close" do
+      instance = described_class.new(opts)
+      producer = double("producer", shutdown: true)
+      connection = double("connection", close: true)
+
+      instance.instance_variable_set(:@producer, producer)
+      instance.instance_variable_set(:@io, connection)
+
+      expect(producer).to receive(:shutdown)
+      expect(connection).to receive(:close)
+
+      instance.close
+    end
+  end
+
   describe "closing connection" do
     it "closes the Kafka connection when present" do
       instance = described_class.new(opts)
