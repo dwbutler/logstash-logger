@@ -23,7 +23,7 @@ module LogStashLogger
         formatter_type.new
       else
         formatter_klass(formatter_type).new(customize_event: customize_event, error_logger: error_logger)
-      end
+                  end
 
       formatter.send(:extend, ::LogStashLogger::TaggedLogging::Formatter)
       formatter

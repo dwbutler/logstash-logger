@@ -26,7 +26,6 @@ module LogStashLogger
     end
   end
 
-  protected
 
   def self.extract_opts(*args)
     args.flatten!
@@ -62,13 +61,12 @@ module LogStashLogger
       build_syslog_logger(opts)
     else
       build_default_logger(opts)
-    end
+             end
 
     logger.formatter = formatter if formatter
     logger
   end
 
-  private
 
   def self.build_default_logger(opts)
     logger_class = opts.delete(:logger_class) || ::Logger

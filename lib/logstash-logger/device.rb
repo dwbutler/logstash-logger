@@ -28,7 +28,7 @@ module LogStashLogger
     end
 
     def self.build_device(opts)
-      if parsed_uri_opts = parse_uri_config(opts)
+      if (parsed_uri_opts = parse_uri_config(opts))
         opts.delete(:uri)
         opts.merge!(parsed_uri_opts)
       end
@@ -39,7 +39,7 @@ module LogStashLogger
     end
 
     def self.parse_uri_config(opts)
-      if uri = opts[:uri]
+      if (uri = opts[:uri])
         require 'uri'
         parsed = ::URI.parse(uri)
         if parsed.scheme == 'kafka'

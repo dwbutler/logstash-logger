@@ -29,7 +29,7 @@ module LogStashLogger
         end
       end
 
-      def write_batch(messages, group = nil)
+      def write_batch(messages, _group = nil)
         messages.each do |message|
           write_one(message)
         end
@@ -43,7 +43,7 @@ module LogStashLogger
         close
       end
 
-      def close(opts = {})
+      def close(_opts = {})
         close!
       rescue => e
         log_error(e)

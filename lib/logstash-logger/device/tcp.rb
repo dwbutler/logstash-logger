@@ -41,7 +41,7 @@ module LogStashLogger
           ssl_io
         else
           tcp_io
-        end
+                end
       end
 
       protected

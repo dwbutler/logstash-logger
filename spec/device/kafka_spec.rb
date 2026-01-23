@@ -208,7 +208,7 @@ describe LogStashLogger::Device::Kafka do
     end
 
     it 'is capabable of writing to a different topic than instantiated' do
-      producer = double('producer', produce: lambda {|message, topic| "hi" })
+      producer = double('producer', produce: lambda {|_message, _topic| "hi" })
       connect_double = double("connection", producer: producer)
       instance = described_class.new(opts)
 
@@ -259,7 +259,7 @@ describe LogStashLogger::Device::Kafka do
 
   describe "writing a batch of messages to the broker" do
     it "writes the messages to the topic" do
-      producer = double('producer', produce: lambda {|message, topic| "hi" })
+      producer = double('producer', produce: lambda {|_message, _topic| "hi" })
       connect_double = double("connection", producer: producer)
       instance = described_class.new(opts)
 

@@ -59,7 +59,7 @@ module LogStashLogger
         close(flush: false)
       end
 
-      def write_batch(messages, group = nil)
+      def write_batch(messages, _group = nil)
         records = messages.map{ |m| transform_message(m) }
 
         with_connection do

@@ -49,7 +49,7 @@ describe LogStashLogger::Formatter do
 
       context "formatter proc" do
         let(:formatter) do
-          proc { |severity, time, progname, msg| msg }
+          proc { |_severity, _time, _progname, msg| msg }
         end
 
         it "returns the same formatter proc" do
@@ -63,7 +63,7 @@ describe LogStashLogger::Formatter do
 
       context "formatter lambda" do
         let(:formatter) do
-          ->(severity, time, progname, msg) { msg }
+          ->(_severity, _time, _progname, msg) { msg }
         end
 
         it "returns the same formatter lambda" do

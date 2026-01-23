@@ -118,7 +118,7 @@ module LogStashLogger
       end
 
       # Ensure the block is executed with a valid connection
-      def with_connection(&block)
+      def with_connection()
         connect unless connected?
         yield
       rescue => e

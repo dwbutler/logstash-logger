@@ -25,7 +25,7 @@ module LogStashLogger
     # Convert logger options to OrderedOptions if regular Hash
     logger_options = ActiveSupport::OrderedOptions.new.merge(logger_options)
 
-    if parsed_uri_options = LogStashLogger::Device.parse_uri_config(logger_options)
+    if (parsed_uri_options = LogStashLogger::Device.parse_uri_config(logger_options))
       logger_options.delete(:uri)
       logger_options.merge!(parsed_uri_options)
     end

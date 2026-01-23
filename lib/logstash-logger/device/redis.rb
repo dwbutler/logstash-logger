@@ -60,7 +60,7 @@ module LogStashLogger
       def normalize_path(opts)
         path = opts.fetch(:path, nil)
         if path
-          opts[:db] = path.gsub("/", "").to_i unless path.empty?
+          opts[:db] = path.delete("/").to_i unless path.empty?
           opts.delete(:path)
         end
       end

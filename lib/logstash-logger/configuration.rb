@@ -13,12 +13,11 @@ module LogStashLogger
     attr_accessor :max_message_size
     attr_accessor :default_error_logger
 
-    def initialize(*args)
+    def initialize(*_args)
       @customize_event_block = nil
       @default_error_logger = Logger.new($stderr)
 
       yield self if block_given?
-      self
     end
 
     def customize_event(&block)

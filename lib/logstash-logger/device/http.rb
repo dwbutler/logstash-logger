@@ -21,7 +21,7 @@ module LogStashLogger
         write_batch([message])
       end
 
-      def write_batch(messages, group = nil)
+      def write_batch(messages, _group = nil)
         # Logstash HTTP input expects JSON array instead of lines of JSON
         body = "[#{messages.join(',')}]"
         resp = Net::HTTP.post @url, body, {"Content-Type" => "application/json"}

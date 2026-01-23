@@ -66,7 +66,6 @@ module LogStashLogger
   # to ensure that all accumulated messages are flushed.
   module Buffer
 
-    public
     # Initialize the buffer.
     #
     # Call directly from your constructor if you wish to set some non-default
