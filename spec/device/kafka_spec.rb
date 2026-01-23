@@ -250,7 +250,7 @@ describe LogStashLogger::Device::Kafka do
       connection = double("connection")
       expect(connection).to receive(:close)
 
-      instance.instance_variable_set(:@connection, connection)
+      instance.instance_variable_set(:@io, connection)
       instance.close
 
       expect(instance.instance_variable_get(:@connection)).to be_nil

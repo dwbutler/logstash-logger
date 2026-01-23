@@ -66,13 +66,6 @@ module LogStashLogger
         connection
       end
 
-      def close!
-        @connection&.close
-      ensure
-        @connection = nil
-        super
-      end
-
       def write_one(message, topic=nil)
         topic ||= @topic
         write_messages_to_broker_and_deliver do |producer|
