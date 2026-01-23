@@ -224,4 +224,36 @@ describe LogStashLogger::Device::Kafka do
       instance.write_batch(messages, topic)
     end
   end
+
+  describe "connecting/reconnecting" do
+    it "sets @io when connecting" do
+      instance = described_class.new(opts)
+      connection = double("connection")
+
+      instance.instance_variable_set(:@io, connection)
+      expect(instance.connect).to eq(connection)
+      expect(instance.io).to eq(connection)
+    end
+
+    it "reconnects without raising" do
+      instance = described_class.new(opts)
+      connection = double("connection", close: true)
+
+      allow(instance).to receive(:connection).and_return(connection)
+      expect { instance.reconnect }.not_to raise_error
+    end
+  end
+
+  describe "closing connection" do
+    it "closes the Kafka connection when present" do
+      instance = described_class.new(opts)
+      connection = double("connection")
+      expect(connection).to receive(:close)
+
+      instance.instance_variable_set(:@connection, connection)
+      instance.close
+
+      expect(instance.instance_variable_get(:@connection)).to be_nil
+    end
+  end
 end

@@ -59,7 +59,18 @@ module LogStashLogger
       end
 
       def connection
-        @connection ||= ::Kafka.new(**kafka_client_connection_hash)
+        @io ||= ::Kafka.new(**kafka_client_connection_hash)
+      end
+
+      def connect
+        connection
+      end
+
+      def close!
+        @connection&.close
+      ensure
+        @connection = nil
+        super
       end
 
       def write_one(message, topic=nil)
