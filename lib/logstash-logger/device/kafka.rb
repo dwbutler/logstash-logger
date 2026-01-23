@@ -56,6 +56,7 @@ module LogStashLogger
         @buffer_group = @topic
         @kafka_tls_configurator = kafka_tls_configurator
         @brokers = make_brokers_array(opts[:brokers])
+        raise_no_brokers_set! if @brokers.empty?
         make_cert_bundle(opts)
       end
 
@@ -116,6 +117,10 @@ module LogStashLogger
 
       def raise_no_topic_set!
         fail ArgumentError, "a topic must be configured"
+      end
+
+      def raise_no_brokers_set!
+        fail ArgumentError, "brokers must be configured"
       end
 
       def make_brokers_array(opt)

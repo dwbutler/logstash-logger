@@ -53,7 +53,6 @@ module LogStashLogger
       brokers = parsed.host
       brokers = "#{brokers}:#{parsed.port}" if parsed.port
       topic = parsed.path.to_s.sub(%r{\A/}, '')
-      topic = 'logstash' if topic.empty?
       {type: 'kafka', brokers: brokers, topic: topic}
     end
 

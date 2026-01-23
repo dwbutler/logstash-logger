@@ -63,30 +63,47 @@ describe LogStashLogger::Device::Kafka do
     }
   end
   let(:instance) { LogStashLogger::Device::Kafka.new(opts) }
+  let(:brokers) { %w(localhost:9300 localhost:9232) }
 
   describe "initializing" do
     context "brokers" do
       context "when array" do
         it "sets the brokers array to @brokers" do
-          brokers = %w(localhost:9300 localhost:9232)
           instance = LogStashLogger::Device::Kafka.new(opts.merge({brokers: brokers}))
 
-          expect(instance.brokers).to be_kind_of Array
-          expect(instance.brokers.length).to eql(2)
+          expect(instance.brokers).to eql(brokers)
         end
 
         it 'sets the brokers to an array if a string is passed in' do
-          brokers = "localhost:9300 localhost:9232"
-          instance = LogStashLogger::Device::Kafka.new(opts.merge({brokers: brokers}))
-          expect(instance.brokers).to be_kind_of Array
-          expect(instance.brokers.length).to eql(2)
+          instance = LogStashLogger::Device::Kafka.new(opts.merge({brokers: broker_hosts}))
+          expect(instance.brokers).to eql(brokers)
+        end
+      end
+
+      context "when missing or empty" do
+        it "raises an error if brokers are nil" do
+          expect {
+            described_class.new(topic: 'hello-world', brokers: nil)
+          }.to raise_error(ArgumentError)
+        end
+
+        it "raises an error if brokers are an empty array" do
+          expect {
+            described_class.new(topic: 'hello-world', brokers: [])
+          }.to raise_error(ArgumentError)
+        end
+
+        it "raises an error if brokers are blank" do
+          expect {
+            described_class.new(topic: 'hello-world', brokers: "  ")
+          }.to raise_error(ArgumentError)
         end
       end
     end
 
     context "topic" do
       it 'sets the topic to the option provided' do
-        instance = described_class.new(topic: 'hello-world')
+        instance = described_class.new(topic: 'hello-world', brokers: brokers)
         expect(instance.topic).to eql('hello-world')
       end
 
