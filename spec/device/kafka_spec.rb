@@ -202,6 +202,16 @@ describe LogStashLogger::Device::Kafka do
     end
   end
 
+  describe "buffer group" do
+    it "uses the topic so final flush does not pass a boolean topic" do
+      instance = described_class.new(opts)
+
+      expect(instance).to receive(:write_batch).with(['hello world'], 'hello-world')
+      instance.write('hello world')
+      instance.buffer_flush(final: true)
+    end
+  end
+
   describe "writing a batch of messages to the broker" do
     it "writes the messages to the topic" do
       producer = double('producer', produce: lambda {|message, topic| "hi" })

@@ -53,6 +53,7 @@ module LogStashLogger
 
         @client_id = opts[:client_id]
         @topic = opts[:topic] || raise_no_topic_set!
+        @buffer_group = @topic
         @kafka_tls_configurator = kafka_tls_configurator
         @brokers = make_brokers_array(opts[:brokers])
         make_cert_bundle(opts)
