@@ -63,6 +63,7 @@ describe LogStashLogger::MultiLogger do
     end
 
     subject.reset
+  end
 
   it "delegates #log to loggers" do
     subject.loggers.each do |logger|
