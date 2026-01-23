@@ -42,19 +42,28 @@ module LogStashLogger
       if (uri = opts[:uri])
         require 'uri'
         parsed = ::URI.parse(uri)
-        if parsed.scheme == 'kafka'
-          return parse_kafka_uri(parsed)
-        end
         {type: parsed.scheme, host: parsed.host, port: parsed.port, path: parsed.path}
+          .merge(parse_uri_query(parsed.query))
       end
     end
 
-    def self.parse_kafka_uri(parsed)
-      brokers = parsed.host
-      brokers = "#{brokers}:#{parsed.port}" if parsed.port
-      topic = parsed.path.to_s.sub(%r{\A/}, '')
-      topic = nil if topic.empty?
-      {type: 'kafka', brokers: brokers, topic: topic}
+    def self.parse_uri_query(query)
+      return {} unless query && !query.empty?
+      ::URI.decode_www_form(query).each_with_object({}) do |(key, value), acc|
+        next unless key
+        key = key.to_s.strip
+        next if key.empty?
+        acc[key.to_sym] = cast_uri_value(key, value)
+      end
+    end
+
+    def self.cast_uri_value(key, value)
+      case key
+      when 'buffer_max_items'
+        value.to_i
+      else
+        value
+      end
     end
 
     def self.device_klass_for(type)

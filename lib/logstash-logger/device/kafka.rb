@@ -51,6 +51,7 @@ module LogStashLogger
         require 'ruby-kafka'
         super(opts)
 
+        opts = normalize_uri_options(opts)
         @client_id = opts[:client_id]
         @topic = normalize_topic(opts[:topic])
         @buffer_group = @topic
@@ -142,6 +143,23 @@ module LogStashLogger
             []
           end
         brokers.compact.map(&:to_s).reject(&:empty?)
+      end
+
+      def normalize_uri_options(opts)
+        normalized = opts.dup
+        if normalized[:brokers].nil?
+          if normalized[:hosts]
+            normalized[:brokers] = normalized[:hosts]
+          elsif normalized[:host]
+            broker = normalized[:host]
+            broker = "#{broker}:#{normalized[:port]}" if normalized[:port]
+            normalized[:brokers] = broker
+          end
+        end
+        if normalized[:topic].nil? && normalized[:path]
+          normalized[:topic] = normalized[:path].to_s.sub(%r{\A/}, '')
+        end
+        normalized
       end
 
       def make_cert_bundle(opts)

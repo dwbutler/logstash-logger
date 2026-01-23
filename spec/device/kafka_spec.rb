@@ -66,6 +66,19 @@ describe LogStashLogger::Device::Kafka do
   let(:brokers) { %w(localhost:9300 localhost:9232) }
 
   describe "initializing" do
+    context "uri-derived options" do
+      it "normalizes host/port/path into brokers and topic" do
+        instance = described_class.new(
+          host: 'localhost',
+          port: 9092,
+          path: '/logstash'
+        )
+
+        expect(instance.brokers).to eq(['localhost:9092'])
+        expect(instance.topic).to eq('logstash')
+      end
+    end
+
     context "brokers" do
       context "when array" do
         it "sets the brokers array to @brokers" do
