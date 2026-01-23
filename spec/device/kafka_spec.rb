@@ -219,6 +219,27 @@ describe LogStashLogger::Device::Kafka do
     end
   end
 
+  describe "error handling" do
+    it "clears the producer and connection when an error occurs" do
+      producer = double('producer')
+      allow(producer).to receive(:produce).and_raise(StandardError, "boom")
+      allow(producer).to receive(:deliver_messages)
+
+      connection = double("connection", producer: producer, close: true)
+      instance = described_class.new(opts)
+
+      allow(instance).to receive(:connection).and_return(connection)
+      expect(connection).to receive(:close)
+
+      expect {
+        instance.write_one("hello world")
+      }.to raise_error(StandardError)
+
+      expect(instance.instance_variable_get(:@producer)).to be_nil
+      expect(instance.instance_variable_get(:@io)).to be_nil
+    end
+  end
+
   describe "buffer group" do
     it "uses the topic so final flush does not pass a boolean topic" do
       instance = described_class.new(opts)

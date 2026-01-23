@@ -65,7 +65,7 @@ module LogStashLogger
       end
 
       def connect
-        connection
+        @io = connection
       end
 
       def write_one(message, topic=nil)
@@ -85,9 +85,11 @@ module LogStashLogger
       private
 
       def write_messages_to_broker_and_deliver(&block)
-        kproducer = producer
-        block.call(kproducer) if block_given?
-        kproducer.deliver_messages
+        with_connection do
+          kproducer = producer
+          block.call(kproducer) if block_given?
+          kproducer.deliver_messages
+        end
       end
 
       def close!
@@ -112,7 +114,7 @@ module LogStashLogger
       end
 
       def producer
-        @producer ||= connection.producer
+        @producer ||= (connected? ? @io : connection).producer
       end
 
       def raise_no_topic_set!
