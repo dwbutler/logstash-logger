@@ -80,7 +80,7 @@ RSpec.shared_context 'device' do
   let(:unix_uri) { "unix:///some/path/to/socket" }
   let(:file_uri) { "file://#{file.path}" }
   let(:redis_uri) { "redis://localhost:6379" }
-  let(:kafka_uri) { "kafka://localhost:9092" }
+  let(:kafka_uri) { "kafka://localhost:9092/logstash" }
   let(:stdout_uri) { "stdout://localhost" }
   let(:stderr_uri) { "stderr://localhost" }
 
