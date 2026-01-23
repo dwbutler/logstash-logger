@@ -642,6 +642,14 @@ config.logstash.type = :file
 
 # Optional, defaults to Rails log path
 config.logstash.path = 'log/production.log'
+
+# Optional, enable log rotation
+config.logstash.shift_age = 7
+config.logstash.shift_size = 10 * 1024 * 1024
+
+# Optional, time-based rotation
+config.logstash.shift_age = 'daily' # or 'weekly'/'monthly'
+config.logstash.shift_period_suffix = '%Y-%m-%d'
 ```
 
 #### IO
