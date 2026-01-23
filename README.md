@@ -1,14 +1,15 @@
 # LogStashLogger
-[![Build Status](https://travis-ci.org/dwbutler/logstash-logger.svg?branch=master)](https://travis-ci.org/dwbutler/logstash-logger) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master)
+[![Build Status](https://github.com/dwbutler/logstash-logger/workflows/Ruby%20tests/badge.svg)](https://github.com/dwbutler/logstash-logger/actions) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master) [![Gem Version](https://badge.fury.io/rb/logstash-logger.svg)](https://badge.fury.io/rb/logstash-logger)
 
-LogStashLogger extends Ruby's `Logger` class to log directly to [logstash](http://logstash.net).
+LogStashLogger extends Ruby's `Logger` class to log directly to
+[Logstash](https://www.elastic.co/products/logstash).
 It supports writing to various outputs in logstash JSON format. This is an improvement over
-writing to a file or syslog since logstash can receive the structured data directly.
+writing to a file or syslog since Logstash can receive the structured data directly.
 
 ## Features
 
 * Can write directly to a logstash listener over a UDP or TCP/SSL connection.
-* Can write to a file, Redis, Kafka, a unix socket, syslog, stdout, or stderr.
+* Can write to a file, Redis, Kafka, Kinesis, Firehose, a unix socket, syslog, stdout, or stderr.
 * Logger can take a string message, a hash, a `LogStash::Event`, an object, or a JSON string as input.
 * Events are automatically populated with message, timestamp, host, and severity.
 * Writes in logstash JSON format, but supports other formats as well.
@@ -185,6 +186,15 @@ You can also enable SSL without a certificate:
 LogStashLogger.new(type: :tcp, port: 5228, ssl_enable: true)
 ```
 
+Specify an SSL context to have more control over the behavior. For example,
+set the verify mode:
+
+```ruby
+ctx = OpenSSL::SSL::SSLContext.new
+ctx.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
+LogStashLogger.new(type: :tcp, port: 5228, ssl_context: ctx)
+```
+
 The following Logstash configuration is required for SSL:
 
 ```ruby
@@ -199,6 +209,71 @@ input {
   }
 }
 ```
+
+### Hostname Verification
+
+Hostname verification is enabled by default. Without further configuration,
+the hostname supplied to `:host` will be used to verify the server's certificate
+identity.
+
+If you don't pass an `:ssl_context` or pass a falsey value to the
+`:verify_hostname` option, hostname verification will not occur.
+
+#### Examples
+
+**Verify the hostname from the `:host` option**
+
+```ruby
+ctx = OpenSSL::SSL::SSLContext.new
+ctx.cert = '/path/to/cert.pem'
+ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER
+
+LogStashLogger.new \
+  type: :tcp,
+  host: 'logstash.example.com'
+  port: 5228,
+  ssl_context: ctx
+```
+
+**Verify a hostname different from the `:host` option**
+
+```ruby
+LogStashLogger.new \
+  type: :tcp,
+  host: '1.2.3.4'
+  port: 5228,
+  ssl_context: ctx,
+  verify_hostname: 'server.example.com'
+```
+
+**Explicitly disable hostname verification**
+
+```ruby
+LogStashLogger.new \
+  type: :tcp,
+  host: '1.2.3.4'
+  port: 5228,
+  ssl_context: ctx,
+  verify_hostname: false
+```
+
+## HTTP
+Supports rudimentary writes (buffered, non-persistent connections) to the[ Logstash HTTP Input](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-http.html):
+```ruby
+input {
+  http {
+    port => 8080
+  }
+}
+```
+
+```ruby
+LogStashLogger.new \
+  type: :http,
+  url: 'http://localhost:8080'
+```
+
+Note the parameter is `url` and not `uri`.  Relies on [Net:HTTP](https://ruby-doc.org/stdlib-2.7.1/libdoc/net/http/rdoc/Net/HTTP.html#class-Net::HTTP-label-HTTPS) to auto-detect SSL usage from the scheme.
 
 ## Custom Log Fields
 
@@ -238,6 +313,24 @@ This configuration would result in the following output.
 }
 ```
 
+This block has full access to the event, so you can remove fields, modify
+existing fields, etc. For example, to remove the default timestamp:
+
+```ruby
+config = LogStashLogger.configure do |config|
+  config.customize_event do |event|
+    event.remove('@timestamp')
+  end
+end
+```
+
+You can also customize events on a per-logger basis by passing a callable object
+(lambda or proc) to the `customize_event` option when creating a logger:
+
+```ruby
+LogStashLogger.new(customize_event: ->(event){ event['other_field'] = 'other_field' })
+``` 
+
 ## Buffering / Automatic Retries
 
 For devices that establish a connection to a remote service, log messages are buffered internally
@@ -254,6 +347,7 @@ You can configure its behavior by passing the following options to LogStashLogge
 * :drop_messages_on_full_buffer - Drop messages when the buffer is full. Defaults to true.
 * :sync - Flush buffer every time a message is received (blocking). Defaults to false.
 * :buffer_flush_at_exit - Flush messages when exiting the program. Defaults to true.
+* :buffer_logger - Logger to write buffer debug/error messages to. Defaults to none.
 
 You can turn buffering off by setting `sync = true`.
 
@@ -268,6 +362,9 @@ Please be aware of the following caveats to this behavior:
    immediately. In my testing, it took Ruby about 4 seconds to notice the receiving end was down
    and start raising exceptions. Since logstash listeners over TCP/UDP do not acknowledge received
    messages, it's not possible to know which log messages to re-send.
+ * When `sync` is turned off, Ruby may buffer data internally before writing to
+   the IO device. This is why you may not see messages written immediately to a
+   UDP or TCP socket, even though LogStashLogger's buffer is periodically flushed.
 
 ## Full Buffer
 
@@ -320,9 +417,18 @@ logger.silence(temporary_level) do
 end
 ```
 
+## Custom Logger Class
+
+By default, LogStashLogger creates a logger that extends Ruby's built in `Logger` class.
+If you require a different logger implementation, you can use a different class
+by passing in the class with the `logger_class` option.
+
+Note that for syslog, the `Syslog::Logger` class is required and cannot be
+changed.
+
 ## Rails Integration
 
-Verified to work with both Rails 3, 4, and 5.
+Supports Rails 7.2, 8.0, and 8.1.
 
 By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.
 
@@ -411,11 +517,7 @@ config.logstash.path = '/tmp/sock'
 
 #### Syslog
 
-If you're on Ruby 1.9, add `Syslog::Logger` v2 to your Gemfile:
-
-    gem 'SyslogLogger', '2.0'
-
-If you're on Ruby 2+, `Syslog::Logger` is already built into the standard library.
+`Syslog::Logger` is built into the standard library for Ruby 3.2+.
 
 ```ruby
 # Required
@@ -483,6 +585,62 @@ config.logstash.ssl_client_cert: ENV['CLOUDKAFKA_CERT']
 config.logstash.ssl_client_cert_key: ENV['CLOUDKAFKA_PRIVATE_KEY']
 ```
 
+#### Kinesis
+
+Add the aws-sdk gem to your Gemfile:
+
+    # aws-sdk >= 3.0
+    gem 'aws-sdk-kinesis'
+
+    # aws-sdk < 3.0
+    gem 'aws-sdk'
+
+```ruby
+# Required
+config.logstash.type = :kinesis
+
+# Optional, will default to the 'logstash' stream
+config.logstash.stream = 'my-stream-name'
+
+# Optional, will default to 'us-east-1'
+config.logstash.aws_region = 'us-west-2'
+
+# Optional, will default to the AWS_ACCESS_KEY_ID environment variable
+config.logstash.aws_access_key_id = 'ASKASKHLD12341'
+
+# Optional, will default to the AWS_SECRET_ACCESS_KEY environment variable
+config.logstash.aws_secret_access_key = 'ASKASKHLD1234123412341234'
+
+```
+
+#### Firehose
+
+Add the aws-sdk gem to your Gemfile:
+
+    # aws-sdk >= 3.0
+    gem 'aws-sdk-firehose'
+
+    # aws-sdk < 3.0
+    gem 'aws-sdk'
+
+```ruby
+# Required
+config.logstash.type = :firehose
+
+# Optional, will default to the 'logstash' delivery stream
+config.logstash.stream = 'my-stream-name'
+
+# Optional, will default to AWS default region config chain
+config.logstash.aws_region = 'us-west-2'
+
+# Optional, will default to AWS default credential provider chain
+config.logstash.aws_access_key_id = 'ASKASKHLD12341'
+
+# Optional, will default to AWS default credential provider chain
+config.logstash.aws_secret_access_key = 'ASKASKHLD1234123412341234'
+
+```
+
 #### File
 
 ```ruby
@@ -491,6 +649,14 @@ config.logstash.type = :file
 
 # Optional, defaults to Rails log path
 config.logstash.path = 'log/production.log'
+
+# Optional, enable log rotation
+config.logstash.shift_age = 7
+config.logstash.shift_size = 10 * 1024 * 1024
+
+# Optional, time-based rotation
+config.logstash.shift_age = 'daily' # or 'weekly'/'monthly'
+config.logstash.shift_period_suffix = '%Y-%m-%d'
 ```
 
 #### IO
@@ -573,15 +739,44 @@ def track_load_balancer_session_id
 end
 ```
 
+## Cleaning up resources when forking
+
+If your application forks (as is common with many web servers) you will need to
+manage cleaning up resources on your LogStashLogger instances. The instance method
+`#reset` is available for this purpose. Here is sample configuration for
+several common web servers used with Rails:
+
+Passenger:
+```ruby
+::PhusionPassenger.on_event(:starting_worker_process) do |forked|
+  Rails.logger.reset
+end
+```
+
+Puma:
+```ruby
+# In config/puma.rb
+on_worker_boot do
+  Rails.logger.reset
+end
+```
+
+Unicorn
+```ruby
+# In config/unicorn.rb
+after_fork do |server, worker|
+  Rails.logger.reset
+end
+```
+
 ## Ruby Compatibility
 
 Verified to work with:
 
-* MRI Ruby 1.9.3, 2.0, 2.1, 2.2, 2.3
-* JRuby 1.7, 9.0
-* Rubinius
+* MRI Ruby 3.2, 3.3, 3.4, 4.0
+* JRuby 9.x (when compatible with Ruby 3.2+)
 
-Ruby 1.8.7 is not supported.
+Ruby versions < 3.2 are EOL'ed and no longer supported.
 
 ## What type of logger should I use?
 
@@ -602,6 +797,14 @@ For a more detailed discussion of UDP vs TCP, I recommend reading this article:
 [UDP vs. TCP](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/)
 
 ## Troubleshooting
+
+### Logstash never receives any logs
+If you are using a device backed by a Ruby IO object (such as a file, UDP socket, or TCP socket), please be aware that Ruby
+keeps its own internal buffer. Despite the fact that LogStashLogger buffers
+messages and flushes them periodically, the data written to the IO object can
+be buffered by Ruby internally indefinitely, and may not even write until the
+program terminates. If this bothers you or you need to see log messages
+immediately, your only recourse is to set the `sync: true` option.
 
 ### JSON::GeneratorError
 Your application is probably attempting to log data that is not encoded in a valid way. When this happens, Ruby's
@@ -638,6 +841,15 @@ you set the max message size significantly less than 65535 bytes to make room
 for other fields.
 
 ## Breaking changes
+
+### Version 0.27+
+
+MRI Ruby < 3.2 is no longer supported, since it has been EOL'ed. If you are on an older version of Ruby, you will need to use 0.26 or below.
+
+### Version 0.25+
+
+Rails 3.2, MRI Ruby < 2.2, and JRuby 1.7 are no longer supported, since they have been
+EOL'ed. If you are on an older version of Ruby, you will need to use 0.24 or below.
 
 ### Version 0.5+
  * The `source` event key has been replaced with `host` to better match the latest logstash.
@@ -677,6 +889,19 @@ logger = LogStashLogger.new('localhost', 5228, :tcp)
 * [Mike Gunderloy](https://github.com/ffmike)
 * [Vitaly Gorodetsky](https://github.com/vitalis)
 * [Courtland Caldwell](https://github.com/caldwecr)
+* [Bibek Shrestha](https://github.com/bibstha)
+* [Alex Ianus](https://github.com/aianus)
+* [Craig Read](https://github.com/Catharz)
+* [glaszig](https://github.com/glaszig)
+* [Bin Lan](https://github.com/lanxx019)
+* [Joao Fernandes](https://github.com/jcmfernandes)
+* [CoolElvis](https://github.com/coolelvis)
+* [Sergey Pyankov](https://github.com/esergion)
+* [Alec Hoey](https://github.com/alechoey)
+* [Alexey Krasnoperov](https://github.com/AlexeyKrasnoperov)
+* [Gabriel de Oliveira](https://github.com/gdeoliveira)
+* [Vladislav Syabruk](https://github.com/SeTeM)
+* [Matus Vacula](https://github.com/matus-vacula)
 
 ## Contributing
 

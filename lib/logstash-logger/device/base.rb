@@ -15,7 +15,7 @@ module LogStashLogger
       end
 
       def write(message)
-        write_one(message)
+        write_one(message) unless message.nil?
       end
 
       def write_one(message)
@@ -35,14 +35,12 @@ module LogStashLogger
         end
       end
 
-      def write_batch(messages, group = nil)
-        messages.each do |message|
-          @io.write(message)
-        end
-      end
-
       def flush
         @io && @io.flush
+      end
+
+      def reset
+        close
       end
 
       def close(opts = {})

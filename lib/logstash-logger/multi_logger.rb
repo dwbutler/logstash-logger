@@ -26,6 +26,7 @@ module LogStashLogger
     end
 
     def formatter=(formatter)
+      super
       @loggers.each do |logger|
         logger.formatter ||= formatter
       end
@@ -69,7 +70,7 @@ module LogStashLogger
     def method_missing(name, *args, &block)
       @loggers.each do |logger|
         if logger.respond_to?(name)
-          logger.send(name, args, &block)
+          logger.send(name, *args, &block)
         end
       end
     end
@@ -100,6 +101,7 @@ module LogStashLogger
         logger.add(severity, message, progname, &block)
       end
     end
+    alias log add
 
     def <<(msg)
       @loggers.each do |logger|

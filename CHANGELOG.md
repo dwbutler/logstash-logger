@@ -1,3 +1,60 @@
+## 0.26.1
+
+ - Fix: Support for SSL with the TCP device without an SSL context in Ruby
+   2.4+. [#144](https://github.com/dwbutler/logstash-logger/issues/144)
+
+## 0.26.0
+
+- Allow user configuration of the logger class. [#129](https://github.com/dwbutler/logstash-logger/pull/129)
+- Fix: Allow type to be a string for multi_logger and syslog. [#131](https://github.com/dwbutler/logstash-logger/pull/131)
+- Fix: Cancelled events are being logged. [#133](https://github.com/dwbutler/logstash-logger/issues/133)
+- Fix: Expose method to reset logger state. [#138](https://github.com/dwbutler/logstash-logger/pull/138)
+- Use specific AWS SDK gems. [#136](https://github.com/dwbutler/logstash-logger/pull/136)
+- Adds support for using the default AWS credential provider chain. [#141](https://github.com/dwbutler/logstash-logger/pull/141)
+
+## 0.25.1
+
+- Skip message truncating when there is no message field. [#130](https://github.com/dwbutler/logstash-logger/pull/130)
+
+## 0.25.0
+
+- Drops support for Rails 3.2, MRI Ruby < 2.2, and JRuby 1.7, since these have been EOL'ed.
+- Adds support for customizing events on a per-logger level. [#113](https://github.com/dwbutler/logstash-logger/pull/113)
+
+## 0.24.1
+
+- Fixes logging of a hash with symbol keys. [#116](https://github.com/dwbutler/logstash-logger/pull/116)
+
+## 0.24.0
+
+- Adds support for AWS Firehose. [#121](https://github.com/dwbutler/logstash-logger/pull/121)
+
+## 0.23.0
+
+- Adds support for SSL host verification to the TCP device. [#114](https://github.com/dwbutler/logstash-logger/pull/114)
+- Fixes `NoMethodError` when `nil` tags are used in tagged logging. [#123](https://github.com/dwbutler/logstash-logger/issues/123)
+
+## 0.22.1
+
+- Fixes compatibility with ActiveJob. [#112](https://github.com/dwbutler/logstash-logger/issues/112)
+
+## 0.22.0
+
+- Adds support for writing to Amazon Kinesis. [#111](https://github.com/dwbutler/logstash-logger/pull/111)
+
+## 0.21.0
+
+- Support for merging top level configuration in MultiLogger and
+  MultiDelegator. [#108](https://github.com/dwbutler/logstash-logger/pull/108)
+
+## 0.20.1
+
+- Fixes missing require for URI [#107](https://github.com/dwbutler/logstash-logger/pull/107)
+
+## 0.20.0
+
+- Adds support for logging debug/error information for the connectable device's buffer. [#102](https://github.com/dwbutler/logstash-logger/pull/102)
+
 ## 0.19.2
 
 - Fixes mutex and memory leak issues when resetting buffer.

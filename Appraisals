@@ -1,19 +1,11 @@
-appraise "rails-3.2" do
-  gem "rails", "~> 3.2.18"
+appraise "rails-7.2" do
+  gem "rails", "~> 7.2.0"
 end
 
-appraise "rails-4.0" do
-  gem "rails", "~> 4.0.0"
+appraise "rails-8.0" do
+  gem "rails", "~> 8.0.0"
 end
 
-appraise "rails-4.1" do
-  gem "rails", "~> 4.1.1"
-end
-
-appraise "rails-4.2" do
-  gem "rails", "~> 4.2.0"
-end
-
-appraise "rails-5.0" do
-  gem "rails", "~> 5.0.0"
+appraise "rails-8.1" do
+  gem "rails", "~> 8.1.0"
 end

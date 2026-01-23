@@ -19,6 +19,10 @@ module LogStashLogger
       def flush
         !!(@device.flush if @device.respond_to?(:flush))
       end
+
+      def reset
+        @device.reset if @device.respond_to?(:reset)
+      end
     end
   end
 
@@ -46,9 +50,12 @@ module LogStashLogger
   end
 
   def self.build_logger(opts)
-    formatter = Formatter.new(opts.delete(:formatter))
+    formatter = Formatter.new(opts.delete(:formatter),
+                              customize_event: opts.delete(:customize_event),
+                              error_logger: opts.fetch(:error_logger, LogStashLogger.configuration.default_error_logger))
 
-    logger = case opts[:type]
+    logger_type = opts[:type].to_s.to_sym
+    logger = case logger_type
     when :multi_logger
       build_multi_logger(opts)
     when :syslog
@@ -64,15 +71,20 @@ module LogStashLogger
   private
 
   def self.build_default_logger(opts)
+    logger_class = opts.delete(:logger_class) || ::Logger
     device = Device.new(opts)
-    ::Logger.new(device).tap do |logger|
+    logger_class.new(device).tap do |logger|
       logger.instance_variable_set(:@device, device)
       extend_logger(logger)
     end
   end
 
   def self.build_multi_logger(opts)
-    loggers = opts[:outputs].map { |logger_opts| build_logger(logger_opts) }
+    output_configurations = opts.delete(:outputs) || []
+    loggers = output_configurations.map do |config|
+      logger_opts = opts.merge(config)
+      build_logger(logger_opts)
+    end
     MultiLogger.new(loggers)
   end
 

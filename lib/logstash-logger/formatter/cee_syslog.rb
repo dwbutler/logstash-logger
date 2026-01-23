@@ -2,18 +2,20 @@ module LogStashLogger
   module Formatter
     class CeeSyslog < Cee
       def call(severity, time, progname, message)
-        @cee = super
         @progname = progname
-
-        "#{facility}:#{@cee}\n"
+        super
       end
 
-      protected
+      private
 
-      def facility
-        @facility = "#{@event['host']}"
-        @facility << " #{@progname}" if @progname
-        @facility
+      def build_facility(host)
+        facility = host['hostname'.freeze].dup
+        facility << " #{@progname}" if @progname
+        facility
+      end
+
+      def format_event(event)
+        "#{build_facility(event["host".freeze])}:#{super}\n"
       end
     end
   end

@@ -12,12 +12,15 @@ module LogStashLogger
     autoload :Unix, 'logstash-logger/device/unix'
     autoload :Redis, 'logstash-logger/device/redis'
     autoload :Kafka, 'logstash-logger/device/kafka'
+    autoload :Kinesis, 'logstash-logger/device/kinesis'
+    autoload :Firehose, 'logstash-logger/device/firehose'
     autoload :File, 'logstash-logger/device/file'
     autoload :IO, 'logstash-logger/device/io'
     autoload :Stdout, 'logstash-logger/device/stdout'
     autoload :Stderr, 'logstash-logger/device/stderr'
     autoload :Balancer, 'logstash-logger/device/balancer'
     autoload :MultiDelegator, 'logstash-logger/device/multi_delegator'
+    autoload :HTTP, 'logstash-logger/device/http'
 
     def self.new(opts)
       opts = opts.dup
@@ -37,6 +40,7 @@ module LogStashLogger
 
     def self.parse_uri_config(opts)
       if uri = opts[:uri]
+        require 'uri'
         parsed = ::URI.parse(uri)
         {type: parsed.scheme, host: parsed.host, port: parsed.port, path: parsed.path}
       end
@@ -50,11 +54,14 @@ module LogStashLogger
         when :file then File
         when :redis then Redis
         when :kafka then Kafka
+        when :kinesis then Kinesis
+        when :firehose then Firehose
         when :io then IO
         when :stdout then Stdout
         when :stderr then Stderr
         when :multi_delegator then MultiDelegator
         when :balancer then Balancer
+        when :http then HTTP
         else fail ArgumentError, 'Invalid device type'
       end
     end

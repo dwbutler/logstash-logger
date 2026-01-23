@@ -1,9 +1,15 @@
 module LogStashLogger
   module Formatter
     class Json < Base
-      def call(severity, time, progname, message)
-        super
-        @event.to_json
+      private
+
+      def format_event(event)
+        event.to_json
+      rescue Encoding::UndefinedConversionError,
+             Encoding::InvalidByteSequenceError,
+             JSON::GeneratorError => e
+        log_error(e)
+        force_utf8_encoding(event).to_json
       end
     end
   end

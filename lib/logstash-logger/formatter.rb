@@ -10,11 +10,11 @@ module LogStashLogger
     autoload :Cee, 'logstash-logger/formatter/cee'
     autoload :CeeSyslog, 'logstash-logger/formatter/cee_syslog'
 
-		def self.new(formatter_type)
-    	build_formatter(formatter_type)
+    def self.new(formatter_type, customize_event: nil, error_logger: LogStashLogger.configuration.default_error_logger)
+      build_formatter(formatter_type, customize_event, error_logger)
     end
 
-    def self.build_formatter(formatter_type)
+    def self.build_formatter(formatter_type, customize_event, error_logger)
       formatter_type ||= DEFAULT_FORMATTER
 
       formatter = if custom_formatter_instance?(formatter_type)
@@ -22,7 +22,7 @@ module LogStashLogger
       elsif custom_formatter_class?(formatter_type)
         formatter_type.new
       else
-        formatter_klass(formatter_type).new
+        formatter_klass(formatter_type).new(customize_event: customize_event, error_logger: error_logger)
       end
 
       formatter.send(:extend, ::LogStashLogger::TaggedLogging::Formatter)

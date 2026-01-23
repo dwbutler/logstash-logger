@@ -21,19 +21,15 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'logstash-event', '~> 1.2'
 
   gem.add_development_dependency 'rails'
-  if RUBY_VERSION < '2'
-    gem.add_development_dependency 'mime-types', '< 3'
-  end
   gem.add_development_dependency 'redis'
-  gem.add_development_dependency 'poseidon'
   gem.add_development_dependency 'ruby-kafka'
+  gem.add_development_dependency 'aws-sdk-kinesis'
+  gem.add_development_dependency 'aws-sdk-firehose'
+  gem.add_development_dependency 'syslog'
+>>>>>>> master
 
-  if RUBY_VERSION < '2' || defined?(JRUBY_VERSION)
+  if defined?(JRUBY_VERSION)
     gem.add_development_dependency 'SyslogLogger'
-  end
-
-  if RUBY_VERSION < '2'
-    gem.add_development_dependency 'json', '~> 1.8'
   end
 
   gem.add_development_dependency 'rspec', '>= 3'
@@ -41,4 +37,9 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'pry'
   gem.add_development_dependency 'wwtd'
   gem.add_development_dependency 'appraisal'
+  gem.add_development_dependency 'rubocop'
+  gem.add_development_dependency 'rubocop-performance'
+  gem.add_development_dependency 'rubocop-rails'
+
+  gem.required_ruby_version = '>= 3.2'
 end

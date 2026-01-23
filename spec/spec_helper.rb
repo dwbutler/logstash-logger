@@ -1,14 +1,8 @@
 require 'pry'
+require 'securerandom'
 
 require 'simplecov'
 SimpleCov.start
-if ENV['CI']=='true'
-  require 'codecov'
-  SimpleCov.formatter = SimpleCov::Formatter::Codecov
-end
-
-require "codeclimate-test-reporter"
-CodeClimate::TestReporter.start
 
 RSpec.configure do |config|
   config.order = "random"
@@ -55,6 +49,7 @@ RSpec.shared_context 'device' do
   let(:tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, sync: true) }
   let(:ssl_tcp_device) { LogStashLogger::Device.new(type: :tcp, port: port, ssl_enable: true, sync: true) }
   let(:unix_device) { LogStashLogger::Device.new(type: :unix, path: '/tmp/logstash', sync: true) }
+  let(:http_device) { LogStashLogger::Device.new(type: :http, url: 'http://localhost', sync: true) }
 
   let(:file) { Tempfile.new('test') }
   let(:file_device) { LogStashLogger::Device.new(type: :file, path: file.path)}
@@ -64,6 +59,8 @@ RSpec.shared_context 'device' do
 
   let(:redis_device) { LogStashLogger::Device.new(type: :redis, sync: true) }
   let(:kafka_device) { LogStashLogger::Device.new(type: :kafka, sync: true) }
+  let(:kinesis_device) { LogStashLogger::Device.new(type: :kinesis, sync: true) }
+  let(:firehose_device) { LogStashLogger::Device.new(type: :firehose, sync: true) }
 
   let(:outputs) { [{type: :stdout}, {type: :io, io: io}] }
   let(:multi_delegator_device) { LogStashLogger::Device.new(type: :multi_delegator, outputs: outputs) }
@@ -103,6 +100,7 @@ RSpec.shared_context 'formatter' do
   let(:time) { Time.now }
   let(:progname) { "ruby" }
   let(:message) { "foo" }
+  let(:long_message) { SecureRandom.hex(65537) }
   let(:hostname) { Socket.gethostname }
   let(:formatted_message) do
     subject.call(severity, time, progname, message)

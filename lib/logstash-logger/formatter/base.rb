@@ -4,16 +4,31 @@ require 'time'
 
 module LogStashLogger
   module Formatter
-    HOST = ::Socket.gethostname
+    HOST = {
+      'hostname' => ::Socket.gethostname,
+      'ip' => Socket.ip_address_list.reject(&:ipv4_loopback?).reject(&:ipv6_loopback?).map(&:ip_address)
+  }.freeze
 
     class Base < ::Logger::Formatter
+      FAILED_TO_FORMAT_MSG = 'Failed to format log event'
+      attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
 
-      def call(severity, time, progname, message)
-        @event = build_event(message, severity, time)
+      def initialize(customize_event: nil, error_logger: LogStashLogger.configuration.default_error_logger)
+        @customize_event = customize_event
+        @error_logger = error_logger
+        super()
       end
 
-      protected
+      def call(severity, time, _progname, message)
+        event = build_event(message, severity, time)
+        format_event(event) unless event.cancelled?
+      rescue StandardError => e
+        log_error(e)
+        FAILED_TO_FORMAT_MSG
+      end
+
+      private
 
       def build_event(message, severity, time)
         data = message
@@ -25,10 +40,24 @@ module LogStashLogger
                   when LogStash::Event
                     data.clone
                   when Hash
-                    event_data = data.merge("@timestamp".freeze => time)
+                    event_data = { '@timestamp'.freeze => time }
+                    data.each do |key, value|
+                      case key
+                      when :message, 'message'
+                        event_data['message'.freeze] = value
+                      when :tags, 'tags'
+                        event_data['tags'.freeze] = value
+                      when :source, 'source'
+                        event_data['source'.freeze] = value
+                      when :type, 'type'
+                        event_data['type'.freeze] = value
+                      else
+                        event_data[key] = value
+                      end
+                    end
                     LogStash::Event.new(event_data)
                   else
-                    LogStash::Event.new("message".freeze => msg2str(data), "@timestamp".freeze => time)
+                    LogStash::Event.new("@timestamp".freeze => time, "message".freeze => msg2str(data))
                 end
 
         event['severity'.freeze] ||= severity
@@ -37,19 +66,35 @@ module LogStashLogger
         event['host'.freeze] ||= HOST
 
         current_tags.each { |tag| event.tag(tag) }
-        
+
         LogStashLogger.configuration.customize_event_block.call(event) if LogStashLogger.configuration.customize_event_block.respond_to?(:call)
+
+        @customize_event.call(event) if @customize_event
 
         # In case Time#to_json has been overridden
         if event.timestamp.is_a?(Time)
           event.timestamp = event.timestamp.iso8601(3)
         end
 
-        if LogStashLogger.configuration.max_message_size
+        if LogStashLogger.configuration.max_message_size && event['message']
           event['message'.freeze] = event['message'.freeze].byteslice(0, LogStashLogger.configuration.max_message_size)
         end
-        
+
         event
+      end
+
+      def format_event(event)
+        event
+      end
+
+      def force_utf8_encoding(event)
+        original_message = event.instance_variable_get(:@data)['message']
+        event.message = original_message.dup.force_encoding(Encoding::UTF_8).scrub
+        event
+      end
+
+      def log_error(e)
+        error_logger.error "[#{self.class}] #{e.class} - #{e.message}"
       end
     end
   end
