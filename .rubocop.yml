@@ -1,3 +1,7 @@
+require:
+  - rubocop-performance
+  - rubocop-rails
+
 AllCops:
   DisabledByDefault: true
 
@@ -21,7 +25,7 @@ Lint/AssignmentInCondition:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#safe-assignment-in-condition'
   Enabled: true
 
-Lint/BlockAlignment:
+Layout/BlockAlignment:
   Description: 'Align block ends correctly.'
   Enabled: true
 
@@ -40,7 +44,7 @@ Lint/Debugger:
   Description: 'Check for debugger calls.'
   Enabled: true
 
-Lint/DefEndAlignment:
+Layout/DefEndAlignment:
   Description: 'Align ends corresponding to defs correctly.'
   Enabled: true
 
@@ -68,11 +72,11 @@ Lint/EmptyInterpolation:
   Description: 'Checks for empty string interpolation.'
   Enabled: true
 
-Lint/EndAlignment:
+Layout/EndAlignment:
   Description: 'Align ends correctly.'
   Enabled: true
 
-Lint/EndInMethod:
+Style/EndBlock:
   Description: 'END blocks should not be placed inside method definitions.'
   Enabled: true
 
@@ -81,7 +85,7 @@ Lint/EnsureReturn:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-return-ensure'
   Enabled: true
 
-Lint/Eval:
+Security/Eval:
   Description: 'The use of eval represents a serious security risk.'
   Enabled: true
 
@@ -89,16 +93,11 @@ Lint/FormatParameterMismatch:
   Description: 'The number of parameters to format/sprint must match the fields.'
   Enabled: true
 
-Lint/HandleExceptions:
+Lint/SuppressedException:
   Description: "Don't suppress exception."
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#dont-hide-exceptions'
   Enabled: true
 
-Lint/InvalidCharacterLiteral:
-  Description: >-
-                 Checks for invalid character literals with a non-escaped
-                 whitespace character.
-  Enabled: true
 
 Lint/LiteralInCondition:
   Description: 'Checks of literals used in conditions.'
@@ -148,7 +147,7 @@ Lint/ShadowingOuterLocalVariable:
                  for block arguments or block local variables.
   Enabled: true
 
-Lint/StringConversionInInterpolation:
+Lint/RedundantStringCoercion:
   Description: 'Checks for Object#to_s usage in string interpolation.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-to-s'
   Enabled: true
@@ -187,9 +186,6 @@ Lint/UselessAssignment:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#underscore-unused-vars'
   Enabled: true
 
-Lint/UselessComparison:
-  Description: 'Checks for comparison of something with itself.'
-  Enabled: true
 
 Lint/UselessElseWithoutRescue:
   Description: 'Checks for useless `else` in `begin..end` without `rescue`.'
@@ -230,7 +226,7 @@ Metrics/CyclomaticComplexity:
                  of test cases needed to validate a method.
   Enabled: true
 
-Metrics/LineLength:
+Layout/LineLength:
   Description: 'Limit lines to 80 characters.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#80-character-limits'
   Enabled: false
@@ -258,6 +254,8 @@ Metrics/PerceivedComplexity:
   Enabled: false
 
 ##################### Performance #############################
+# Note: Performance cops have been extracted to the `rubocop-performance` gem.
+# These configurations will only work if that gem is installed.
 
 Performance/Count:
   Description: >-
@@ -314,6 +312,8 @@ Performance/StringReplacement:
   Enabled: true
 
 ##################### Rails ##################################
+# Note: Rails cops have been extracted to the `rubocop-rails` gem.
+# These configurations will only work if that gem is installed.
 
 Rails/ActionFilter:
   Description: 'Enforces consistent use of action filter methods.'
@@ -372,7 +372,7 @@ Style/AccessModifierIndentation:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#indent-public-private-protected'
   Enabled: false
 
-Style/AccessorMethodName:
+Naming/AccessorMethodName:
   Description: Check the naming of accessor methods for get_/set_.
   Enabled: false
 
@@ -416,7 +416,7 @@ Style/AsciiComments:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#english-comments'
   Enabled: false
 
-Style/AsciiIdentifiers:
+Naming/AsciiIdentifiers:
   Description: 'Use only ascii symbols in identifiers.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#english-identifiers'
   Enabled: false
@@ -453,9 +453,6 @@ Style/BlockDelimiters:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#single-line-blocks'
   Enabled: false
 
-Style/BracesAroundHashParameters:
-  Description: 'Enforce braces style around hash parameters.'
-  Enabled: false
 
 Style/CaseEquality:
   Description: 'Avoid explicit use of the case equality operator(===).'
@@ -472,7 +469,7 @@ Style/CharacterLiteral:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-character-literals'
   Enabled: false
 
-Style/ClassAndModuleCamelCase:
+Naming/ClassAndModuleCamelCase:
   Description: 'Use CamelCase for classes and modules.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#camelcase-classes'
   Enabled: false
@@ -518,7 +515,7 @@ Style/CommentIndentation:
   Description: 'Indentation of comments.'
   Enabled: false
 
-Style/ConstantName:
+Naming/ConstantName:
   Description: 'Constants should use SCREAMING_SNAKE_CASE.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#screaming-snake-case'
   Enabled: false
@@ -612,7 +609,7 @@ Style/ExtraSpacing:
   Description: 'Do not use unnecessary spacing.'
   Enabled: false
 
-Style/FileName:
+Naming/FileName:
   Description: 'Use snake_case for source file names.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#snake-case-files'
   Enabled: false
@@ -626,7 +623,7 @@ Style/FirstParameterIndentation:
   Description: 'Checks the indentation of the first parameter in a method call.'
   Enabled: false
 
-Style/FlipFlop:
+Lint/FlipFlop:
   Description: 'Checks for flip flops'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-flip-flops'
   Enabled: false
@@ -716,7 +713,7 @@ Style/LineEndConcatenation:
                  line end.
   Enabled: false
 
-Style/MethodCallParentheses:
+Style/MethodCallWithoutArgsParentheses:
   Description: 'Do not use parentheses for method calls with no arguments.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-args-no-parens'
   Enabled: false
@@ -728,7 +725,7 @@ Style/MethodDefParentheses:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#method-parens'
   Enabled: false
 
-Style/MethodName:
+Naming/MethodName:
   Description: 'Use the configured style when naming methods.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#snake-case-symbols-methods-vars'
   Enabled: false
@@ -816,7 +813,7 @@ Style/OneLineConditional:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#ternary-operator'
   Enabled: false
 
-Style/OpMethod:
+Naming/BinaryOperatorParameterName:
   Description: 'When defining binary operators, name the argument other.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#other-arg'
   Enabled: false
@@ -1084,10 +1081,6 @@ Style/TrailingCommaInArguments:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-trailing-params-comma'
   Enabled: false
 
-Style/TrailingCommaInLiteral:
-  Description: 'Checks for trailing comma in literals.'
-  StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-trailing-array-commas'
-  Enabled: false
 
 Style/TrailingWhitespace:
   Description: 'Avoid trailing whitespace.'
@@ -1106,11 +1099,11 @@ Style/UnlessElse:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-else-with-unless'
   Enabled: false
 
-Style/UnneededCapitalW:
+Style/RedundantCapitalW:
   Description: 'Checks for %W when interpolation is not needed.'
   Enabled: false
 
-Style/UnneededPercentQ:
+Style/RedundantPercentQ:
   Description: 'Checks for %q/%Q when single quotes or double quotes would do.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#percent-q'
   Enabled: false
@@ -1128,7 +1121,7 @@ Style/VariableInterpolation:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#curlies-interpolate'
   Enabled: false
 
-Style/VariableName:
+Naming/VariableName:
   Description: 'Use the configured style when naming variables.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#snake-case-symbols-methods-vars'
   Enabled: false

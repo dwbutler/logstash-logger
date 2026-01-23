@@ -9,7 +9,7 @@ module LogStashLogger
       private
 
       def build_facility(host)
-        facility = host.dup
+        facility = host['hostname'.freeze].dup
         facility << " #{@progname}" if @progname
         facility
       end
