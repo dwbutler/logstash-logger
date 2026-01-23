@@ -35,6 +35,23 @@ describe LogStashLogger::Formatter do
         end
       end
 
+      context "formatter class that accepts customize_event keyword arg in initializer" do
+        let(:formatter) do
+          Class.new do
+            def initialize(customize_event: nil)
+            end
+
+            def call
+            end
+          end
+        end
+
+        it "returns a new instance of the class" do
+          expect(formatter).to receive(:new).with(hash_including(:customize_event)).and_call_original
+          expect(subject).to be_a formatter
+        end
+      end
+
       context "formatter instance" do
         let(:formatter) { ::Logger::Formatter.new }
 
