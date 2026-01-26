@@ -10,17 +10,9 @@ module LogStashLogger
       def initialize(opts = {})
         super
 
-        if opts[:batch_events]
-          warn "The :batch_events option is deprecated. Please use :buffer_max_items instead"
-        end
-
-        if opts[:batch_timeout]
-          warn "The :batch_timeout option is deprecated. Please use :buffer_max_interval instead"
-        end
-
         @buffer_group = nil
-        @buffer_max_items = opts[:batch_events] || opts[:buffer_max_items]
-        @buffer_max_interval = opts[:batch_timeout] || opts[:buffer_max_interval]
+        @buffer_max_items = opts[:buffer_max_items]
+        @buffer_max_interval = opts[:buffer_max_interval]
         @drop_messages_on_flush_error =
           if opts.key?(:drop_messages_on_flush_error)
             opts.delete(:drop_messages_on_flush_error)
