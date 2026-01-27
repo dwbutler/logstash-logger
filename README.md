@@ -774,7 +774,7 @@ end
 Verified to work with:
 
 * MRI Ruby 3.2, 3.3, 3.4, 4.0
-* JRuby 9.x (when compatible with Ruby 3.2+)
+* JRuby 10.x
 
 Ruby versions < 3.2 are EOL'ed and no longer supported.
 
