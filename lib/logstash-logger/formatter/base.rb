@@ -93,6 +93,23 @@ module LogStashLogger
         event
       end
 
+      # Check if the message has encoding issues that would cause JSON serialization problems.
+      # This is needed because some Ruby implementations (e.g., JRuby) may not raise
+      # exceptions during JSON encoding but produce malformed output instead.
+      def message_has_encoding_issue?(event)
+        message = event.instance_variable_get(:@data)['message']
+        return false unless message.is_a?(String)
+
+        # Check if already valid UTF-8
+        return false if message.encoding == Encoding::UTF_8 && message.valid_encoding?
+
+        # Try to encode to UTF-8 to detect issues
+        message.encode(Encoding::UTF_8)
+        false
+      rescue Encoding::UndefinedConversionError, Encoding::InvalidByteSequenceError
+        true
+      end
+
       def log_error(e)
         error_logger.error "[#{self.class}] #{e.class} - #{e.message}"
       end

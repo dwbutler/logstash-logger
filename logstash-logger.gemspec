@@ -25,10 +25,11 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'ruby-kafka'
   gem.add_development_dependency 'aws-sdk-kinesis'
   gem.add_development_dependency 'aws-sdk-firehose'
-  gem.add_development_dependency 'syslog'
 
   if defined?(JRUBY_VERSION)
     gem.add_development_dependency 'SyslogLogger'
+  else
+    gem.add_development_dependency 'syslog'
   end
 
   gem.add_development_dependency 'rspec', '>= 3'

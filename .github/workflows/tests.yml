@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['3.2', '3.3', '3.4', '4.0']
+        ruby: ['3.2', '3.3', '3.4', '4.0', 'jruby-10']
         rails: ['7.2', '8.0', '8.1']
     runs-on: ubuntu-latest
     steps:
