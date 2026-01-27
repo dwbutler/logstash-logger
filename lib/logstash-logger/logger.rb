@@ -28,23 +28,10 @@ module LogStashLogger
 
 
   def self.extract_opts(*args)
-    args.flatten!
-
-    if args.length > 1
-      if args.all?{|arg| arg.is_a?(Hash)}
-        # Deprecated array of hashes
-        warn "[LogStashLogger] Passing an array of hashes to the constructor is deprecated. Please replace with an options hash: { type: :multi_delegator, outputs: [...] }"
-        { type: :multi_delegator, outputs: args }
-      else
-        # Deprecated host/port/type constructor
-        warn "[LogStashLogger] The (host, port, type) constructor is deprecated. Please use an options hash instead."
-        host, port, type = *args
-        { host: host, port: port, type: type }
-      end
-    elsif Hash === args[0]
+    if args.length == 1 && args[0].is_a?(Hash)
       args[0]
     else
-      fail ArgumentError, "Invalid LogStashLogger options"
+      fail ArgumentError, "Invalid LogStashLogger options. Expected a single options hash."
     end
   end
 
