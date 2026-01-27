@@ -2,7 +2,7 @@
 [![Build Status](https://github.com/dwbutler/logstash-logger/workflows/Ruby%20tests/badge.svg)](https://github.com/dwbutler/logstash-logger/actions) [![Code Climate](https://codeclimate.com/github/dwbutler/logstash-logger/badges/gpa.svg)](https://codeclimate.com/github/dwbutler/logstash-logger) [![codecov.io](http://codecov.io/github/dwbutler/logstash-logger/coverage.svg?branch=master)](http://codecov.io/github/dwbutler/logstash-logger?branch=master) [![Gem Version](https://badge.fury.io/rb/logstash-logger.svg)](https://badge.fury.io/rb/logstash-logger)
 
 LogStashLogger extends Ruby's `Logger` class to log directly to
-[Logstash](https://www.elastic.co/products/logstash).
+[Logstash](https://www.elastic.co/logstash).
 It supports writing to various outputs in logstash JSON format. This is an improvement over
 writing to a file or syslog since Logstash can receive the structured data directly.
 
@@ -21,15 +21,21 @@ writing to a file or syslog since Logstash can receive the structured data direc
 
 Add this line to your application's Gemfile:
 
-    gem 'logstash-logger'
+```ruby
+gem 'logstash-logger'
+```
 
 And then execute:
 
-    $ bundle
+```bash
+bundle install
+```
 
 Or install it yourself as:
 
-    $ gem install logstash-logger
+```bash
+gem install logstash-logger
+```
 
 ## Ruby Compatibility
 
