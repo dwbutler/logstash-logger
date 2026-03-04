@@ -1,3 +1,31 @@
+## 1.0.0
+
+### Breaking Changes
+- Remove deprecated features (deprecated constructor, Poseidon Kafka implementation). [#177](https://github.com/dwbutler/logstash-logger/pull/177)
+- Drops support for older Ruby/Rails versions. Configures modern Ruby and Rails. [#176](https://github.com/dwbutler/logstash-logger/pull/176)
+
+### Features
+- New Kafka device implementation using `ruby-kafka` gem, replacing deprecated Poseidon. Includes topic validation, buffer group configuration, and improved error handling. [#175](https://github.com/dwbutler/logstash-logger/pull/175)
+- Add buffered HTTP device to write to Logstash HTTP input. [#163](https://github.com/dwbutler/logstash-logger/pull/163) [#135](https://github.com/dwbutler/logstash-logger/issues/135)
+- Support for `shift_age` and `shift_size` options in File device. [#164](https://github.com/dwbutler/logstash-logger/issues/164)
+- Configure `buffer_max_items` for Connectable devices using URI query string options. [#176](https://github.com/dwbutler/logstash-logger/pull/176)
+- Wrap hostname into a hash to ensure compatibility with Elastic >= 8. [#172](https://github.com/dwbutler/logstash-logger/pull/172)
+- Put `@timestamp` first in JSON output. [#174](https://github.com/dwbutler/logstash-logger/pull/174) [#168](https://github.com/dwbutler/logstash-logger/issues/168)
+- Instantiate custom formatter classes with `customize_event` keyword arg. [#155](https://github.com/dwbutler/logstash-logger/pull/155)
+- Allow `.reset` on MultiLogger. [#153](https://github.com/dwbutler/logstash-logger/pull/153) [#151](https://github.com/dwbutler/logstash-logger/issues/151)
+
+### Bug Fixes
+- Fix JRuby compatibility issues. [#179](https://github.com/dwbutler/logstash-logger/pull/179)
+- Handle non-string tags in tagged logging. [#173](https://github.com/dwbutler/logstash-logger/pull/173)
+- Allow passing integers as tags to `TaggedLogging::Formatter`. [#152](https://github.com/dwbutler/logstash-logger/pull/152)
+- Fix alias in MultiLogger. [#161](https://github.com/dwbutler/logstash-logger/pull/161)
+- Gracefully handle JSON `Encoding::UndefinedConversionError`. [#165](https://github.com/dwbutler/logstash-logger/pull/165) [#158](https://github.com/dwbutler/logstash-logger/issues/158)
+- Fix argument error for unknown keyword `:sync` with Redis connection. [#171](https://github.com/dwbutler/logstash-logger/pull/171)
+
+### Other
+- Move documentation from README to `docs/` directory. [#178](https://github.com/dwbutler/logstash-logger/pull/178)
+- Migrate CI to GitHub Actions.
+
 ## 0.26.1
 
  - Fix: Support for SSL with the TCP device without an SSL context in Ruby
