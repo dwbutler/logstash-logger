@@ -2,4 +2,4 @@ source 'https://rubygems.org'
 
 gemspec
 
-gem "codeclimate-test-reporter", group: :test, require: nil
+gem "simplecov", ">= 0.22", group: :test, require: false
