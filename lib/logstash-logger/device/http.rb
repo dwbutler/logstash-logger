@@ -25,7 +25,7 @@ module LogStashLogger
         # Logstash HTTP input expects JSON array instead of lines of JSON
         body = "[#{messages.join(',')}]"
         resp = Net::HTTP.post @url, body, {"Content-Type" => "application/json"}
-        raise resp.message if Net::HTTPError === resp
+        raise "HTTP log upload failed: #{resp.code} #{resp.message}" unless resp.is_a?(Net::HTTPSuccess)
       end
 
     end
