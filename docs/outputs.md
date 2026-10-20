@@ -49,3 +49,13 @@ LogStashLogger.new \
   url: 'https://example.com:8071/?token=TOKEN',
   ndjson: true
 ```
+
+With `ndjson: true` the request is sent with `Content-Type: application/x-ndjson`; otherwise it uses `application/json`. If your endpoint expects a different header, set it explicitly with `content_type`:
+
+```ruby
+LogStashLogger.new \
+  type: :http,
+  url: 'https://example.com:8071/?token=TOKEN',
+  ndjson: true,
+  content_type: 'application/json'
+```

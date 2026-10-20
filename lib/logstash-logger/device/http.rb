@@ -12,6 +12,7 @@ module LogStashLogger
         super
         @url = URI(opts[:url])
         @ndjson = opts.fetch(:ndjson, false)
+        @content_type = opts[:content_type] || default_content_type
       end
 
       def connect
@@ -24,11 +25,15 @@ module LogStashLogger
 
       def write_batch(messages, _group = nil)
         body = @ndjson ? ndjson_body(messages) : json_array_body(messages)
-        resp = Net::HTTP.post @url, body, {"Content-Type" => "application/json"}
+        resp = Net::HTTP.post @url, body, {"Content-Type" => @content_type}
         raise resp.message if Net::HTTPError === resp
       end
 
       private
+
+      def default_content_type
+        @ndjson ? "application/x-ndjson" : "application/json"
+      end
 
       # Logstash HTTP input expects a JSON array instead of lines of JSON
       def json_array_body(messages)
