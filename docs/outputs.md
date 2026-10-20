@@ -41,21 +41,21 @@ LogStashLogger.new \
 
 Note the parameter is `url` and not `uri`. Relies on [Net:HTTP](https://ruby-doc.org/stdlib-2.7.1/libdoc/net/http/rdoc/Net/HTTP.html#class-Net::HTTP-label-HTTPS) to auto-detect SSL usage from the scheme.
 
-By default, each batch is sent as a JSON array, which is what the Logstash HTTP Input expects. For endpoints that expect newline-delimited JSON (NDJSON), with one event per line, set `ndjson: true`:
+By default, each batch is sent as a JSON array, which is what the Logstash HTTP Input expects. For endpoints that expect newline-delimited JSON (NDJSON), with one event per line, set `format: :ndjson`:
 
 ```ruby
 LogStashLogger.new \
   type: :http,
   url: 'https://example.com:8071/?token=TOKEN',
-  ndjson: true
+  format: :ndjson
 ```
 
-With `ndjson: true` the request is sent with `Content-Type: application/x-ndjson`; otherwise it uses `application/json`. If your endpoint expects a different header, set it explicitly with `content_type`:
+The `format` option accepts `:json_array` (the default) or `:ndjson`. With `:ndjson` the request is sent with `Content-Type: application/x-ndjson`; with `:json_array` it uses `application/json`. If your endpoint expects a different header, set it explicitly with `content_type`:
 
 ```ruby
 LogStashLogger.new \
   type: :http,
   url: 'https://example.com:8071/?token=TOKEN',
-  ndjson: true,
+  format: :ndjson,
   content_type: 'application/json'
 ```

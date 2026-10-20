@@ -8,11 +8,22 @@ module LogStashLogger
     # rather than persistent HTTP connections for efficiency.
     class HTTP < Connectable
 
+      # Request body formats, with the Content-Type sent by default for each.
+      FORMATS = {
+        json_array: "application/json",
+        ndjson: "application/x-ndjson",
+      }.freeze
+
+      DEFAULT_FORMAT = :json_array
+
       def initialize(opts)
         super
         @url = URI(opts[:url])
-        @ndjson = opts.fetch(:ndjson, false)
-        @content_type = opts[:content_type] || default_content_type
+        @format = (opts[:format] || DEFAULT_FORMAT).to_sym
+        unless FORMATS.key?(@format)
+          raise ArgumentError, "Unknown HTTP body format: #{@format.inspect} (expected one of #{FORMATS.keys.map(&:inspect).join(', ')})"
+        end
+        @content_type = opts[:content_type] || FORMATS[@format]
       end
 
       def connect
@@ -24,16 +35,12 @@ module LogStashLogger
       end
 
       def write_batch(messages, _group = nil)
-        body = @ndjson ? ndjson_body(messages) : json_array_body(messages)
+        body = @format == :ndjson ? ndjson_body(messages) : json_array_body(messages)
         resp = Net::HTTP.post @url, body, {"Content-Type" => @content_type}
         raise resp.message if Net::HTTPError === resp
       end
 
       private
-
-      def default_content_type
-        @ndjson ? "application/x-ndjson" : "application/json"
-      end
 
       # Logstash HTTP input expects a JSON array instead of lines of JSON
       def json_array_body(messages)

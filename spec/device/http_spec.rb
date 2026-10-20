@@ -19,11 +19,31 @@ describe LogStashLogger::Device::HTTP do
       device.write_batch(messages)
     end
 
-    it "sends newline-delimited JSON when ndjson is enabled" do
-      device = LogStashLogger::Device.new(type: :http, url: url, sync: true, ndjson: true)
+    it "sends a JSON array with format: :json_array" do
+      device = LogStashLogger::Device.new(type: :http, url: url, sync: true, format: :json_array)
+      expect(Net::HTTP).to receive(:post)
+        .with(URI(url), "[{\"a\":1}\n,{\"b\":2}]", anything)
+      device.write_batch(messages)
+    end
+
+    it "sends newline-delimited JSON with format: :ndjson" do
+      device = LogStashLogger::Device.new(type: :http, url: url, sync: true, format: :ndjson)
       expect(Net::HTTP).to receive(:post)
         .with(URI(url), "{\"a\":1}\n{\"b\":2}\n", anything)
       device.write_batch(messages)
+    end
+
+    it "accepts the format as a string" do
+      device = LogStashLogger::Device.new(type: :http, url: url, sync: true, format: "ndjson")
+      expect(Net::HTTP).to receive(:post)
+        .with(URI(url), "{\"a\":1}\n{\"b\":2}\n", anything)
+      device.write_batch(messages)
+    end
+
+    it "raises an error for an unknown format" do
+      expect {
+        LogStashLogger::Device.new(type: :http, url: url, sync: true, format: :xml)
+      }.to raise_error(ArgumentError, /Unknown HTTP body format: :xml/)
     end
   end
 
@@ -41,14 +61,14 @@ describe LogStashLogger::Device::HTTP do
       device.write_batch(["{}"])
     end
 
-    it "is application/x-ndjson when ndjson is enabled" do
-      device = LogStashLogger::Device.new(type: :http, url: url, sync: true, ndjson: true)
+    it "is application/x-ndjson for format: :ndjson" do
+      device = LogStashLogger::Device.new(type: :http, url: url, sync: true, format: :ndjson)
       expect_content_type("application/x-ndjson")
       device.write_batch(["{}"])
     end
 
     it "can be overridden with content_type" do
-      device = LogStashLogger::Device.new(type: :http, url: url, sync: true, ndjson: true, content_type: "application/json")
+      device = LogStashLogger::Device.new(type: :http, url: url, sync: true, format: :ndjson, content_type: "application/json")
       expect_content_type("application/json")
       device.write_batch(["{}"])
     end
