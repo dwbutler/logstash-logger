@@ -2,6 +2,11 @@ require 'pry'
 require 'securerandom'
 
 require 'simplecov'
+require 'simplecov-cobertura'
+SimpleCov.formatters = [
+  SimpleCov::Formatter::HTMLFormatter,
+  SimpleCov::Formatter::CoberturaFormatter
+]
 SimpleCov.start
 
 RSpec.configure do |config|
