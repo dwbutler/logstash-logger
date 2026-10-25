@@ -37,7 +37,7 @@ module LogStashLogger
       def write_batch(messages, _group = nil)
         body = @format == :ndjson ? ndjson_body(messages) : json_array_body(messages)
         resp = Net::HTTP.post @url, body, {"Content-Type" => @content_type}
-        raise resp.message if Net::HTTPError === resp
+        raise "HTTP log upload failed: #{resp.code} #{resp.message}" unless resp.is_a?(Net::HTTPSuccess)
       end
 
       private
