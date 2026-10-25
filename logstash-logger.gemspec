@@ -26,11 +26,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'aws-sdk-kinesis'
   gem.add_development_dependency 'aws-sdk-firehose'
 
-  if defined?(JRUBY_VERSION)
-    gem.add_development_dependency 'SyslogLogger'
-  else
-    gem.add_development_dependency 'syslog'
-  end
+  gem.add_development_dependency 'syslog', '>= 0.4'
 
   gem.add_development_dependency 'rspec', '>= 3'
   gem.add_development_dependency 'rake'
