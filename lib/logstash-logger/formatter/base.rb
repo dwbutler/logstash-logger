@@ -17,9 +17,9 @@ module LogStashLogger
       # moved under MOVED_FIELDS_KEY and the call-site values are used.
       CALL_SITE_FIELDS = %w[severity @timestamp @version].freeze
       MOVED_FIELDS_KEY = 'message_fields'.freeze
-      # The JSON generator's default max_nesting. Encoding repair leaves
-      # Hashes and Arrays nested deeper than this as they are, and the
-      # generator then rejects them with its usual NestingError.
+      # The JSON generator's default max_nesting. The encoding check raises
+      # JSON::NestingError for Hashes and Arrays nested deeper than this, and
+      # encoding repair leaves them as they are.
       MAX_SCAN_DEPTH = 100
       attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
@@ -237,12 +237,31 @@ module LogStashLogger
         end
       end
 
-      # Check if the message has encoding issues that would cause JSON serialization problems.
-      # This is needed because some Ruby implementations (e.g., JRuby) may not raise
-      # exceptions during JSON encoding but produce malformed output instead.
-      def message_has_encoding_issue?(event)
-        message = event.to_hash['message']
-        message.is_a?(String) && string_has_encoding_issue?(message)
+      # Checks every String in the event for encoding issues that would cause
+      # JSON serialization problems. This is needed because some Ruby
+      # implementations (e.g., JRuby) may not raise exceptions during JSON
+      # encoding but produce malformed output instead.
+      def event_has_encoding_issue?(event)
+        encoding_issue?(event.to_hash)
+      end
+
+      # Past MAX_SCAN_DEPTH this raises JSON::NestingError, as the JSON
+      # generator does, so a Hash or Array that contains itself ends in the
+      # placeholder record instead of recursing forever. Not every JSON
+      # encoder checks the nesting itself (ActiveSupport 8.0's does not).
+      def encoding_issue?(value, depth = 0)
+        case value
+        when String then string_has_encoding_issue?(value)
+        when Hash, Array
+          raise JSON::NestingError, "nesting of #{depth + 1} is too deep" if depth > MAX_SCAN_DEPTH
+
+          if value.is_a?(Hash)
+            value.any? { |k, v| encoding_issue?(k, depth + 1) || encoding_issue?(v, depth + 1) }
+          else
+            value.any? { |v| encoding_issue?(v, depth + 1) }
+          end
+        else false
+        end
       end
 
       def string_has_encoding_issue?(string)

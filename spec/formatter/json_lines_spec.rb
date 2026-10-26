@@ -36,6 +36,40 @@ describe LogStashLogger::Formatter::JsonLines do
     end
   end
 
+  context 'when a tag or another field has invalid bytes' do
+    before do
+      allow(subject).to receive(:error_logger).and_return(Logger.new(IO::NULL))
+    end
+
+    it 'writes the record with every String repaired' do
+      fields = { 'message' => 'hello', 'agent' => "x\xFFy".b, 'nested' => { 'a' => "z\xFF".b } }
+      output = subject.tagged("evil-\xFF".b, "caf\xC3\xA9".b) do
+        subject.call(severity, time, progname, fields)
+      end
+
+      expect(output.count("\n")).to eq(1)
+      data = JSON.parse(output)
+      expect(data['message']).to eq('hello')
+      expect(data['tags']).to eq(["evil-\uFFFD", "caf\u00E9"])
+      expect(data['agent']).to eq("x\uFFFDy")
+      expect(data['nested']).to eq('a' => "z\uFFFD")
+    end
+  end
+
+  context 'when a logged Hash contains itself' do
+    let(:message) { {}.tap { |data| data['self'] = data } }
+
+    before do
+      allow(subject).to receive(:error_logger).and_return(Logger.new(IO::NULL))
+    end
+
+    it 'writes the placeholder record instead of raising' do
+      data = JSON.parse(formatted_message)
+      expect(data['tags']).to eq([LogStashLogger::Formatter::Base::FAILED_TO_FORMAT_TAG])
+      expect(data['error']).to eq('JSON::NestingError')
+    end
+  end
+
   context 'when a message uses Symbol keys for fields the logger also sets' do
     # Rejects a record whose JSON object has two members with the same name
     def parse_strictly(line)
