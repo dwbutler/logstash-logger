@@ -55,11 +55,16 @@ for more information.
 
 The UDP output sends each record as one datagram, and a datagram has a size
 limit: 65,507 bytes for IPv4, and less on some hosts (macOS allows 9,216 bytes
-by default). The UDP output replaces any formatted record larger than 65,507
-bytes with a small record that has the message
-`Record of N bytes replaced: too large for one UDP datagram`, the tag
+by default). The UDP output replaces any formatted record larger than
+`max_datagram_size` (65,507 bytes by default) with a small record that has the
+message `Record of N bytes replaced: too large for one UDP datagram`, the tag
 `_logstashlogger_record_too_large` and an `original_size` field. The error
-logger gets the size, never the content.
+logger gets the size, never the content. If your host or collector accepts
+smaller datagrams, set `max_datagram_size` (at least 512) to its limit:
+
+```ruby
+logger = LogStashLogger.new(type: :udp, host: 'localhost', port: 5228, max_datagram_size: 9216)
+```
 
 `max_message_size` truncates only the `message` field, so it cannot keep a
 record under the datagram limit on its own:
