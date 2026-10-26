@@ -1,4 +1,5 @@
 require 'logstash-logger'
+require_relative '../support/unserializable_value'
 
 describe LogStashLogger::Formatter::JsonLines do
   include_context "formatter"
@@ -32,6 +33,23 @@ describe LogStashLogger::Formatter::JsonLines do
     it "outputs in JSON format with message encoding updated to utf8" do
       json_message = JSON.parse(formatted_message)
       expect(json_message["message"]).to eq(message.force_encoding(Encoding::UTF_8).scrub)
+    end
+  end
+
+  context 'when the record cannot be serialized' do
+    let(:message) { { 'message' => 'x', 'n' => UnserializableValue.new } }
+
+    before do
+      allow(subject).to receive(:error_logger).and_return(Logger.new(IO::NULL))
+    end
+
+    it 'emits a JSON placeholder line instead of a bare string' do
+      expect(formatted_message).to end_with("\n")
+      expect(formatted_message.count("\n")).to eq(1)
+      data = JSON.parse(formatted_message)
+      expect(data['message']).to eq(LogStashLogger::Formatter::Base::FAILED_TO_FORMAT_MSG)
+      expect(data['tags']).to eq([LogStashLogger::Formatter::Base::FAILED_TO_FORMAT_TAG])
+      expect(data['error']).to eq('JSON::GeneratorError')
     end
   end
 end

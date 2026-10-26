@@ -11,6 +11,7 @@ module LogStashLogger
 
     class Base < ::Logger::Formatter
       FAILED_TO_FORMAT_MSG = 'Failed to format log event'
+      FAILED_TO_FORMAT_TAG = '_logstashlogger_format_failure'
       attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
 
@@ -20,15 +21,42 @@ module LogStashLogger
         super()
       end
 
-      def call(severity, time, _progname, message)
+      def call(severity, time, progname, message)
         event = build_event(message, severity, time)
-        format_event(event) unless event.cancelled?
+        frame_event(event, progname) unless event.cancelled?
       rescue StandardError => e
         log_error(e)
-        FAILED_TO_FORMAT_MSG
+        fallback_event(severity, time, progname, e)
       end
 
       private
+
+      # Wraps a built event in this formatter's record framing. Formatters that
+      # add a header or trailer override this; the fallback below goes through
+      # the same framing.
+      def frame_event(event, _progname)
+        format_event(event)
+      end
+
+      # When a record cannot be built or serialized, emit a well-formed
+      # placeholder in this formatter's own framing instead, so the failure never
+      # changes how a collector splits the stream into records. Returns nil
+      # (which devices drop) if even the placeholder cannot be formatted.
+      def fallback_event(severity, time, progname, error)
+        event = LogStash::Event.new(
+          '@timestamp'.freeze => time.is_a?(Time) ? time : Time.now,
+          'message'.freeze => FAILED_TO_FORMAT_MSG,
+          'severity'.freeze => severity.to_s,
+          'host'.freeze => HOST,
+          'tags'.freeze => [FAILED_TO_FORMAT_TAG],
+          'error'.freeze => error.class.name
+        )
+        event.timestamp = event.timestamp.iso8601(3) if event.timestamp.is_a?(Time)
+        frame_event(event, progname)
+      rescue StandardError => e
+        log_error(e)
+        nil
+      end
 
       def build_event(message, severity, time)
         data = message
@@ -51,6 +79,9 @@ module LogStashLogger
                         event_data['source'.freeze] = value
                       when :type, 'type'
                         event_data['type'.freeze] = value
+                      when :'@timestamp', '@timestamp'
+                        # Keep the logger time unless the value is a usable time
+                        event_data['@timestamp'.freeze] = usable_time(value) || time
                       else
                         event_data[key] = value
                       end
@@ -85,6 +116,16 @@ module LogStashLogger
 
       def format_event(event)
         event
+      end
+
+      # LogStash::Event runs String timestamps through Time.parse, which raises
+      # for text that is not a time. Keep every other value exactly as given.
+      def usable_time(value)
+        return value unless value.is_a?(String)
+        Time.parse(value)
+        value
+      rescue ArgumentError, RangeError
+        nil
       end
 
       def force_utf8_encoding(event)

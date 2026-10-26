@@ -24,19 +24,55 @@ describe LogStashLogger::Formatter::Base do
       end
     end
 
-    context "when exception is raised" do
+    context "when building the event raises" do
       before do
-        allow(subject).to receive(:error_logger).and_return(Logger.new('/dev/null'))
-        allow(subject).to receive(:format_event).and_throw
+        allow(subject).to receive(:error_logger).and_return(Logger.new(IO::NULL))
+        allow(subject).to receive(:build_event).and_raise(ArgumentError, 'boom')
       end
 
       it "logs an exception" do
-        expect(subject).to receive(:log_error)
+        expect(subject).to receive(:log_error).and_call_original
         subject.call(severity, time, progname, message)
       end
 
-      it "returns a failed to format message" do
-        expect(subject.call(severity, time, progname, message)).to eq(LogStashLogger::Formatter::Base::FAILED_TO_FORMAT_MSG)
+      it "returns a well-formed placeholder event instead of a bare string" do
+        event = subject.call(severity, time, progname, message)
+        expect(event).to be_a(LogStash::Event)
+        expect(event['message']).to eq(LogStashLogger::Formatter::Base::FAILED_TO_FORMAT_MSG)
+        expect(event['tags']).to eq([LogStashLogger::Formatter::Base::FAILED_TO_FORMAT_TAG])
+        expect(event['error']).to eq('ArgumentError')
+        expect(event['severity']).to eq(severity)
+        expect(event['@timestamp']).to eq(time.iso8601(3))
+      end
+    end
+
+    context "when even the placeholder cannot be formatted" do
+      before do
+        allow(subject).to receive(:error_logger).and_return(Logger.new(IO::NULL))
+        allow(subject).to receive(:format_event).and_raise(ArgumentError, 'boom')
+      end
+
+      it "returns nil, which devices drop" do
+        expect(subject.call(severity, time, progname, message)).to be_nil
+      end
+    end
+
+    context "when logged content carries an @timestamp that is not a time" do
+      let(:message) { '{"message":"hello","@timestamp":"not-a-time"}' }
+
+      it "keeps the logger time and formats the record normally" do
+        event = subject.call(severity, time, progname, message)
+        expect(event['message']).to eq('hello')
+        expect(event['@timestamp']).to eq(time.iso8601(3))
+      end
+    end
+
+    context "when logged content carries a valid @timestamp" do
+      let(:message) { '{"message":"hello","@timestamp":"2001-01-01T00:00:00Z"}' }
+
+      it "keeps it" do
+        event = subject.call(severity, time, progname, message)
+        expect(event['@timestamp']).to start_with('2001-01-01T00:00:00')
       end
     end
   end
