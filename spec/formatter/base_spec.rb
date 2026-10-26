@@ -67,12 +67,31 @@ describe LogStashLogger::Formatter::Base do
       end
     end
 
-    context "when logged content carries a valid @timestamp" do
-      let(:message) { '{"message":"hello","@timestamp":"2001-01-01T00:00:00Z"}' }
+    context "when logged content carries a valid @timestamp and @version" do
+      let(:message) { '{"message":"hello","@timestamp":"2001-01-01T00:00:00Z","@version":"9"}' }
 
-      it "keeps it" do
+      it "uses the logger time and version and keeps the logged values aside" do
         event = subject.call(severity, time, progname, message)
-        expect(event['@timestamp']).to start_with('2001-01-01T00:00:00')
+        expect(event['@timestamp']).to eq(time.iso8601(3))
+        expect(event['@version']).to eq('1')
+        expect(event['message_fields']).to eq('@timestamp' => '2001-01-01T00:00:00Z', '@version' => '9')
+      end
+
+      it "does the same for a Hash message with Symbol keys" do
+        event = subject.call(severity, time, progname, { message: 'hello', :@timestamp => 12345, :@version => '9' })
+        expect(event['@timestamp']).to eq(time.iso8601(3))
+        expect(event['@version']).to eq('1')
+        expect(event['message_fields']).to eq('@timestamp' => 12345, '@version' => '9')
+      end
+
+      context "when trust_message_fields is set" do
+        before { LogStashLogger.configure { |config| config.trust_message_fields = true } }
+
+        it "keeps them" do
+          event = subject.call(severity, time, progname, message)
+          expect(event['@timestamp']).to start_with('2001-01-01T00:00:00')
+          expect(event['@version']).to eq('9')
+        end
       end
     end
   end

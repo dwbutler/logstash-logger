@@ -10,6 +10,10 @@ For minimal, more-structured logstash events, try one of the following gems:
 * [yarder](https://github.com/rurounijones/yarder)
 
 Currently these gems output a JSON string, which LogStashLogger then parses.
+LogStashLogger uses the time of the log call for `@timestamp` and moves any
+`@timestamp` or `@version` in that JSON under `message_fields`. To keep the
+values these gems write, set `trust_message_fields` (see
+[Fields Set by the Log Call](customization.md#fields-set-by-the-log-call)).
 Future versions of these gems could potentially have deeper integration with LogStashLogger
 (e.g. by directly writing `LogStash::Event` objects).
 

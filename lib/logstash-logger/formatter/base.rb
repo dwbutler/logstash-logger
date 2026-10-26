@@ -15,7 +15,7 @@ module LogStashLogger
       # Fields of a String (JSON) or Hash message that the log call itself
       # owns. Unless trust_message_fields is set, logged values for them are
       # moved under MOVED_FIELDS_KEY and the call-site values are used.
-      CALL_SITE_FIELDS = %w[severity].freeze
+      CALL_SITE_FIELDS = %w[severity @timestamp @version].freeze
       MOVED_FIELDS_KEY = 'message_fields'.freeze
       attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
@@ -99,7 +99,8 @@ module LogStashLogger
                         # object is never modified.
                         event_data['tags'.freeze] = value.dup
                       when '@timestamp'
-                        # Keep the logger time unless the value is a usable time
+                        # Reached only when trust_message_fields is set. Keep
+                        # the logger time unless the value is a usable time.
                         event_data['@timestamp'.freeze] = usable_time(value) || time
                       else
                         event_data[key] = value
