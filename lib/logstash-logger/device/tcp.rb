@@ -4,6 +4,8 @@ require 'ipaddr'
 module LogStashLogger
   module Device
     class TCP < Socket
+      include WriteDeadline
+
       DEFAULT_CONNECT_TIMEOUT = 5
 
       attr_reader :ssl_certificate, :connect_timeout
@@ -17,6 +19,7 @@ module LogStashLogger
         @use_ssl = opts[:ssl_enable] if opts.has_key? :ssl_enable
         @verify_hostname = opts.fetch(:verify_hostname, true)
         @connect_timeout = parse_timeout(:connect_timeout, opts.fetch(:connect_timeout, DEFAULT_CONNECT_TIMEOUT))
+        @write_timeout = parse_timeout(:write_timeout, opts.fetch(:write_timeout, DEFAULT_WRITE_TIMEOUT))
         validate_ssl_certificate! if use_ssl? && @ssl_certificate && !@ssl_context
       end
 
