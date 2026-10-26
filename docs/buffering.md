@@ -62,6 +62,10 @@ records, and log their size and the reason, never their content:
 
 * Kafka: records the broker or client rejects with `MessageSizeTooLarge`, `RecordListTooLarge`
   or `BufferOverflow`. The rest of the batch is sent one record at a time.
+* Kinesis and Firehose: records over the service's per-record limit (Kinesis 1 MiB by default,
+  Firehose 1,000 KiB). Batches are split to fit each service's request limits. If your Kinesis
+  stream is configured for larger records, raise the limit with `aws_max_record_bytes`, for
+  example `aws_max_record_bytes: 10 * 1024 * 1024`.
 
 ## Sync Mode
 

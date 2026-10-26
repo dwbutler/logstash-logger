@@ -18,6 +18,7 @@ module LogStashLogger
       end
 
       attr_accessor :aws_region, :stream
+      attr_reader :max_record_bytes
 
       def initialize(opts)
         super
@@ -25,6 +26,22 @@ module LogStashLogger
         @secret_access_key = opts[:aws_secret_access_key]
         @aws_region = opts[:aws_region]
         @stream = opts[:stream] || DEFAULT_STREAM
+        # The largest record the stream accepts. Kinesis streams can be
+        # configured above the 1 MiB default, up to 10 MiB.
+        @max_record_bytes = Integer(opts[:aws_max_record_bytes] || self.class.max_record_bytes)
+      end
+
+      # Service limits, defined by each subclass
+      def self.max_records
+        fail NotImplementedError
+      end
+
+      def self.max_record_bytes
+        fail NotImplementedError
+      end
+
+      def self.max_request_bytes
+        fail NotImplementedError
       end
 
       def transform_message(message)
@@ -55,27 +72,32 @@ module LogStashLogger
         yield
       rescue => e
         log_error(e)
-        log_warning("giving up")
         close(flush: false)
+        raise
       end
 
       def write_batch(messages, _group = nil)
-        records = messages.map{ |m| transform_message(m) }
+        records = []
+        messages.each do |message|
+          record = transform_message(message.to_s)
+          size = record_size(record)
+          if size > max_record_bytes
+            log_warning("dropping a record of #{size} bytes: over the #{max_record_bytes}-byte limit of #{self.class.stream_class.name}")
+          else
+            records << record
+          end
+        end
 
-        with_connection do
-          resp = put_records(records)
-
-          # Put any failed records back into the buffer
-          if !is_successful_response(resp)
-            get_response_records(resp).each_with_index do |record, index|
-              if self.class.recoverable_error_codes.include?(record.error_code)
-                log_warning("Failed to post record using #{self.class.stream_class.name} with error: #{record.error_code} #{record.error_message}")
-                log_warning("Retrying")
-                write(records[index][:data])
-              elsif !record.error_code.nil? && record.error_code != ''
-                log_error("Failed to post record using #{self.class.stream_class.name} with error: #{record.error_code} #{record.error_message}")
-              end
-            end
+        slices = request_slices(records)
+        slices.each_with_index do |slice, index|
+          begin
+            with_connection { send_slice(slice) }
+          rescue StandardError
+            # Already logged by with_connection. Only records that were not
+            # sent go back; dropped oversized records never do.
+            unsent = slices[index..-1].flatten(1).map { |r| r[:data] }
+            give_back(unsent)
+            return
           end
         end
       end
@@ -86,6 +108,56 @@ module LogStashLogger
 
       def close!
         @io = nil
+      end
+
+      private
+
+      def send_slice(records)
+        resp = put_records(records)
+        return if is_successful_response(resp)
+
+        get_response_records(resp).each_with_index do |record, index|
+          if self.class.recoverable_error_codes.include?(record.error_code)
+            log_warning("Failed to post record using #{self.class.stream_class.name} with error: #{record.error_code} #{record.error_message}")
+            log_warning("Retrying")
+            write(records[index][:data])
+          elsif !record.error_code.nil? && record.error_code != ''
+            log_warning("dropping a record that #{self.class.stream_class.name} rejected: #{record.error_code} #{record.error_message}")
+          end
+        end
+      end
+
+      def record_size(record)
+        record[:data].bytesize + record.fetch(:partition_key, '').bytesize
+      end
+
+      # Groups records into requests that fit the service's record-count and
+      # request-size limits.
+      def request_slices(records)
+        slices = []
+        bytes = 0
+        records.each do |record|
+          size = record_size(record)
+          if slices.empty? || slices.last.size >= self.class.max_records || bytes + size > self.class.max_request_bytes
+            slices << []
+            bytes = 0
+          end
+          slices.last << record
+          bytes += size
+        end
+        slices
+      end
+
+      # Records from a request that failed: retried on the next flush, or
+      # dropped when drop_messages_on_flush_error is set.
+      def give_back(messages)
+        return if messages.empty?
+        if @drop_messages_on_flush_error
+          log_warning("dropping #{messages.size} records after a failed request")
+        else
+          log_warning("#{messages.size} records will be retried on the next flush")
+          buffer_requeue(messages, @buffer_group)
+        end
       end
 
     end
