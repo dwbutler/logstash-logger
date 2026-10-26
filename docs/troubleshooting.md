@@ -15,6 +15,24 @@ Your application is probably attempting to log data that is not encoded in a val
 standard JSON library will raise an exception. You may be able to overcome this by swapping out a different JSON encoder
 such as Oj. Use the [oj_mimic_json](https://github.com/ohler55/oj_mimic_json) gem to use Oj for JSON generation.
 
+## Records tagged `_logstashlogger_format_failure`
+
+When a log call cannot be turned into a record, for example because a logged
+value cannot be serialized to JSON, LogStashLogger writes a placeholder record
+instead. It is framed like any other record, so the records around it are not
+affected. The placeholder has the message `Failed to format log event`, the
+tag `_logstashlogger_format_failure`, the logger's time and severity, and the
+error class in an `error` field. The error itself is reported to the error
+logger. Before 1.1.0 a bare `Failed to format log event` string was written
+without a line ending, which could merge with the next record.
+
+## The `cee_syslog` header shows the local hostname
+
+The `cee_syslog` formatter writes a `hostname progname:@cee:` header before
+each record. The hostname is always this machine's hostname, and control
+characters in the header are replaced with spaces. A `host` field in the logged
+content, or one set in `customize_event`, appears only in the JSON body.
+
 ## No logs getting sent on Heroku
 
 Heroku recommends installing the [rails_12factor](https://github.com/heroku/rails_12factor) so that logs get sent to STDOUT.

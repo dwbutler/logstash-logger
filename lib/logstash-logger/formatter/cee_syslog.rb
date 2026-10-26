@@ -1,21 +1,18 @@
 module LogStashLogger
   module Formatter
     class CeeSyslog < Cee
-      def call(severity, time, progname, message)
-        @progname = progname
-        super
-      end
-
       private
 
-      def build_facility(host)
-        facility = host['hostname'.freeze].dup
-        facility << " #{@progname}" if @progname
-        facility
+      def frame_event(event, progname)
+        "#{build_header(progname)}:#{format_event(event)}\n"
       end
 
-      def format_event(event)
-        "#{build_facility(event["host".freeze])}:#{super}\n"
+      # The header names this process, never a value taken from the logged
+      # content, and always stays on one line.
+      def build_header(progname)
+        header = HOST['hostname'.freeze].to_s.dup
+        header << " #{progname}" if progname
+        header.gsub(/[[:cntrl:]]/, ' '.freeze)
       end
     end
   end
