@@ -74,9 +74,14 @@ config.logstash.port = 5228
 # Required
 config.logstash.type = :tcp
 
-# Optional, enables SSL
+# Optional, enables SSL and verifies the server certificate against the system trust store
 config.logstash.ssl_enable = true
+
+# Optional, trusts this certificate (for a self-signed or private-CA server) and enables SSL
+# config.logstash.ssl_certificate = '/path/to/certificate.crt'
 ```
+
+See [SSL Configuration](ssl.md) for other options.
 
 ### Unix Socket
 

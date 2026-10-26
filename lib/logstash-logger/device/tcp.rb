@@ -1,4 +1,5 @@
 require 'openssl'
+require 'ipaddr'
 
 module LogStashLogger
   module Device
@@ -13,11 +14,16 @@ module LogStashLogger
         @use_ssl = !!(@ssl_certificate || opts[:ssl_context])
         @use_ssl = opts[:ssl_enable] if opts.has_key? :ssl_enable
         @verify_hostname = opts.fetch(:verify_hostname, true)
+        validate_ssl_certificate! if use_ssl? && @ssl_certificate && !@ssl_context
       end
 
+      # The TLS context used for the connection. Without an operator-supplied
+      # :ssl_context, the server certificate is always verified: against the
+      # :ssl_certificate file when one is given, otherwise against the system
+      # trust store.
       def ssl_context
         return unless use_ssl?
-        @ssl_context || certificate_context
+        @ssl_context || certificate_context || default_context
       end
 
       def use_ssl?
@@ -49,20 +55,60 @@ module LogStashLogger
       end
 
       def ssl_io
-        ssl_context ?
-          OpenSSL::SSL::SSLSocket.new(tcp_io, ssl_context) :
-          OpenSSL::SSL::SSLSocket.new(tcp_io)
-      end
-
-      def certificate_context
-        return unless @ssl_certificate
-        @certificate_context ||= OpenSSL::SSL::SSLContext.new.tap do |ctx|
-          ctx.set_params(cert: @ssl_certificate)
+        socket = tcp_io
+        begin
+          OpenSSL::SSL::SSLSocket.new(socket, ssl_context).tap do |ssl|
+            # Closing the TLS socket also closes the TCP socket underneath it
+            ssl.sync_close = true
+            # SNI is only sent for DNS names, never for IP addresses
+            ssl.hostname = hostname unless ip_address?(hostname)
+          end
+        rescue StandardError
+          socket.close rescue nil
+          raise
         end
       end
 
+      # Trusts the certificate (or CA bundle) in the :ssl_certificate file, in
+      # addition to the system trust store.
+      def certificate_context
+        return unless @ssl_certificate
+        @certificate_context ||= verifying_context(ca_file: @ssl_certificate)
+      end
+
+      # Used when TLS is enabled without an :ssl_context or :ssl_certificate.
+      def default_context
+        @default_context ||= verifying_context
+      end
+
+      def verifying_context(params = {})
+        OpenSSL::SSL::SSLContext.new.tap do |ctx|
+          # VERIFY_PEER, hostname verification and the system certificate store
+          ctx.set_params(params)
+          # Honour an explicit verify_hostname: false
+          ctx.verify_hostname = !!@verify_hostname
+        end
+      end
+
+      def validate_ssl_certificate!
+        path = @ssl_certificate.to_s
+        unless ::File.file?(path) && ::File.readable?(path)
+          raise ArgumentError, "ssl_certificate must be a readable certificate file: #{path.inspect}"
+        end
+        OpenSSL::X509::Certificate.new(::File.read(path))
+      rescue OpenSSL::X509::CertificateError => e
+        raise ArgumentError, "ssl_certificate #{path.inspect} is not a PEM or DER certificate: #{e.message}"
+      end
+
+      def ip_address?(name)
+        IPAddr.new(name.to_s)
+        true
+      rescue IPAddr::Error
+        false
+      end
+
       def verify_hostname?
-        return false unless ssl_context
+        return false unless use_ssl?
         !! @verify_hostname
       end
 
