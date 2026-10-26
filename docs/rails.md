@@ -271,7 +271,8 @@ config.logstash.outputs = [
 # Required
 config.logstash.type = :multi_logger
 
-# Required. Each logger may have its own formatter.
+# Required. Each logger may have its own formatter. Loggers without one
+# use config.logstash.formatter.
 config.logstash.outputs = [
   {
     type: :file,
