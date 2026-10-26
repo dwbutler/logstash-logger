@@ -45,6 +45,7 @@ module LogStashLogger
       end
 
       def io
+        forget_connection_after_fork
         @io ||= if use_ssl?
           ssl_io
         else
