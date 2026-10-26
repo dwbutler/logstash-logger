@@ -11,6 +11,8 @@ module LogStashLogger
 
       def initialize(opts = {})
         super
+        @io_pid = Process.pid
+        @fork_mutex = Mutex.new
 
         @buffer_group = nil
         @buffer_max_items = opts[:buffer_max_items]
@@ -118,7 +120,33 @@ module LogStashLogger
       end
 
       def connected?
+        forget_connection_after_fork
         !!@io
+      end
+
+      def io
+        forget_connection_after_fork
+        super
+      end
+
+      # Each output's connect replaces @io and its close! can talk to the
+      # server (a TLS close_notify, a Redis QUIT), so in a forked process both
+      # first release an inherited connection.
+      module ForkSafeConnection
+        def connect
+          forget_connection_after_fork
+          super
+        end
+
+        def close!
+          forget_connection_after_fork
+          super
+        end
+      end
+
+      def self.inherited(subclass)
+        super
+        subclass.prepend(ForkSafeConnection)
       end
 
       def write_one(message)
@@ -156,6 +184,33 @@ module LogStashLogger
         close!
       rescue => e
         log_error(e)
+      end
+
+      # A forked process shares the parent's connection. Writing to it, or
+      # closing it in a way that talks to the peer (a TLS close_notify, a
+      # Redis QUIT), would mix with or end the parent's stream. So the new
+      # process only releases its copy and opens its own connection.
+      # One thread releases the inherited connection; the new pid is recorded
+      # last, so no thread sees it while parent objects are still in place.
+      def forget_connection_after_fork
+        return if @io_pid == Process.pid
+        @fork_mutex.synchronize do
+          return if @io_pid == Process.pid
+          inherited, @io = @io, nil
+          release_inherited_connection(inherited)
+          @io_pid = Process.pid
+        end
+      end
+
+      # Closes this process's file descriptor without sending anything on it;
+      # the connection stays open in the parent. Objects that are not IOs
+      # (client libraries) are only dropped.
+      def release_inherited_connection(io)
+        return unless io
+        raw = io.respond_to?(:to_io) ? io.to_io : io
+        raw.close if raw.is_a?(::IO)
+      rescue StandardError
+        nil
       end
 
       # A timeout in seconds, or nil for no timeout. Strings are accepted
