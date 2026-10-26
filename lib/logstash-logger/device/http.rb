@@ -16,6 +16,16 @@ module LogStashLogger
 
       DEFAULT_FORMAT = :json_array
 
+      # Statuses that reject the content of the request. Sending the same
+      # records again can never succeed, so the rejected records are found and
+      # dropped. Every other error status is retried.
+      CONTENT_REJECTED_STATUSES = [
+        400, # Bad Request: the body is malformed
+        413, # Content Too Large: the body is over the collector's size limit
+        415, # Unsupported Media Type: the collector does not accept this content type
+        422, # Unprocessable Content: the body is well-formed but cannot be processed
+      ].freeze
+
       def initialize(opts)
         super
         @url = URI(opts[:url])
@@ -35,12 +45,49 @@ module LogStashLogger
       end
 
       def write_batch(messages, _group = nil)
-        body = @format == :ndjson ? ndjson_body(messages) : json_array_body(messages)
-        resp = Net::HTTP.post @url, body, {"Content-Type" => @content_type}
-        raise "HTTP log upload failed: #{resp.code} #{resp.message}" unless resp.is_a?(Net::HTTPSuccess)
+        messages = messages.map(&:to_s)
+        resp = post(messages)
+        return if resp.is_a?(Net::HTTPSuccess)
+        raise upload_error(resp) unless content_rejected?(resp)
+        deliver_one_at_a_time(messages, resp)
       end
 
       private
+
+      def post(messages)
+        body = @format == :ndjson ? ndjson_body(messages) : json_array_body(messages)
+        Net::HTTP.post @url, body, {"Content-Type" => @content_type}
+      end
+
+      # The collector rejected the content of the batch. Send the records one
+      # at a time and drop only the ones that are still rejected, so one bad
+      # record does not hold back, or take down, the rest.
+      def deliver_one_at_a_time(messages, batch_resp)
+        return drop(messages.first, batch_resp) if messages.size == 1
+
+        messages.each do |message|
+          resp = post([message])
+          next if resp.is_a?(Net::HTTPSuccess)
+
+          if content_rejected?(resp)
+            drop(message, resp)
+          else
+            raise upload_error(resp)
+          end
+        end
+      end
+
+      def content_rejected?(resp)
+        CONTENT_REJECTED_STATUSES.include?(resp.code.to_i)
+      end
+
+      def drop(message, resp)
+        log_warning("dropping a record of #{message.bytesize} bytes that the collector rejected: HTTP #{resp.code} #{resp.message}")
+      end
+
+      def upload_error(resp)
+        RuntimeError.new("HTTP log upload failed: #{resp.code} #{resp.message}").tap { |e| log_error(e) }
+      end
 
       # Logstash HTTP input expects a JSON array instead of lines of JSON
       def json_array_body(messages)

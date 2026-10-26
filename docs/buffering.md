@@ -66,6 +66,8 @@ records, and log their size and the reason, never their content:
   Firehose 1,000 KiB). Batches are split to fit each service's request limits. If your Kinesis
   stream is configured for larger records, raise the limit with `aws_max_record_bytes`, for
   example `aws_max_record_bytes: 10 * 1024 * 1024`.
+* HTTP: records the collector rejects with 400, 413, 415 or 422. The rest of the batch is sent
+  one record at a time. Other error statuses, such as 401, 429 or 5xx, are retried.
 
 ## Sync Mode
 
