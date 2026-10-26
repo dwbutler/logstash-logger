@@ -5,6 +5,8 @@ module LogStashLogger
     class Connectable < Base
       include LogStashLogger::Buffer
 
+      DEFAULT_FINAL_FLUSH_TIMEOUT = 5
+
       attr_accessor :buffer_logger
 
       def initialize(opts = {})
@@ -36,6 +38,11 @@ module LogStashLogger
 
         @buffer_logger = opts[:buffer_logger]
 
+        # Deleted from opts so outputs that forward their options (Redis) never
+        # receive it.
+        @final_flush_timeout = parse_timeout(:final_flush_timeout,
+          opts.key?(:final_flush_timeout) ? opts.delete(:final_flush_timeout) : DEFAULT_FINAL_FLUSH_TIMEOUT)
+
         # Optional cap on the size of a single formatted record. Off by default.
         # Deleted from opts so outputs that forward their options (Redis) never
         # receive it.
@@ -48,7 +55,8 @@ module LogStashLogger
           autoflush: @sync,
           drop_messages_on_flush_error: @drop_messages_on_flush_error,
           drop_messages_on_full_buffer: @drop_messages_on_full_buffer,
-          flush_at_exit: @buffer_flush_at_exit
+          flush_at_exit: @buffer_flush_at_exit,
+          final_flush_timeout: @final_flush_timeout
         )
       end
 
@@ -75,6 +83,10 @@ module LogStashLogger
 
       def on_full_buffer_receive(data)
         log_warning("Buffer Full - #{data}")
+      end
+
+      def on_final_flush_timeout(pending)
+        log_warning("final flush gave up after #{@final_flush_timeout} seconds waiting for a running flush; #{pending} records were not sent")
       end
 
       def on_buffer_drops(count)
