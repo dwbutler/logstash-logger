@@ -12,8 +12,13 @@ immediately, your only recourse is to set the `sync: true` option.
 ## JSON::GeneratorError
 
 Your application is probably attempting to log data that is not encoded in a valid way. When this happens, Ruby's
-standard JSON library will raise an exception. You may be able to overcome this by swapping out a different JSON encoder
-such as Oj. Use the [oj_mimic_json](https://github.com/ohler55/oj_mimic_json) gem to use Oj for JSON generation.
+standard JSON library will raise an exception. The `json` and `json_lines` formatters report the error to the error
+logger, convert every String in the record (message, tags and any other field, at any depth) to valid UTF-8, replacing
+invalid bytes with `U+FFFD`, and write the repaired record. If two keys of the same Hash repair to the same String, the
+later one gets a numeric suffix (`"a\uFFFD"`, then `"a\uFFFD_2"`), so no value is lost. A record that needs repair is
+rebuilt from plain Hashes and Arrays, so custom Hash or Array subclasses in it are converted to plain ones. If the
+error has another cause, a placeholder record is written instead (see below). You may also be able to overcome this by
+swapping out a different JSON encoder such as Oj. Use the [oj_mimic_json](https://github.com/ohler55/oj_mimic_json) gem to use Oj for JSON generation.
 
 ## Records tagged `_logstashlogger_format_failure`
 

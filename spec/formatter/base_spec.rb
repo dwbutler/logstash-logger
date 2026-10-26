@@ -125,6 +125,46 @@ describe LogStashLogger::Formatter::Base do
     end
   end
 
+  describe '#force_utf8_encoding with invalid bytes outside the message' do
+    let(:event) do
+      LogStash::Event.new(
+        'message' => 'ok',
+        'tags' => ["evil-\xFF".b],
+        'user' => { 'agent' => "x\xFFy".dup.force_encoding(Encoding::UTF_8) },
+        "k\xFF".b => 'v'
+      )
+    end
+
+    it 'repairs every String in the event, nested ones and keys included' do
+      subject.send(:force_utf8_encoding, event)
+      data = event.to_hash
+
+      expect(data['message']).to eq('ok')
+      expect(data['tags']).to eq(["evil-\uFFFD"])
+      expect(data['user']).to eq('agent' => "x\uFFFDy")
+      expect(data["k\uFFFD"]).to eq('v')
+      expect(JSON.parse(event.to_json)['tags']).to eq(["evil-\uFFFD"])
+    end
+
+    it 'keeps both values when two keys repair to the same String' do
+      event = LogStash::Event.new('message' => 'ok', 'fields' => { "a\xFF".b => 1, "a\xFE".b => 2 })
+
+      subject.send(:force_utf8_encoding, event)
+      expect(event.to_hash['fields']).to eq("a\uFFFD" => 1, "a\uFFFD_2" => 2)
+    end
+
+    it 'repairs a Hash that contains itself without recursing forever' do
+      cyclic = { 'agent' => "x\xFF".b }
+      cyclic['self'] = cyclic
+      event = LogStash::Event.new('message' => 'ok', 'fields' => cyclic)
+
+      subject.send(:force_utf8_encoding, event)
+      fields = event.to_hash['fields']
+      expect(fields['agent']).to eq("x\uFFFD")
+      expect(fields['self']).to equal(fields)
+    end
+  end
+
   describe "#build_event" do
     let(:event) { formatted_message }
 

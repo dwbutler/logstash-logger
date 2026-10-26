@@ -17,6 +17,10 @@ module LogStashLogger
       # moved under MOVED_FIELDS_KEY and the call-site values are used.
       CALL_SITE_FIELDS = %w[severity @timestamp @version].freeze
       MOVED_FIELDS_KEY = 'message_fields'.freeze
+      # The JSON generator's default max_nesting. Encoding repair leaves
+      # Hashes and Arrays nested deeper than this as they are, and the
+      # generator then rejects them with its usual NestingError.
+      MAX_SCAN_DEPTH = 100
       attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
 
@@ -181,24 +185,72 @@ module LogStashLogger
         nil
       end
 
+      # Re-encodes every String in the event as valid UTF-8: keys and values,
+      # nested Hashes and Arrays included, so invalid bytes in a tag or any
+      # other field cannot stop the record from being serialized.
       def force_utf8_encoding(event)
-        original_message = event.instance_variable_get(:@data)['message']
-        event.message = original_message.dup.force_encoding(Encoding::UTF_8).scrub
+        data = event.to_hash
+        data.replace(utf8_copy(data))
         event
+      end
+
+      # Each Hash or Array is copied once, so one that appears several times,
+      # or contains itself, maps to a single copy instead of recursing forever.
+      def utf8_copy(value, copies = {}.compare_by_identity, depth = 0)
+        case value
+        when String then utf8_string(value)
+        when Hash, Array
+          return value if depth > MAX_SCAN_DEPTH
+          return copies[value] if copies.key?(value)
+
+          if value.is_a?(Hash)
+            copy = copies[value] = {}
+            value.each do |k, v|
+              copy[unique_key(copy, utf8_copy(k, copies, depth + 1))] = utf8_copy(v, copies, depth + 1)
+            end
+          else
+            copy = copies[value] = []
+            value.each { |v| copy << utf8_copy(v, copies, depth + 1) }
+          end
+          copy
+        else value
+        end
+      end
+
+      # Two keys can repair to the same String ("a\xFF" and "a\xFE" both become
+      # "a\uFFFD"). The later one gets a numeric suffix, so no value is lost.
+      def unique_key(copy, key)
+        return key unless copy.key?(key)
+
+        suffix = 2
+        suffix += 1 while copy.key?("#{key}_#{suffix}")
+        "#{key}_#{suffix}"
+      end
+
+      def utf8_string(string)
+        return string unless string_has_encoding_issue?(string)
+
+        if string.encoding == Encoding::UTF_8 || string.encoding == Encoding::BINARY
+          string.dup.force_encoding(Encoding::UTF_8).scrub
+        else
+          string.encode(Encoding::UTF_8, invalid: :replace, undef: :replace)
+        end
       end
 
       # Check if the message has encoding issues that would cause JSON serialization problems.
       # This is needed because some Ruby implementations (e.g., JRuby) may not raise
       # exceptions during JSON encoding but produce malformed output instead.
       def message_has_encoding_issue?(event)
-        message = event.instance_variable_get(:@data)['message']
-        return false unless message.is_a?(String)
+        message = event.to_hash['message']
+        message.is_a?(String) && string_has_encoding_issue?(message)
+      end
 
-        # Check if already valid UTF-8
-        return false if message.encoding == Encoding::UTF_8 && message.valid_encoding?
+      def string_has_encoding_issue?(string)
+        return !string.valid_encoding? if string.encoding == Encoding::UTF_8
+        return false if string.ascii_only?
 
         # Try to encode to UTF-8 to detect issues
-        message.encode(Encoding::UTF_8)
+        string.encode(Encoding::UTF_8)
         false
       rescue Encoding::UndefinedConversionError, Encoding::InvalidByteSequenceError
         true
