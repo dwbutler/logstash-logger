@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['3.2', '3.3', '3.4', '4.0', 'jruby-10']
-        rails: ['7.2', '8.0', '8.1']
+        ruby: ['3.3', '3.4', '4.0', 'jruby-10']
+        rails: ['8.0', '8.1']
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -45,7 +45,7 @@ jobs:
           bundle exec appraisal rails-${{ matrix.rails }} rake default
       
       - name: Upload coverage to Codecov
-        if: matrix.ruby == '3.2' && matrix.rails == '8.1'
+        if: matrix.ruby == '3.3' && matrix.rails == '8.1'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
