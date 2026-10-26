@@ -146,6 +146,17 @@ module LogStashLogger
         log_error(e)
       end
 
+      # A timeout in seconds, or nil for no timeout. Strings are accepted
+      # because options given in a URI query arrive as strings.
+      def parse_timeout(name, value)
+        return nil if value.nil?
+        seconds = value.is_a?(String) ? Float(value) : value
+        raise TypeError unless seconds.is_a?(Numeric) && seconds > 0
+        seconds
+      rescue TypeError, ArgumentError
+        raise ArgumentError, "#{name} must be a positive number of seconds or nil: #{value.inspect}"
+      end
+
       def parse_max_record_bytes(value)
         return nil if value.nil? || value.to_s.strip.empty?
         bytes = Integer(value)

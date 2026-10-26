@@ -4,7 +4,9 @@ require 'ipaddr'
 module LogStashLogger
   module Device
     class TCP < Socket
-      attr_reader :ssl_certificate
+      DEFAULT_CONNECT_TIMEOUT = 5
+
+      attr_reader :ssl_certificate, :connect_timeout
 
       def initialize(opts)
         super
@@ -14,6 +16,7 @@ module LogStashLogger
         @use_ssl = !!(@ssl_certificate || opts[:ssl_context])
         @use_ssl = opts[:ssl_enable] if opts.has_key? :ssl_enable
         @verify_hostname = opts.fetch(:verify_hostname, true)
+        @connect_timeout = parse_timeout(:connect_timeout, opts.fetch(:connect_timeout, DEFAULT_CONNECT_TIMEOUT))
         validate_ssl_certificate! if use_ssl? && @ssl_certificate && !@ssl_context
       end
 
@@ -49,9 +52,17 @@ module LogStashLogger
       protected
 
       def tcp_io
-        TCPSocket.new(@host, @port).tap do |socket|
+        TCPSocket.new(@host, @port, **tcp_timeouts).tap do |socket|
           socket.sync = sync unless sync.nil?
         end
+      end
+
+      # connect_timeout also bounds name resolution where Ruby supports it;
+      # JRuby's TCPSocket has no resolv_timeout.
+      def tcp_timeouts
+        timeouts = { connect_timeout: @connect_timeout }
+        timeouts[:resolv_timeout] = @connect_timeout if RUBY_ENGINE == 'ruby'
+        timeouts
       end
 
       def ssl_io
