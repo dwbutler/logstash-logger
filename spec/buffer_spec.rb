@@ -106,3 +106,115 @@ describe LogStashLogger::Buffer, 'when the buffer is full' do
     end
   end
 end
+
+describe LogStashLogger::Device::Connectable, '#close' do
+  it 'stops the flush timer of every closed device' do
+    devices = Array.new(10) { RecordingDevice.new(buffer_max_interval: 3600) }
+    timers = devices.map(&:timer)
+    devices.each(&:close)
+    timers.each { |t| t.join(2) }
+    expect(timers).to all(satisfy { |t| !t.alive? })
+  end
+
+  it 'flushes pending records, then ignores later writes without reconnecting' do
+    device = RecordingDevice.new(buffer_max_interval: 3600, buffer_max_items: 3)
+    device.write('before')
+    device.close
+    connects = device.connects
+
+    5.times { |i| device.write("after-#{i}") }
+    device.buffer_flush(force: true)
+    expect(device.lines).to eq(['before'])
+    expect(device.connects).to eq(connects)
+    expect(device.timer).to be_nil
+  end
+
+  it 'does not reconnect to send records left over from a failed final flush' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.fail_connect = true
+    device.write('left over')
+    device.close
+    device.fail_connect = false
+
+    device.flush
+    expect(device.to_io).to be_nil
+    expect(device.lines).to be_empty
+  end
+
+  it 'completes when called from inside a timed flush' do
+    device = RecordingDevice.new(buffer_max_interval: 0.05, buffer_flush_at_exit: true)
+    closed = Queue.new
+    device.gate = -> { device.gate = nil; device.close(flush: false); closed << Thread.current }
+    device.write('a')
+    timer = closed.pop
+    timer.join(2)
+
+    expect(timer).not_to be_alive
+    expect(LogStashLogger::Buffer::AT_EXIT_REGISTRY[device]).to be(false)
+  end
+
+  it 'is registered for an exit-time flush until it is closed' do
+    device = RecordingDevice.new(buffer_flush_at_exit: true)
+    expect(LogStashLogger::Buffer::AT_EXIT_REGISTRY[device]).to be(true)
+    device.close
+    expect(LogStashLogger::Buffer::AT_EXIT_REGISTRY[device]).to be(false)
+  end
+
+  it 'keeps buffering after a failed write, which only drops the connection' do
+    device = RecordingDevice.new(buffer_max_interval: 0.05)
+    device.fail_connect = true
+    device.write('first')
+    wait_until { device.connects >= 1 }
+    timer = device.timer
+    device.fail_connect = false
+    wait_until { device.lines.include?('first') }
+
+    expect(timer).to be_alive
+    expect(device.lines).to eq(['first'])
+  end
+
+  it 'leaves #reset usable on an open device' do
+    device = RecordingDevice.new(buffer_max_interval: 0.05)
+    device.reset
+    device.write('after reset')
+    wait_until { device.lines.include?('after reset') }
+    expect(device.timer).to be_alive
+  end
+end
+
+describe 'outputs with their own connection handling' do
+  it 'keeps the Redis flush timer running after a transient error' do
+    redis = double('redis')
+    calls = 0
+    allow(redis).to receive(:rpush) { calls += 1; raise ::Redis::CannotConnectError, 'down' if calls == 1 }
+    allow(redis).to receive(:quit)
+    allow(::Redis).to receive(:new).and_return(redis)
+    device = LogStashLogger::Device.new(type: :redis, buffer_max_interval: 0.05, buffer_flush_at_exit: false,
+                                        error_logger: ::Logger.new(StringIO.new))
+    timer = device.instance_variable_get(:@flush_timer_thread)
+    device.write('a')
+    wait_until { calls >= 2 }
+
+    expect(timer).to be_alive
+    expect(calls).to be >= 2
+  end
+
+  it 'keeps the Kinesis flush timer running after a transient error' do
+    client = double('kinesis')
+    calls = 0
+    allow(client).to receive(:put_records) do |params|
+      calls += 1
+      raise Seahorse::Client::NetworkingError.new(StandardError.new('reset')) if calls == 1
+      Aws::Kinesis::Types::PutRecordsOutput.new(failed_record_count: 0, records: params[:records].map { Aws::Kinesis::Types::PutRecordsResultEntry.new })
+    end
+    allow(Aws::Kinesis::Client).to receive(:new).and_return(client)
+    device = LogStashLogger::Device.new(type: :kinesis, aws_region: 'us-east-1', buffer_max_interval: 0.05,
+                                        buffer_flush_at_exit: false, error_logger: ::Logger.new(StringIO.new))
+    timer = device.instance_variable_get(:@flush_timer_thread)
+    device.write('a')
+    wait_until { calls >= 2 }
+
+    expect(timer).to be_alive
+    expect(calls).to be >= 2
+  end
+end

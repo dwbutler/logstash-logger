@@ -65,6 +65,20 @@ module LogStashLogger
   # during a teardown/shutdown routine (after the last call to buffer_receive)
   # to ensure that all accumulated messages are flushed.
   module Buffer
+    # Buffers to flush when the process exits. Weak keys, so a closed or
+    # unreachable device can be garbage-collected; closed devices are marked
+    # false, since ObjectSpace::WeakMap has no delete.
+    AT_EXIT_REGISTRY = ObjectSpace::WeakMap.new
+
+    at_exit do
+      AT_EXIT_REGISTRY.each do |buffer, live|
+        next unless live
+        begin
+          buffer.buffer_flush(final: true)
+        rescue StandardError
+        end
+      end
+    end
 
     # Initialize the buffer.
     #
@@ -98,9 +112,8 @@ module LogStashLogger
         :flush_at_exit => options.fetch(:flush_at_exit, false)
       }
 
-      if @buffer_config[:flush_at_exit]
-        at_exit { buffer_flush(final: true) }
-      end
+      @buffer_shutdown = false
+      AT_EXIT_REGISTRY[self] = true if @buffer_config[:flush_at_exit]
 
       reset_buffer
     end
@@ -160,6 +173,7 @@ module LogStashLogger
     #              passed to +flush+ together, along with the grouping key itself.
     def buffer_receive(event, group=nil)
       buffer_initialize if ! @buffer_state
+      return if buffer_shutdown?
 
       make_room if buffer_full?
 
@@ -214,6 +228,7 @@ module LogStashLogger
     # @param [Hash] options Optional. May be <code>{:force => true}</code> or <code>{:final => true}</code>.
     # @return [Fixnum] The number of items successfully passed to +flush+.
     def buffer_flush(options={})
+      return 0 if buffer_shutdown?
       force = options[:force] || options[:final]
       final = options[:final]
       # Work on the state this flush started with. Connectable#reset or
@@ -303,6 +318,21 @@ module LogStashLogger
       return items_flushed
     end
 
+    # Stops the buffer for good: no timer, no flushes, and records written
+    # afterwards are dropped. Called once from Connectable#close, after the
+    # final flush. Never kills the current thread, so it also completes when
+    # called from inside a timed flush.
+    def buffer_shutdown
+      @buffer_shutdown = true
+      AT_EXIT_REGISTRY[self] = false if AT_EXIT_REGISTRY.key?(self)
+      timer, @flush_timer_thread = @flush_timer_thread, nil
+      timer.kill if timer && timer != Thread.current
+    end
+
+    def buffer_shutdown?
+      @buffer_shutdown == true
+    end
+
     private
 
     def pending_mutex
@@ -314,10 +344,12 @@ module LogStashLogger
     end
 
     def flush_timer_thread
+      return nil if buffer_shutdown?
       @flush_timer_thread ||=
         Thread.new do
           loop do
             sleep(@buffer_config[:max_interval])
+            break if buffer_shutdown?
             begin
               buffer_flush(:force => true)
             rescue
