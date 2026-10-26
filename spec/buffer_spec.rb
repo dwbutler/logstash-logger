@@ -408,4 +408,41 @@ describe LogStashLogger::Buffer, 'exit-time flush' do
     device = RecordingDevice.new(buffer_flush_at_exit: false)
     expect(LogStashLogger::Buffer::AT_EXIT_REGISTRY.key?(device)).to be(false)
   end
+
+  describe 'when another flush is stuck' do
+    def stuck_device(**opts)
+      device = RecordingDevice.new({ buffer_max_interval: 3600 }.merge(opts))
+      @release = Queue.new
+      blocked = Queue.new
+      device.gate = -> { blocked << true; @release.pop }
+      device.write('stuck')
+      @flusher = Thread.new { device.buffer_flush(force: true) }
+      blocked.pop
+      device.write('queued')
+      device
+    end
+
+    after do
+      @release << true
+      @flusher.join(5)
+    end
+
+    it 'gives up after final_flush_timeout instead of waiting forever' do
+      device = stuck_device(final_flush_timeout: 0.2)
+      final = Thread.new { device.buffer_flush(final: true) }
+      expect(final.join(3)).to be_truthy
+      expect(final.value).to eq(0)
+      expect(device.error_log.string).to include('final flush gave up after 0.2 seconds', '2 records were not sent')
+    end
+
+    it 'waits for the stuck flush when final_flush_timeout is nil' do
+      device = stuck_device(final_flush_timeout: nil)
+      final = Thread.new { device.buffer_flush(final: true) }
+      expect(final.join(0.5)).to be_nil
+      device.gate = nil
+      @release << true
+      expect(final.join(5)).to be_truthy
+      expect(device.lines).to eq(%w[stuck queued])
+    end
+  end
 end
