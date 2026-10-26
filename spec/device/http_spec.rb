@@ -16,6 +16,7 @@ describe LogStashLogger::Device::HTTP do
       device = LogStashLogger::Device.new(type: :http, url: url, sync: true)
       expect(Net::HTTP).to receive(:post)
         .with(URI(url), "[{\"a\":1}\n,{\"b\":2}]", anything)
+        .and_return(Net::HTTPOK.new('1.1', '200', 'OK'))
       device.write_batch(messages)
     end
 
@@ -23,6 +24,7 @@ describe LogStashLogger::Device::HTTP do
       device = LogStashLogger::Device.new(type: :http, url: url, sync: true, format: :json_array)
       expect(Net::HTTP).to receive(:post)
         .with(URI(url), "[{\"a\":1}\n,{\"b\":2}]", anything)
+        .and_return(Net::HTTPOK.new('1.1', '200', 'OK'))
       device.write_batch(messages)
     end
 
@@ -30,6 +32,7 @@ describe LogStashLogger::Device::HTTP do
       device = LogStashLogger::Device.new(type: :http, url: url, sync: true, format: :ndjson)
       expect(Net::HTTP).to receive(:post)
         .with(URI(url), "{\"a\":1}\n{\"b\":2}\n", anything)
+        .and_return(Net::HTTPOK.new('1.1', '200', 'OK'))
       device.write_batch(messages)
     end
 
@@ -37,6 +40,7 @@ describe LogStashLogger::Device::HTTP do
       device = LogStashLogger::Device.new(type: :http, url: url, sync: true, format: "ndjson")
       expect(Net::HTTP).to receive(:post)
         .with(URI(url), "{\"a\":1}\n{\"b\":2}\n", anything)
+        .and_return(Net::HTTPOK.new('1.1', '200', 'OK'))
       device.write_batch(messages)
     end
 
@@ -53,6 +57,7 @@ describe LogStashLogger::Device::HTTP do
     def expect_content_type(type)
       expect(Net::HTTP).to receive(:post)
         .with(anything, anything, {"Content-Type" => type})
+        .and_return(Net::HTTPOK.new('1.1', '200', 'OK'))
     end
 
     it "is application/json by default" do
