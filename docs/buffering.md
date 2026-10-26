@@ -54,6 +54,15 @@ If you don't want to lose messages when the buffer gets full, you can set
 `drop_messages_on_full_buffer = false`. Note that if the buffer gets full, any
 incoming log message will block, which could be undesirable.
 
+## Records that can never be delivered
+
+Some outputs can reject a record for a reason that will not go away on retry, such as its size.
+Instead of retrying the whole batch until the buffer fills, these outputs drop only the rejected
+records, and log their size and the reason, never their content:
+
+* Kafka: records the broker or client rejects with `MessageSizeTooLarge`, `RecordListTooLarge`
+  or `BufferOverflow`. The rest of the batch is sent one record at a time.
+
 ## Sync Mode
 
 All logger outputs support a `sync` setting. This is analogous to the "sync mode" setting on Ruby IO
