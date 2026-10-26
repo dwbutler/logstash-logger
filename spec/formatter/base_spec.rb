@@ -221,6 +221,45 @@ describe LogStashLogger::Formatter::Base do
       end
     end
 
+    describe "fields the log call sets" do
+      let(:severity) { 'ERROR' }
+
+      [
+        '{"message":"m","severity":"DEBUG"}',
+        { 'message' => 'm', 'severity' => 'DEBUG' },
+        { message: 'm', severity: 'DEBUG' }
+      ].each do |logged|
+        it "uses the call-site severity for #{logged.inspect} and keeps the logged value aside" do
+          event = subject.call(severity, time, progname, logged)
+          expect(event['severity']).to eq('ERROR')
+          expect(event['message']).to eq('m')
+          expect(event['message_fields']).to eq('severity' => 'DEBUG')
+        end
+      end
+
+      it "merges the logged value into the message's own message_fields Hash, whose keys win" do
+        logged = { 'message' => 'm', 'severity' => 'DEBUG', 'message_fields' => { 'a' => 1, severity: 'own' } }
+        event = subject.call(severity, time, progname, logged)
+        expect(event['message_fields']).to eq('a' => 1, 'severity' => 'own')
+        expect(logged['message_fields']).to eq('a' => 1, severity: 'own')
+      end
+
+      it "keeps a message_fields value that is not a Hash under its own name" do
+        event = subject.call(severity, time, progname, '{"message":"m","severity":"DEBUG","message_fields":"x"}')
+        expect(event['message_fields']).to eq('severity' => 'DEBUG', 'message_fields' => 'x')
+      end
+
+      context "when trust_message_fields is set" do
+        before { LogStashLogger.configure { |config| config.trust_message_fields = true } }
+
+        it "keeps the logged severity" do
+          event = subject.call(severity, time, progname, '{"message":"m","severity":"DEBUG"}')
+          expect(event['severity']).to eq('DEBUG')
+          expect(event['message_fields']).to be_nil
+        end
+      end
+    end
+
     describe "extra fields on the event" do
       it "adds severity" do
         expect(event['severity']).to eq(severity)

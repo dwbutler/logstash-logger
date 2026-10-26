@@ -56,6 +56,37 @@ You can also customize events on a per-logger basis by passing a callable object
 LogStashLogger.new(customize_event: ->(event){ event['other_field'] = 'other_field' })
 ```
 
+## Fields Set by the Log Call
+
+A String message that starts with `{` is parsed as JSON, and a Hash message is
+merged into the event. Those messages may set any field, except the fields
+that describe the log call itself. `severity` is always the level of the
+logger method that was called. If the message has its own value for that
+field, the value is moved under `message_fields` instead of being dropped:
+
+```ruby
+logger.error('{"message":"login failed","severity":"DEBUG"}')
+# {"message":"login failed","severity":"ERROR","message_fields":{"severity":"DEBUG"},...}
+```
+
+If the message already has its own `message_fields`, nothing in it is lost: a
+Hash is merged with the moved values, and its own keys win when both have the
+same name; any other value is kept as `message_fields.message_fields`.
+
+This keeps text such as a logged request body from changing how its own
+record is classified. `host` is an ordinary field: a message may set it, and
+the logger fills it in only when it is missing. A `LogStash::Event` message is
+used as given and keeps its own `severity`.
+
+If every String and Hash message you log comes from code you trust, such as a
+log formatter that already sets these fields, you can let messages set them:
+
+```ruby
+LogStashLogger.configure do |config|
+  config.trust_message_fields = true
+end
+```
+
 ## Field Names
 
 A Hash or `LogStash::Event` message may use Symbol or String keys. Every

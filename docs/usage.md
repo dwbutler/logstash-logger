@@ -94,6 +94,9 @@ logger.info 'test'
 logger.error '{"message": "error"}'
 # {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","host":"[hostname]"}
 
+logger.error '{"message": "error", "severity": "DEBUG"}'
+# {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","message_fields":{"severity":"DEBUG"},"host":"[hostname]"}
+
 logger.debug message: 'test', foo: 'bar'
 # {"message":"test","foo":"bar","@timestamp":"2014-05-22T09:43:24.004-07:00","@version":"1","severity":"DEBUG","host":"[hostname]"}
 
@@ -104,6 +107,9 @@ logger.warn LogStash::Event.new(message: 'test', foo: 'bar')
 logger.tagged('foo') { logger.fatal('bar') }
 # {"message":"bar","@timestamp":"2014-05-26T20:35:14.685-07:00","@version":"1","severity":"FATAL","host":"[hostname]","tags":["foo"]}
 ```
+
+A JSON or Hash message cannot change the fields that describe the log call,
+such as `severity`. See [Fields Set by the Log Call](customization.md#fields-set-by-the-log-call).
 
 ## URI Configuration
 

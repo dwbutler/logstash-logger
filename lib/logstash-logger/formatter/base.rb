@@ -12,6 +12,11 @@ module LogStashLogger
     class Base < ::Logger::Formatter
       FAILED_TO_FORMAT_MSG = 'Failed to format log event'
       FAILED_TO_FORMAT_TAG = '_logstashlogger_format_failure'
+      # Fields of a String (JSON) or Hash message that the log call itself
+      # owns. Unless trust_message_fields is set, logged values for them are
+      # moved under MOVED_FIELDS_KEY and the call-site values are used.
+      CALL_SITE_FIELDS = %w[severity].freeze
+      MOVED_FIELDS_KEY = 'message_fields'.freeze
       attr_accessor :error_logger
       include ::LogStashLogger::TaggedLogging::Formatter
 
@@ -78,8 +83,15 @@ module LogStashLogger
                     fields['tags'.freeze] = tags.dup if tags.is_a?(Array) || tags.is_a?(String)
                     data.dup.tap { |copy| copy.instance_variable_set(:@data, fields) }
                   when Hash
+                    trusted = LogStashLogger.configuration.trust_message_fields
                     event_data = { '@timestamp'.freeze => time }
+                    moved = {}
                     string_keys(data).each do |key, value|
+                      if !trusted && CALL_SITE_FIELDS.include?(key)
+                        moved[key] = value
+                        next
+                      end
+
                       case key
                       when 'tags'
                         # Tagged-scope tags are appended to this value below,
@@ -93,6 +105,8 @@ module LogStashLogger
                         event_data[key] = value
                       end
                     end
+                    event_data['severity'.freeze] = severity unless trusted
+                    event_data[MOVED_FIELDS_KEY] = moved_fields(moved, event_data) unless moved.empty?
                     LogStash::Event.new(event_data)
                   else
                     LogStash::Event.new("@timestamp".freeze => time, "message".freeze => msg2str(data))
@@ -123,6 +137,16 @@ module LogStashLogger
 
       def format_event(event)
         event
+      end
+
+      # A message's own message_fields is kept: a Hash is merged with the
+      # moved values, its own keys winning, and any other value is kept
+      # under message_fields['message_fields'].
+      def moved_fields(moved, event_data)
+        return moved unless event_data.key?(MOVED_FIELDS_KEY)
+
+        own = event_data[MOVED_FIELDS_KEY]
+        own.is_a?(Hash) ? moved.merge(string_keys(own)) : moved.merge(MOVED_FIELDS_KEY => own)
       end
 
       # JSON member names are Strings, so a Symbol key and the String key the
