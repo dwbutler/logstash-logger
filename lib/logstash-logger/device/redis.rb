@@ -29,9 +29,12 @@ module LogStashLogger
       end
 
       def with_connection
+        return if buffer_shutdown?
         connect unless connected?
         yield
       rescue ::Redis::InheritedError
+        # A close that ran meanwhile must not be undone by a new connection
+        return if buffer_shutdown?
         reconnect
         retry
       rescue => e
