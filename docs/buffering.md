@@ -18,6 +18,7 @@ You can configure buffering behavior by passing the following options to LogStas
 * `:sync` - Flush buffer every time a message is received (blocking). Defaults to false.
 * `:buffer_flush_at_exit` - Flush messages when exiting the program. Defaults to true.
 * `:buffer_logger` - Logger to write buffer debug/error messages to. Defaults to none.
+* `:max_record_bytes` - Drop any single formatted record larger than this many bytes, with a warning that gives its size. Off by default.
 
 You can turn buffering off by setting `sync = true`.
 

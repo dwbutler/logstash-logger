@@ -36,6 +36,11 @@ module LogStashLogger
 
         @buffer_logger = opts[:buffer_logger]
 
+        # Optional cap on the size of a single formatted record. Off by default.
+        # Deleted from opts so outputs that forward their options (Redis) never
+        # receive it.
+        @max_record_bytes = parse_max_record_bytes(opts.delete(:max_record_bytes))
+
         buffer_initialize(
           max_items: @buffer_max_items,
           max_interval: @buffer_max_interval,
@@ -48,7 +53,15 @@ module LogStashLogger
       end
 
       def write(message)
-        buffer_receive(message, @buffer_group) unless message.nil?
+        return if message.nil?
+        if @max_record_bytes
+          size = message.to_s.bytesize
+          if size > @max_record_bytes
+            log_warning("dropping a record of #{size} bytes: over max_record_bytes (#{@max_record_bytes})")
+            return
+          end
+        end
+        buffer_receive(message, @buffer_group)
       end
 
       def flush(*args)
@@ -108,6 +121,19 @@ module LogStashLogger
         close(flush: false)
         connect
       end
+
+      private
+
+      def parse_max_record_bytes(value)
+        return nil if value.nil? || value.to_s.strip.empty?
+        bytes = Integer(value)
+        raise ArgumentError, "max_record_bytes must be a positive number of bytes: #{value.inspect}" unless bytes > 0
+        bytes
+      rescue TypeError
+        raise ArgumentError, "max_record_bytes must be a positive number of bytes: #{value.inspect}"
+      end
+
+      public
 
       # Ensure the block is executed with a valid connection
       def with_connection()
