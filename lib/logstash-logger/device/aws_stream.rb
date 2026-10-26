@@ -116,15 +116,22 @@ module LogStashLogger
         resp = put_records(records)
         return if is_successful_response(resp)
 
+        retries = []
+        retry_codes = []
         get_response_records(resp).each_with_index do |record, index|
           if self.class.recoverable_error_codes.include?(record.error_code)
-            log_warning("Failed to post record using #{self.class.stream_class.name} with error: #{record.error_code} #{record.error_message}")
-            log_warning("Retrying")
-            write(records[index][:data])
+            retries << records[index][:data]
+            retry_codes << record.error_code
           elsif !record.error_code.nil? && record.error_code != ''
             log_warning("dropping a record that #{self.class.stream_class.name} rejected: #{record.error_code} #{record.error_message}")
           end
         end
+        return if retries.empty?
+
+        log_warning("#{retries.size} records will be retried on the next flush (#{retry_codes.tally.map { |c, n| "#{c}: #{n}" }.join(', ')})")
+        # This runs inside a flush, so requeue without the full-buffer check,
+        # which would count the batch being flushed against the limit.
+        buffer_requeue(retries, @buffer_group)
       end
 
       def record_size(record)

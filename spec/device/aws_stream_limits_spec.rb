@@ -134,3 +134,86 @@ describe 'AWS outputs and service limits' do
     end
   end
 end
+
+# Throttles every record of the first `throttled` requests, then accepts all.
+class ThrottlingKinesisClient
+  attr_reader :requests
+
+  def initialize(throttled:, code: 'ProvisionedThroughputExceededException')
+    @requests = []
+    @throttled = throttled
+    @code = code
+  end
+
+  def put_records(params)
+    @requests << params[:records].map { |r| r[:data] }
+    if @requests.size <= @throttled
+      entries = params[:records].map { Aws::Kinesis::Types::PutRecordsResultEntry.new(error_code: @code, error_message: 'slow down') }
+      Aws::Kinesis::Types::PutRecordsOutput.new(failed_record_count: entries.size, records: entries)
+    else
+      entries = params[:records].map { Aws::Kinesis::Types::PutRecordsResultEntry.new(sequence_number: '1', shard_id: 's') }
+      Aws::Kinesis::Types::PutRecordsOutput.new(failed_record_count: 0, records: entries)
+    end
+  end
+
+  def delivered
+    @requests.drop(@throttled).flatten
+  end
+end
+
+describe LogStashLogger::Device::Kinesis, 'when records are throttled' do
+  let(:error_log) { StringIO.new }
+  let(:client) { ThrottlingKinesisClient.new(throttled: 1) }
+  let(:records) { (1..50).map(&:to_s) }
+
+  before { allow(Aws::Kinesis::Client).to receive(:new) { client } }
+
+  def device(**opts)
+    LogStashLogger::Device.new({ type: :kinesis, aws_region: 'us-east-1', sync: false, buffer_max_interval: 0.2,
+                                 buffer_flush_at_exit: false, error_logger: ::Logger.new(error_log) }.merge(opts))
+  end
+
+  # These flushes run on the buffer's background timer thread, so poll until
+  # the block returns true, giving up after `timeout` seconds. The example's
+  # own expectations then report what went wrong if it never does.
+  def wait_until(timeout: 5)
+    deadline = Time.now + timeout
+    sleep 0.05 until yield || Time.now > deadline
+  end
+
+  it 'retries a full throttled batch on the timer thread without losing it or stopping the timer' do
+    dev = device
+    timer = dev.instance_variable_get(:@flush_timer_thread)
+    records.each { |r| dev.write(r) }
+
+    wait_until { client.delivered.size == records.size }
+
+    expect(client.delivered).to match_array(records)
+    expect(dev.instance_variable_get(:@buffer_state)[:pending_count]).to eq(0)
+    expect(dev.instance_variable_get(:@buffer_state)[:outgoing_count]).to eq(0)
+    expect(timer).to be_alive
+    expect(error_log.string).to include('50 records will be retried on the next flush (ProvisionedThroughputExceededException: 50)')
+    expect(error_log.string).not_to include('Buffer Full')
+  end
+
+  it 'does not block logging when drop_messages_on_full_buffer is false' do
+    dev = device(drop_messages_on_full_buffer: false)
+    records.each { |r| dev.write(r) }
+    wait_until { client.delivered.size == records.size }
+
+    writer = Thread.new { dev.write('after') }
+    expect(writer.join(2)).not_to be_nil
+    expect(client.delivered).to match_array(records)
+  end
+
+  context 'with InternalFailure' do
+    let(:client) { ThrottlingKinesisClient.new(throttled: 1, code: 'InternalFailure') }
+
+    it 'retries the records' do
+      dev = device
+      records.first(3).each { |r| dev.write(r) }
+      wait_until { client.delivered.size == 3 }
+      expect(client.delivered).to match_array(records.first(3))
+    end
+  end
+end

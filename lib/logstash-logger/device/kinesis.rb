@@ -14,7 +14,8 @@ module LogStashLogger
         "ServiceUnavailable",
         "Throttling",
         "RequestExpired",
-        "ProvisionedThroughputExceededException"
+        "ProvisionedThroughputExceededException",
+        "InternalFailure"
       ].freeze
 
       # https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html

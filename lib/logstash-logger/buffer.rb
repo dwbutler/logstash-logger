@@ -315,11 +315,12 @@ module LogStashLogger
         end
     end
 
+    # Never kills the timer from inside itself: called on the timer thread,
+    # this keeps the running timer, and reset_buffer reuses it.
     def reset_flush_timer_thread
-      unless @flush_timer_thread.nil?
-        @flush_timer_thread.kill
-        @flush_timer_thread = nil
-      end
+      return if @flush_timer_thread.nil? || @flush_timer_thread == Thread.current
+      @flush_timer_thread.kill
+      @flush_timer_thread = nil
     end
 
     def buffer_clear_pending

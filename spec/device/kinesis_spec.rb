@@ -30,9 +30,12 @@ describe LogStashLogger::Device::Kinesis do
     response.records = [failed_record]
 
     expect(client).to receive(:put_records) { response }
-    expect(kinesis_device).to receive(:write).with("foo")
+    expect(kinesis_device).not_to receive(:write)
 
     kinesis_device.write_one "foo"
+    state = kinesis_device.instance_variable_get(:@buffer_state)
+    expect(state[:pending_items][nil]).to eq(["foo"])
+    expect(state[:pending_count]).to eq(1)
   end
 
   it "defaults the kinesis stream to logstash" do
