@@ -9,6 +9,18 @@ module LogStashLogger
       DEFAULT_MAX_DATAGRAM_SIZE = 65_507
       MIN_MAX_DATAGRAM_SIZE = 512
       RECORD_TOO_LARGE_TAG = '_logstashlogger_record_too_large'
+      # Fields copied from an oversized record into its replacement. Logged
+      # content can set any of them, so each is copied only when small.
+      KEPT_FIELDS = %w[@timestamp @version severity host type].freeze
+      KEPT_FIELD_LIMIT = 256
+      # Records larger than this are not parsed to find the fields to copy.
+      MAX_PARSED_BYTES = 1_048_576
+      # The cee formatter writes "@cee:" before the JSON, and cee_syslog writes
+      # "host progname:@cee:", where the progname can hold any character but a
+      # control character. The replacement keeps such a header when the record
+      # does not start with "{" and "@cee:{" appears within MAX_HEADER_BYTES.
+      CEE_MARKER = '@cee:'
+      MAX_HEADER_BYTES = 1024
 
       attr_reader :max_datagram_size
 
@@ -48,7 +60,46 @@ module LogStashLogger
           'tags' => [RECORD_TOO_LARGE_TAG],
           'original_size' => size
         }
-        "#{notice.to_json}#{"\n" if record.end_with?("\n")}"
+        header, body = split_header(record)
+        line_end = record.end_with?("\n") ? "\n" : ''
+        if "#{header}#{notice.to_json}#{line_end}".bytesize > max_datagram_size
+          log_warning("leaving out the #{header.bytesize}-byte cee header: the replacement would be over max_datagram_size")
+          header = ''
+        end
+        replacement = "#{header}#{kept_fields(body).merge(notice).to_json}#{line_end}"
+        # The kept fields can add about 1.5 KB; leave them out under a small limit.
+        replacement = "#{header}#{notice.to_json}#{line_end}" if replacement.bytesize > max_datagram_size
+        replacement
+      end
+
+      # Splits a cee or cee_syslog record into its header (through "@cee:")
+      # and its JSON body. Other records have no header.
+      def split_header(record)
+        head = record.byteslice(0, MAX_HEADER_BYTES).b
+        index = head.byteindex("#{CEE_MARKER}{") unless head.start_with?('{')
+        return ['', record] unless index
+        header_size = index + CEE_MARKER.bytesize
+        return ['', record] if head.byteslice(0, header_size).match?(/[\x00-\x1f\x7f]/n)
+        [record.byteslice(0, header_size), record.byteslice(header_size..)]
+      end
+
+      def kept_fields(body)
+        return {} if body.bytesize > MAX_PARSED_BYTES
+        original = (JSON.parse(body) rescue nil)
+        return {} unless original.is_a?(Hash)
+        KEPT_FIELDS.each_with_object({}) do |key, kept|
+          value = original[key]
+          kept[key] = value if !value.nil? && small_json?(value)
+        end
+      end
+
+      # A parsed value may not serialize again, such as 1e400 (Infinity): the
+      # json gem raises, and ActiveSupport writes null. Either way it is skipped.
+      def small_json?(value)
+        json = value.to_json
+        json != 'null' && json.bytesize <= KEPT_FIELD_LIMIT
+      rescue JSON::GeneratorError
+        false
       end
 
       def parse_max_datagram_size(value)

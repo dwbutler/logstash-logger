@@ -58,7 +58,12 @@ limit: 65,507 bytes for IPv4, and less on some hosts (macOS allows 9,216 bytes
 by default). The UDP output replaces any formatted record larger than
 `max_datagram_size` (65,507 bytes by default) with a small record that has the
 message `Record of N bytes replaced: too large for one UDP datagram`, the tag
-`_logstashlogger_record_too_large` and an `original_size` field. The error
+`_logstashlogger_record_too_large`, an `original_size` field, and the original
+`@timestamp`, `@version`, `severity`, `host` and `type` when each is small
+(and they fit under `max_datagram_size`). Records over 1 MiB are not parsed, so
+their replacement has no copied fields. With the `cee` and `cee_syslog`
+formatters, the replacement keeps the record's header up to `@cee:`, unless
+the header would put it over `max_datagram_size`. The error
 logger gets the size, never the content. If your host or collector accepts
 smaller datagrams, set `max_datagram_size` (at least 512) to its limit:
 
