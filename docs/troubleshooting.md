@@ -53,8 +53,16 @@ for more information.
 
 ## Errno::EMSGSIZE - Message too long
 
-A known drawback of using TCP or UDP is the 65535 byte limit on total message size. To workaround
-this issue, you will have to truncate the message by setting the max message size:
+The UDP output sends each record as one datagram, and a datagram has a size
+limit: 65,507 bytes for IPv4, and less on some hosts (macOS allows 9,216 bytes
+by default). The UDP output replaces any formatted record larger than 65,507
+bytes with a small record that has the message
+`Record of N bytes replaced: too large for one UDP datagram`, the tag
+`_logstashlogger_record_too_large` and an `original_size` field. The error
+logger gets the size, never the content.
+
+`max_message_size` truncates only the `message` field, so it cannot keep a
+record under the datagram limit on its own:
 
 ```ruby
 LogStashLogger.configure do |config|
@@ -62,9 +70,15 @@ LogStashLogger.configure do |config|
 end
 ```
 
-This will truncate only the `message` field of the LogStash Event. So make sure
-you set the max message size significantly less than 65535 bytes to make room
-for other fields.
+Other fields are never truncated. A logged Hash can carry fields of any size,
+and a logged String that starts with `{` is parsed as JSON into fields, so text
+that your application logs as is (such as a request body) can put a large value
+in a field other than `message`. If records must arrive whole, use the TCP
+output, which has no per-record limit.
+
+The opt-in `max_record_bytes` option (see [Buffering](buffering.md)) is checked
+first, when a record is logged, and drops a record over it without a
+replacement.
 
 # Breaking changes
 
