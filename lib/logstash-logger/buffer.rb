@@ -180,6 +180,16 @@ module LogStashLogger
       end
     end
 
+    # Put items back into the pending queue for the next flush, without
+    # applying the full-buffer policy. Safe to call from inside a flush.
+    def buffer_requeue(items, group=nil)
+      return if items.empty?
+      @buffer_state[:pending_mutex].synchronize do
+        @buffer_state[:pending_items][group].concat(items)
+        @buffer_state[:pending_count] += items.size
+      end
+    end
+
     # Try to flush events.
     #
     # Returns immediately if flushing is not necessary/possible at the moment:
@@ -305,11 +315,12 @@ module LogStashLogger
         end
     end
 
+    # Never kills the timer from inside itself: called on the timer thread,
+    # this keeps the running timer, and reset_buffer reuses it.
     def reset_flush_timer_thread
-      unless @flush_timer_thread.nil?
-        @flush_timer_thread.kill
-        @flush_timer_thread = nil
-      end
+      return if @flush_timer_thread.nil? || @flush_timer_thread == Thread.current
+      @flush_timer_thread.kill
+      @flush_timer_thread = nil
     end
 
     def buffer_clear_pending

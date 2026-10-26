@@ -356,3 +356,92 @@ describe LogStashLogger::Device::Kafka do
     end
   end
 end
+
+describe LogStashLogger::Device::Kafka, 'records the broker always rejects' do
+  # Stands in for a ruby-kafka producer: rejects any delivery that contains a
+  # record over the limit, the way a broker answers MESSAGE_TOO_LARGE.
+  class FakeKafkaProducer
+    LIMIT = 1_000
+
+    def initialize(delivered, errors = {})
+      @delivered = delivered
+      @errors = errors
+      @buffer = []
+    end
+
+    def produce(message, topic:)
+      raise ::Kafka::BufferOverflow, 'buffer full' if message.bytesize > LIMIT * 10
+      @buffer << message
+    end
+
+    def deliver_messages
+      if (error = @errors.delete(:next_delivery))
+        @buffer.clear
+        raise error
+      end
+      if @buffer.any? { |m| m.bytesize > LIMIT }
+        @buffer.clear
+        raise ::Kafka::MessageSizeTooLarge, 'message too large'
+      end
+      @delivered.concat(@buffer)
+      @buffer.clear
+    end
+
+    def shutdown; end
+  end
+
+  let(:delivered) { [] }
+  let(:errors) { {} }
+  let(:error_log) { StringIO.new }
+  let(:device) do
+    LogStashLogger::Device::Kafka.new(topic: 'logs', brokers: 'localhost:9092', sync: false,
+      buffer_max_interval: 3600, buffer_flush_at_exit: false, error_logger: ::Logger.new(error_log))
+  end
+
+  before do
+    allow(device).to receive(:connection) do
+      double('connection', producer: FakeKafkaProducer.new(delivered, errors), close: true)
+    end
+  end
+
+  let(:small) { (1..5).map { |i| %({"n":#{i}}) } }
+
+  it 'delivers the other records and drops only an oversized one' do
+    device.write_batch(small + ['x' * 2_000])
+    expect(delivered).to eq(small)
+    expect(error_log.string).to include('dropping a record of 2000 bytes that Kafka rejected: Kafka::MessageSizeTooLarge')
+  end
+
+  it 'drops a record the client buffer cannot hold' do
+    device.write_batch(small + ['x' * 20_000])
+    expect(delivered).to eq(small)
+    expect(error_log.string).to include('Kafka::BufferOverflow')
+  end
+
+  it 'delivers everything when the batch is only too large as a whole' do
+    allow(device).to receive(:connection) do
+      producer = FakeKafkaProducer.new(delivered, errors)
+      def producer.deliver_messages
+        raise ::Kafka::MessageSizeTooLarge, 'batch too large' if @buffer.size > 1
+        super
+      end
+      double('connection', producer: producer, close: true)
+    end
+    device.write_batch(small)
+    expect(delivered).to eq(small)
+  end
+
+  it 'still raises transient errors so the buffer retries the batch' do
+    errors[:next_delivery] = ::Kafka::ConnectionError.new('broker unavailable')
+    expect { device.write_batch(small) }.to raise_error(::Kafka::ConnectionError)
+  end
+
+  it 'clears the buffer instead of holding other records behind the rejected one' do
+    small.each { |m| device.write(m) }
+    device.write('x' * 2_000)
+    device.buffer_flush(force: true)
+
+    expect(delivered).to eq(small)
+    expect(device.instance_variable_get(:@buffer_state)[:pending_count]).to eq(0)
+  end
+end

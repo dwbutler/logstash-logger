@@ -47,6 +47,10 @@ module LogStashLogger
       attr_reader :topic, :brokers, :cert_bundle, :kafka_tls_configurator,
         :client_id
 
+      # Errors that will recur on every retry of the same records. Looked up by
+      # name at rescue time, because ruby-kafka is only required in #initialize.
+      NOT_RETRYABLE_ERRORS = %w[MessageSizeTooLarge RecordListTooLarge BufferOverflow].freeze
+
       def initialize(opts = {}, kafka_tls_configurator = TLSConfiguration)
         require 'ruby-kafka'
         super(opts)
@@ -81,9 +85,32 @@ module LogStashLogger
         write_messages_to_broker_and_deliver do |producer|
           messages.each {|msg| producer.produce(msg, topic: topic) }
         end
+      rescue => e
+        raise if retryable_error?(e)
+        deliver_one_at_a_time(messages, topic)
       end
 
       private
+
+      # One record the broker or client will never accept fails the whole batch.
+      # Send the records one at a time and drop only the ones that are still
+      # rejected. Retryable errors raise, so the buffer retries the batch.
+      def deliver_one_at_a_time(messages, topic)
+        messages.each do |message|
+          begin
+            write_one(message, topic)
+          rescue => e
+            raise if retryable_error?(e)
+            log_warning("dropping a record of #{message.to_s.bytesize} bytes that Kafka rejected: #{e.class}")
+          end
+        end
+      end
+
+      def retryable_error?(error)
+        NOT_RETRYABLE_ERRORS.none? do |name|
+          ::Kafka.const_defined?(name) && error.is_a?(::Kafka.const_get(name))
+        end
+      end
 
       def write_messages_to_broker_and_deliver(&block)
         with_connection do

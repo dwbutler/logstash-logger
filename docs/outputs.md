@@ -39,6 +39,10 @@ LogStashLogger.new \
   url: 'http://localhost:8080'
 ```
 
+A batch that gets an error status is retried on the next flush. If the collector rejects the content
+(400, 413, 415 or 422), the records are sent one at a time and only the rejected ones are dropped.
+See [Records that can never be delivered](buffering.md#records-that-can-never-be-delivered).
+
 Note the parameter is `url` and not `uri`. Relies on [Net:HTTP](https://ruby-doc.org/stdlib-2.7.1/libdoc/net/http/rdoc/Net/HTTP.html#class-Net::HTTP-label-HTTPS) to auto-detect SSL usage from the scheme.
 
 By default, each batch is sent as a JSON array, which is what the Logstash HTTP Input expects. For endpoints that expect newline-delimited JSON (NDJSON), with one event per line, set `format: :ndjson`:

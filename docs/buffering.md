@@ -18,6 +18,7 @@ You can configure buffering behavior by passing the following options to LogStas
 * `:sync` - Flush buffer every time a message is received (blocking). Defaults to false.
 * `:buffer_flush_at_exit` - Flush messages when exiting the program. Defaults to true.
 * `:buffer_logger` - Logger to write buffer debug/error messages to. Defaults to none.
+* `:max_record_bytes` - Drop any single formatted record larger than this many bytes, with a warning that gives its size. Off by default.
 
 You can turn buffering off by setting `sync = true`.
 
@@ -53,6 +54,21 @@ accumulate in the buffer, so make sure you have allocated enough memory to your 
 If you don't want to lose messages when the buffer gets full, you can set
 `drop_messages_on_full_buffer = false`. Note that if the buffer gets full, any
 incoming log message will block, which could be undesirable.
+
+## Records that can never be delivered
+
+Some outputs can reject a record for a reason that will not go away on retry, such as its size.
+Instead of retrying the whole batch until the buffer fills, these outputs drop only the rejected
+records, and log their size and the reason, never their content:
+
+* Kafka: records the broker or client rejects with `MessageSizeTooLarge`, `RecordListTooLarge`
+  or `BufferOverflow`. The rest of the batch is sent one record at a time.
+* Kinesis and Firehose: records over the service's per-record limit (Kinesis 1 MiB by default,
+  Firehose 1,000 KiB). Batches are split to fit each service's request limits. If your Kinesis
+  stream is configured for larger records, raise the limit with `aws_max_record_bytes`, for
+  example `aws_max_record_bytes: 10 * 1024 * 1024`.
+* HTTP: records the collector rejects with 400, 413, 415 or 422. The rest of the batch is sent
+  one record at a time. Other error statuses, such as 401, 429 or 5xx, are retried.
 
 ## Sync Mode
 

@@ -14,8 +14,17 @@ module LogStashLogger
         "ServiceUnavailable",
         "Throttling",
         "RequestExpired",
-        "ProvisionedThroughputExceededException"
+        "ProvisionedThroughputExceededException",
+        "InternalFailure"
       ].freeze
+
+      # https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html
+      # Records count the partition key. 1 MiB is the default and smallest
+      # per-stream maximum; raise it with aws_max_record_bytes if the stream
+      # is configured for larger records.
+      def self.max_records; 500; end
+      def self.max_record_bytes; 1_048_576; end
+      def self.max_request_bytes; 10_485_760; end
 
       def transform_message(message)
         {

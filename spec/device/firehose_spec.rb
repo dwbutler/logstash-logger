@@ -30,9 +30,12 @@ describe LogStashLogger::Device::Firehose do
     response.request_responses = [failed_record]
 
     expect(client).to receive(:put_record_batch) { response }
-    expect(firehose_device).to receive(:write).with("foo")
+    expect(firehose_device).not_to receive(:write)
 
     firehose_device.write_one "foo"
+    state = firehose_device.instance_variable_get(:@buffer_state)
+    expect(state[:pending_items][nil]).to eq(["foo"])
+    expect(state[:pending_count]).to eq(1)
   end
 
   it "defaults the Firehose stream to logstash" do
