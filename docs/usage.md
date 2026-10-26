@@ -56,6 +56,8 @@ ruby_default_formatter_logger = LogStashLogger.new(
 ```ruby
 # Send messages to multiple outputs. Each output will have the same format.
 # Syslog cannot be an output because it requires a separate logger.
+# If one output raises an error, the error is reported to the error_logger
+# and the other outputs still receive the message.
 multi_delegating_logger = LogStashLogger.new(
   type: :multi_delegator,
   outputs: [
