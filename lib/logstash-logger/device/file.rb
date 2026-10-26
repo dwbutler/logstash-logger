@@ -32,6 +32,23 @@ module LogStashLogger
         end
       end
 
+      # Closes and reopens the file, so a forked process gets its own file
+      # descriptor and keeps writing to the same path. A failed reopen is
+      # reported through error_logger; the next write tries again.
+      def reset
+        close
+        open
+      rescue => e
+        log_error(e)
+      end
+
+      # Reopens the file when it has no open handle (after close, or after a
+      # reset whose reopen failed) instead of failing on a nil handle.
+      def write_one(message)
+        open if @io.nil?
+        super
+      end
+
       def to_io
         @io.respond_to?(:dev) ? @io.dev : @io
       end
