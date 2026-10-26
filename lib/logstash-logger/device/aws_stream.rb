@@ -113,6 +113,27 @@ module LogStashLogger
 
       private
 
+      # The AWS SDK keeps one pool of HTTPS connections for the whole process,
+      # so a forked process inherits the parent's. Empty it, so this process
+      # opens its own connections instead of sharing the parent's TLS
+      # sessions. This closes the pooled sessions, so the parent's next request
+      # may need one of the SDK's retries on a new connection. It runs on every
+      # fork, also when this output holds no client: the pool can still hold
+      # its connections.
+      def release_inherited_connection(_client)
+        # aws-sdk v2 has no CORE_GEM_VERSION, and no such bug
+        if defined?(Aws::CORE_GEM_VERSION) && BROKEN_POOL_EMPTY.satisfied_by?(Gem::Version.new(Aws::CORE_GEM_VERSION))
+          log_warning("aws-sdk-core #{Aws::CORE_GEM_VERSION} cannot empty its connection pool safely, " \
+                      "so this forked process may share the parent's connections; upgrade to 3.196.1 or later")
+          return
+        end
+        Aws.empty_connection_pools! if Aws.respond_to?(:empty_connection_pools!)
+      end
+
+      # In these releases ConnectionPool#empty! stops the pool from taking new
+      # connections afterwards (fixed in 3.196.1).
+      BROKEN_POOL_EMPTY = Gem::Requirement.new('>= 3.194.2', '< 3.196.1')
+
       def send_slice(records)
         resp = put_records(records)
         return if is_successful_response(resp)

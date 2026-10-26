@@ -317,10 +317,28 @@ end
 
 ## Cleaning up resources when forking
 
-If your application forks (as is common with many web servers) you will need to
-manage cleaning up resources on your LogStashLogger instances. The instance method
-`#reset` is available for this purpose. Here is sample configuration for
-several common web servers used with Rails:
+If your application forks (as is common with many web servers), each worker
+process opens its own connection and starts its own buffer the first time it
+logs, so workers never write to the connection they inherited. Calling `#reset`
+after forking is no longer required, but it is still safe, and it releases the
+inherited connection right away instead of on the first log call.
+
+Kinesis and Firehose outputs rely on the AWS SDK emptying its connection pool,
+which is broken in aws-sdk-core 3.194.2 to 3.196.0. On those releases they log a
+warning and a worker may share the parent's connections (recreating the logger
+does not help, because the pool belongs to the whole process), so upgrade
+aws-sdk-core to 3.196.1 or later.
+
+A worker that uses the AWS SDK from several threads (another Kinesis or Firehose
+client, say) should still call `reset` right after forking, before any of those
+threads makes a request: the SDK expects its pools to be emptied before a forked
+process starts AWS work, and the logger only does it on its own first use.
+
+This does not cover an `io` output (`type: :io`) given a socket or other
+connection you opened yourself: LogStashLogger cannot reopen it, so create a new
+IO and logger in each worker after forking.
+
+Here is sample configuration for several common web servers used with Rails:
 
 ### Passenger
 
