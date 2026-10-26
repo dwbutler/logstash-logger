@@ -63,6 +63,41 @@ describe LogStashLogger::Device::Balancer do
     end
   end
 
+  describe ".new" do
+    it "merges top level configuration to each output" do
+      error_logger = ::Logger.new(StringIO.new)
+      balancer = described_class.new(
+        port: 1234,
+        ssl_enable: true,
+        sync: true,
+        error_logger: error_logger,
+        outputs: [
+          { type: :tcp, host: '127.0.0.1' },
+          { type: :tcp, host: '127.0.0.1' }
+        ]
+      )
+
+      balancer.devices.each do |device|
+        expect(device.port).to eq(1234)
+        expect(device.use_ssl?).to eq(true)
+        expect(device.sync).to eq(true)
+        expect(device.error_logger).to be(error_logger)
+      end
+    end
+
+    it "lets an output override top level configuration" do
+      balancer = described_class.new(
+        port: 1234,
+        outputs: [
+          { type: :udp, port: 4321 },
+          { type: :udp }
+        ]
+      )
+
+      expect(balancer.devices.map(&:port)).to eq([4321, 1234])
+    end
+  end
+
   describe '#flush, #close' do
     [:flush, :close].each do |method_name|
       it "call on all devices" do

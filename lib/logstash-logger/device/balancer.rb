@@ -6,7 +6,7 @@ module LogStashLogger
       def initialize(opts)
         super
         @io = self
-        @devices = create_devices(opts[:outputs])
+        @devices = create_devices(opts)
         self.class.delegate_to_all(:close, :close!, :flush)
       end
 
@@ -30,8 +30,12 @@ module LogStashLogger
 
       private
 
+      # Top-level options apply to every output; an output's own options win.
       def create_devices(opts)
-        opts.map { |device_opts| Device.new(device_opts) }
+        output_configurations = opts.delete(:outputs)
+        output_configurations.map do |device_opts|
+          Device.new(opts.merge(device_opts))
+        end
       end
 
       # Every output receives the call; an error from one output is reported

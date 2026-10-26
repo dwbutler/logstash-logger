@@ -90,6 +90,10 @@ multi_logger = LogStashLogger.new(
   ])
 ```
 
+Options given at the top level, such as `sync`, `error_logger`, `buffer_max_items` or
+`ssl_enable`, apply to every output of a `multi_delegator`, `balancer` or `multi_logger`.
+An option set on an output overrides the top-level value for that output.
+
 ## Logging Messages
 
 ```ruby
