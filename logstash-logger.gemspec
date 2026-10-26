@@ -39,5 +39,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rubocop-rake'
   gem.add_development_dependency 'rubocop-rspec'
 
-  gem.required_ruby_version = '>= 3.2'
+  gem.required_ruby_version = '>= 3.3'
 end

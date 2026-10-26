@@ -35,10 +35,10 @@ Or install it yourself as:
 
 Verified to work with:
 
-* MRI Ruby 3.2, 3.3, 3.4, 4.0
+* MRI Ruby 3.3, 3.4, 4.0
 * JRuby 10.x
 
-Ruby versions < 3.2 are EOL'ed and no longer supported.
+Ruby versions < 3.3 are EOL'ed and no longer supported.
 
 ## Documentation
 

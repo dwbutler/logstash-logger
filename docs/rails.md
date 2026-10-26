@@ -1,6 +1,6 @@
 # Rails Integration
 
-Supports Rails 7.2, 8.0, and 8.1.
+Supports Rails 8.0 and 8.1.
 
 By default, every Rails log message will be written to logstash in `LogStash::Event` JSON format.
 

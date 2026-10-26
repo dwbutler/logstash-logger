@@ -50,6 +50,10 @@ for other fields.
 
 # Breaking changes
 
+## Version 1.1+
+
+MRI Ruby < 3.3 and Rails < 8.0 are no longer supported, since they have been EOL'ed. If you are on Ruby 3.2 or Rails 7.2, you will need to use 1.0.x.
+
 ## Version 0.27+
 
 MRI Ruby < 3.2 is no longer supported, since it has been EOL'ed. If you are on an older version of Ruby, you will need to use 0.26 or below.
