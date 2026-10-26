@@ -94,10 +94,7 @@ module LogStashLogger
 
                       case key
                       when 'tags'
-                        # Tagged-scope tags are appended to this value below,
-                        # so the event gets its own copy and the caller's
-                        # object is never modified.
-                        event_data['tags'.freeze] = value.dup
+                        event_data['tags'.freeze] = message_tags(value)
                       when '@timestamp'
                         # Reached only when trust_message_fields is set. Keep
                         # the logger time unless the value is a usable time.
@@ -148,6 +145,18 @@ module LogStashLogger
 
         own = event_data[MOVED_FIELDS_KEY]
         own.is_a?(Hash) ? moved.merge(string_keys(own)) : moved.merge(MOVED_FIELDS_KEY => own)
+      end
+
+      # Tagged-scope tags are appended to the event's tags, so the event gets
+      # its own Array and the caller's object is never modified. A single
+      # value, such as a String, becomes the only element instead of having
+      # the tagged-scope tags concatenated onto it.
+      def message_tags(value)
+        case value
+        when nil then nil
+        when Array then value.dup
+        else [value]
+        end
       end
 
       # JSON member names are Strings, so a Symbol key and the String key the

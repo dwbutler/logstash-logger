@@ -238,6 +238,20 @@ describe LogStashLogger::Formatter::Base do
         expect(event['message']).to eq('job')
         expect(event['tags']).to eq(%w[worker req-1])
       end
+
+      it "keeps a single tag value as an element of the tags Array" do
+        single = { message: 'job', tags: 'worker'.dup.freeze }
+        event = subject.tagged('req-1') { subject.call(severity, time, progname, single) }
+
+        expect(event['message']).to eq('job')
+        expect(event['tags']).to eq(%w[worker req-1])
+        expect(single[:tags]).to eq('worker')
+      end
+
+      it "does the same for a JSON message" do
+        event = subject.tagged('req-1') { subject.call(severity, time, progname, '{"message":"job","tags":"worker"}') }
+        expect(event['tags']).to eq(%w[worker req-1])
+      end
     end
 
     describe "fields the log call sets" do

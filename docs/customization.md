@@ -75,9 +75,13 @@ Hash is merged with the moved values, and its own keys win when both have the
 same name; any other value is kept as `message_fields.message_fields`.
 
 This keeps text such as a logged request body from changing how its own
-record is classified or dated. `host` is an ordinary field: a message may set it, and
-the logger fills it in only when it is missing. A `LogStash::Event` message is
-used as given and keeps its own `severity` and `@timestamp`.
+record is classified or dated. A `LogStash::Event` message is used as given
+and keeps its own `severity` and `@timestamp`.
+
+A message may set `tags`. The tags of the enclosing `logger.tagged` blocks are
+always added to them, and a single value such as `"tags":"api"` becomes the
+Array `["api"]`. `host` is an ordinary field: a message may set it, and the
+logger fills it in only when it is missing.
 
 If every String and Hash message you log comes from code you trust, such as a
 log formatter that already sets these fields, you can let messages set them:
