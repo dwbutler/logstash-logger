@@ -1,4 +1,7 @@
 require 'logstash-logger'
+# The device requires ruby-kafka only when the first one is built. Load it here
+# so the classes reopened below and Kafka::SslContext exist in any test order.
+require 'ruby-kafka'
 
 describe LogStashLogger::Device::Kafka::TLSConfiguration do
   context "with TLS" do
