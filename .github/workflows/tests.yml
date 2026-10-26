@@ -5,10 +5,8 @@ on:
     branches:
       - main
       - master
+  # Every pull request, including ones stacked on another PR's branch
   pull_request:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 jobs:
