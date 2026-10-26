@@ -67,6 +67,11 @@ multi_delegating_logger = LogStashLogger.new(
 
 # Balance messages between several outputs.
 # Works the same as multi delegator, but randomly chooses an output to send each message.
+# If handing the message to the chosen output raises an error, the error is reported
+# to the error_logger and the message is sent to another output instead. This covers
+# sync outputs, file and IO outputs, and buffered outputs whose buffer refuses the
+# message. Buffered network outputs accept the message into their own buffer and
+# retry delivery from there instead of failing over.
 balancer_logger = LogStashLogger.new(
   type: :balancer,
   outputs: [
