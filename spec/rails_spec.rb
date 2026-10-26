@@ -1,6 +1,7 @@
 require 'rails/all'
 require 'logstash-logger'
 require 'logstash-logger/railtie'
+require 'rails/rack/silence_request'
 
 module Test
   class Application < ::Rails::Application
@@ -85,6 +86,23 @@ describe LogStashLogger do
         it "does not configure anything" do
           expect(app.config.logger).to be_nil
         end
+      end
+    end
+
+    describe "Rails::Rack::SilenceRequest" do
+      let(:logstash_logger) { Rails.logger.broadcasts.find { |logger| logger.is_a?(LogStashLogger) } }
+      let(:endpoint) { ->(env) { Rails.logger.info("request"); [200, {}, []] } }
+      let(:middleware) { Rails::Rack::SilenceRequest.new(endpoint, path: "/up") }
+
+      it "keeps records for the silenced path out of the LogStashLogger output" do
+        expect(Rails.logger).to be_a(ActiveSupport::BroadcastLogger)
+        expect(logstash_logger.device).not_to receive(:write)
+        middleware.call("PATH_INFO" => "/up")
+      end
+
+      it "writes records for other paths" do
+        expect(logstash_logger.device).to receive(:write).once
+        middleware.call("PATH_INFO" => "/other")
       end
     end
   end

@@ -68,6 +68,12 @@ logger.silence(temporary_level) do
 end
 ```
 
+The logger also implements `local_level` and `local_level=`, the interface
+`ActiveSupport::BroadcastLogger` uses to silence the loggers it wraps. In Rails,
+`Rails.logger` is a `BroadcastLogger`, so `Rails.logger.silence`,
+`Rails::Rack::SilenceRequest` (`config.silence_healthcheck_path`) and
+`benchmark(..., silence: true)` silence LogStashLogger output too.
+
 ## Custom Logger Class
 
 By default, LogStashLogger creates a logger that extends Ruby's built in `Logger` class.

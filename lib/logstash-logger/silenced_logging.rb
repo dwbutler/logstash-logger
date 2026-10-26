@@ -48,6 +48,28 @@ module LogStashLogger
       Thread.current[thread_hash_level_key] = level
     end
 
+    # ActiveSupport::BroadcastLogger, which wraps Rails.logger on Rails 7.1 and
+    # later, silences the loggers it wraps by setting local_level= on each one
+    # that responds to it rather than calling their silence. local_level and
+    # local_level= map that interface onto thread_level, and accept the same
+    # values as ActiveSupport::LoggerThreadSafeLevel: an Integer severity, a
+    # Symbol such as :error, or nil to clear the temporary level.
+    def local_level
+      thread_level
+    end
+
+    def local_level=(level)
+      self.thread_level =
+        case level
+        when Integer, nil
+          level
+        when Symbol
+          ::Logger::Severity.const_get(level.to_s.upcase)
+        else
+          raise ArgumentError, "Invalid log level: #{level.inspect}"
+        end
+    end
+
     def level_with_thread_safety
       thread_level || level_without_thread_safety
     end
