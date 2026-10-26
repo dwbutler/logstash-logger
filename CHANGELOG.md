@@ -1,3 +1,36 @@
+## 1.1.0
+
+### Security
+- The TCP output with `ssl_enable: true` and no `ssl_context` accepted any server certificate, so anyone able to intercept the connection could read or alter the log stream. It now verifies the certificate and hostname. [GHSA-p7gr-ppfj-g45v](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-p7gr-ppfj-g45v)
+- Logged content could break record framing: inject a line break into the `cee_syslog` header, or trigger an unframed `Failed to format log event` string that merged with the next record. [GHSA-88vf-w58m-gv7h](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-88vf-w58m-gv7h)
+- One record that Kafka, Kinesis, Firehose or an HTTP collector always rejects could make the output hold back, duplicate or discard the other records buffered with it. [GHSA-qcm4-6phg-mhpf](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-qcm4-6phg-mhpf)
+
+### Breaking Changes
+- Drop support for Ruby 3.2 and Rails 7.2, which are end of life. [#185](https://github.com/dwbutler/logstash-logger/pull/185)
+- `ssl_enable: true` without an `ssl_context` now verifies the server certificate against the system trust store. For a self-signed or private-CA server, pass its certificate as `ssl_certificate`. Turning verification off requires an explicit `VERIFY_NONE` context. See [SSL Configuration](docs/ssl.md). [GHSA-p7gr-ppfj-g45v](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-p7gr-ppfj-g45v)
+- `ssl_certificate` is now the certificate trusted for the server, as documented, and is checked when the logger is created. [GHSA-p7gr-ppfj-g45v](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-p7gr-ppfj-g45v)
+- The `cee_syslog` header always uses this machine's hostname. A `host` set in logged content or in `customize_event` appears only in the JSON body. [GHSA-88vf-w58m-gv7h](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-88vf-w58m-gv7h)
+
+### Features
+- `format: :ndjson` option for the HTTP device, to send newline-delimited JSON instead of a JSON array, and a `content_type` option. [#182](https://github.com/dwbutler/logstash-logger/pull/182) [#180](https://github.com/dwbutler/logstash-logger/issues/180)
+- `max_record_bytes` option to drop any formatted record over a size limit, for every buffered output. Off by default. [GHSA-qcm4-6phg-mhpf](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-qcm4-6phg-mhpf)
+- `aws_max_record_bytes` option for Kinesis streams configured for records larger than 1 MiB. [GHSA-qcm4-6phg-mhpf](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-qcm4-6phg-mhpf)
+- The TCP output sends SNI for TLS connections to DNS hostnames. [GHSA-p7gr-ppfj-g45v](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-p7gr-ppfj-g45v)
+
+### Bug Fixes
+- HTTP device raises on non-2xx responses, so failed uploads are retried instead of silently dropped. [#184](https://github.com/dwbutler/logstash-logger/pull/184) [#181](https://github.com/dwbutler/logstash-logger/issues/181)
+- HTTP device drops only the records a collector rejects with 400, 413, 415 or 422. Other error statuses are retried. [GHSA-qcm4-6phg-mhpf](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-qcm4-6phg-mhpf)
+- Kinesis and Firehose enforce the service's record and request limits, retry failed requests instead of treating them as delivered, and requeue throttled records without losing the batch. Kinesis `InternalFailure` records are retried. [GHSA-qcm4-6phg-mhpf](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-qcm4-6phg-mhpf)
+- Kafka drops only records the broker always rejects, instead of retrying the whole batch until the buffer fills. [GHSA-qcm4-6phg-mhpf](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-qcm4-6phg-mhpf)
+- The TCP output closes the underlying TCP socket when a TLS connection is closed or fails to set up. [GHSA-p7gr-ppfj-g45v](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-p7gr-ppfj-g45v)
+- A record that cannot be formatted is replaced by a placeholder event tagged `_logstashlogger_format_failure`, framed like any other record. [GHSA-88vf-w58m-gv7h](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-88vf-w58m-gv7h)
+- An `@timestamp` in logged content that is not a valid time no longer fails the record. [GHSA-88vf-w58m-gv7h](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-88vf-w58m-gv7h)
+- The `cee_syslog` formatter no longer shares the program name between concurrent log calls. [GHSA-88vf-w58m-gv7h](https://github.com/dwbutler/logstash-logger/security/advisories/GHSA-88vf-w58m-gv7h)
+
+### Other
+- CI covers Ruby 3.3, 3.4, 4.0 and JRuby 10 with Rails 8.0 and 8.1, and uploads coverage to Codecov. [#183](https://github.com/dwbutler/logstash-logger/pull/183) [#185](https://github.com/dwbutler/logstash-logger/pull/185)
+- Fix an order-dependent Kafka spec. [#186](https://github.com/dwbutler/logstash-logger/pull/186)
+
 ## 1.0.0
 
 ### Breaking Changes
