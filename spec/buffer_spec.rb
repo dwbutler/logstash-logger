@@ -385,3 +385,27 @@ describe LogStashLogger::Device::Connectable, '#close' do
     expect(device.timer).to be_nil
   end
 end
+
+describe LogStashLogger::Buffer, 'exit-time flush' do
+  it 'registers a device until it is closed' do
+    device = RecordingDevice.new(buffer_flush_at_exit: true)
+    expect(LogStashLogger::Buffer::AT_EXIT_REGISTRY[device]).to be(true)
+    device.close
+    expect(LogStashLogger::Buffer::AT_EXIT_REGISTRY[device]).to be(false)
+  end
+
+  it 'unregisters a device closed from inside a timed flush' do
+    device = RecordingDevice.new(buffer_max_interval: 0.05, buffer_flush_at_exit: true)
+    closed = Queue.new
+    device.gate = -> { device.gate = nil; device.close(flush: false); closed << true }
+    device.write('a')
+    closed.pop
+
+    expect(LogStashLogger::Buffer::AT_EXIT_REGISTRY[device]).to be(false)
+  end
+
+  it 'does not register a device when buffer_flush_at_exit is false' do
+    device = RecordingDevice.new(buffer_flush_at_exit: false)
+    expect(LogStashLogger::Buffer::AT_EXIT_REGISTRY.key?(device)).to be(false)
+  end
+end
