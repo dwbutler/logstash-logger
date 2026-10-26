@@ -56,6 +56,25 @@ describe LogStashLogger::Device::MultiDelegator do
     end
   end
 
+  describe "#reset" do
+    it "resets each output so they all keep writing" do
+      logger = LogStashLogger.new(
+        type: :multi_delegator,
+        outputs: [
+          { type: :file, path: file.path, sync: true },
+          { type: :io, io: io }
+        ]
+      )
+
+      logger.reset
+      logger.info("after reset")
+
+      expect(::File.read(file.path)).to include("after reset")
+      expect(io).not_to be_closed
+      expect(io.string).to include("after reset")
+    end
+  end
+
   describe ".new" do
     it "merges top level configuration to each output" do
       logger = described_class.new(

@@ -63,6 +63,17 @@ describe LogStashLogger::Device::Balancer do
     end
   end
 
+  describe "#reset" do
+    it "leaves each output writable" do
+      subject.reset
+
+      expect(io).not_to be_closed
+      allow(subject.devices).to receive(:sample) { subject.devices.last }
+      subject.write("after reset")
+      expect(io.string).to eq("after reset")
+    end
+  end
+
   describe ".new" do
     it "merges top level configuration to each output" do
       error_logger = ::Logger.new(StringIO.new)
@@ -98,8 +109,8 @@ describe LogStashLogger::Device::Balancer do
     end
   end
 
-  describe '#flush, #close' do
-    [:flush, :close].each do |method_name|
+  describe '#flush, #close, #reset' do
+    [:flush, :close, :reset].each do |method_name|
       it "call on all devices" do
         subject.devices.each do |device|
           expect(device).to receive(method_name).once

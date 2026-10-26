@@ -12,7 +12,7 @@ module LogStashLogger
         super
         @io = self
         @devices = create_devices(opts)
-        self.class.delegate(:write, :close, :close!, :flush)
+        self.class.delegate(:write, :close, :close!, :flush, :reset)
       end
 
       private

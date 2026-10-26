@@ -7,7 +7,7 @@ module LogStashLogger
         super
         @io = self
         @devices = create_devices(opts)
-        self.class.delegate_to_all(:close, :close!, :flush)
+        self.class.delegate_to_all(:close, :close!, :flush, :reset)
       end
 
       # Sends the message to one randomly chosen output. If handing the
