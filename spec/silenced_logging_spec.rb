@@ -28,6 +28,17 @@ describe LogStashLogger do
         logger.warn("warning")
       end
     end
+
+    it "restores the outer level when a nested silence ends" do
+      logger.silence(::Logger::ERROR) do
+        logger.silence(::Logger::WARN) { }
+
+        expect(logger.device).to receive(:write).once
+        logger.warn("warning")
+        logger.error("error")
+      end
+      expect(logger.level).to eq(::Logger::DEBUG)
+    end
   end
 
   describe "silencing through ActiveSupport::BroadcastLogger" do

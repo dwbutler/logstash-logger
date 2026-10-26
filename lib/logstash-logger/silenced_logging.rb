@@ -82,14 +82,17 @@ module LogStashLogger
       end
     end
 
-    # Silences the logger for the duration of the block.
+    # Silences the logger for the duration of the block, then restores the
+    # temporary level that was in effect before it, so a nested silence does
+    # not end an enclosing one.
     def silence(temporary_level = Logger::ERROR)
       if silencer
+        previous_level = thread_level
         begin
           self.thread_level = temporary_level
           yield self
         ensure
-          self.thread_level = nil
+          self.thread_level = previous_level
         end
       else
         yield self
