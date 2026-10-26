@@ -211,35 +211,39 @@ module LogStashLogger
     def buffer_flush(options={})
       force = options[:force] || options[:final]
       final = options[:final]
+      # Work on the state this flush started with. Connectable#reset or
+      # drop_messages_on_flush_error can replace @buffer_state while a flush is
+      # in progress, and this flush's bookkeeping must not leak into the new one.
+      state = @buffer_state
 
       # final flush will wait for lock, so we are sure to flush out all buffered events
       if options[:final]
-        @buffer_state[:flush_mutex].lock
-      elsif ! @buffer_state[:flush_mutex].try_lock # failed to get lock, another flush already in progress
+        state[:flush_mutex].lock
+      elsif ! state[:flush_mutex].try_lock # failed to get lock, another flush already in progress
         return 0
       end
 
       items_flushed = 0
 
       begin
-        time_since_last_flush = (Time.now - @buffer_state[:last_flush])
+        time_since_last_flush = (Time.now - state[:last_flush])
 
-        return 0 if @buffer_state[:pending_count] == 0
+        return 0 if state[:pending_count] == 0
         return 0 if (!force) &&
-           (@buffer_state[:pending_count] < @buffer_config[:max_items]) &&
+           (state[:pending_count] < @buffer_config[:max_items]) &&
            (time_since_last_flush < @buffer_config[:max_interval])
 
-        @buffer_state[:pending_mutex].synchronize do
-          @buffer_state[:outgoing_items] = @buffer_state[:pending_items]
-          @buffer_state[:outgoing_count] = @buffer_state[:pending_count]
-          buffer_clear_pending
+        state[:pending_mutex].synchronize do
+          state[:outgoing_items] = state[:pending_items]
+          state[:outgoing_count] = state[:pending_count]
+          buffer_clear_pending(state)
         end
 
         @buffer_config[:logger].debug do
           debug_output = {
-            :outgoing_count => @buffer_state[:outgoing_count],
+            :outgoing_count => state[:outgoing_count],
             :time_since_last_flush => time_since_last_flush,
-            :outgoing_events => @buffer_state[:outgoing_items],
+            :outgoing_events => state[:outgoing_items],
             :batch_timeout => @buffer_config[:max_interval],
             :force => force,
             :final => final
@@ -247,7 +251,7 @@ module LogStashLogger
           "Flushing output: #{debug_output}"
         end if @buffer_config[:logger]
 
-        @buffer_state[:outgoing_items].each do |group, events|
+        state[:outgoing_items].each do |group, events|
           begin
             if group.nil?
               flush(events,final)
@@ -255,17 +259,17 @@ module LogStashLogger
               flush(events, group, final)
             end
 
-            @buffer_state[:outgoing_items].delete(group)
+            state[:outgoing_items].delete(group)
             events_size = events.size
-            @buffer_state[:outgoing_count] -= events_size
+            state[:outgoing_count] -= events_size
             items_flushed += events_size
-            @buffer_state[:last_flush] = Time.now
+            state[:last_flush] = Time.now
 
           rescue => e
 
             @buffer_config[:logger].warn do
               warn_output = {
-                :outgoing_count => @buffer_state[:outgoing_count],
+                :outgoing_count => state[:outgoing_count],
                 :exception => e.class.name,
                 :backtrace => e.backtrace
               }
@@ -279,14 +283,14 @@ module LogStashLogger
             if @buffer_config[:drop_messages_on_flush_error]
               reset_buffer
             else
-              cancel_flush
+              cancel_flush(state)
             end
 
           end
         end
 
       ensure
-        @buffer_state[:flush_mutex].unlock
+        state[:flush_mutex].unlock
       end
 
       return items_flushed
@@ -323,24 +327,24 @@ module LogStashLogger
       @flush_timer_thread = nil
     end
 
-    def buffer_clear_pending
-      @buffer_state[:pending_items] = Hash.new { |h, k| h[k] = [] }
-      @buffer_state[:pending_count] = 0
+    def buffer_clear_pending(state = @buffer_state)
+      state[:pending_items] = Hash.new { |h, k| h[k] = [] }
+      state[:pending_count] = 0
     end
 
-    def buffer_clear_outgoing
-      @buffer_state[:outgoing_items] = Hash.new { |h, k| h[k] = [] }
-      @buffer_state[:outgoing_count] = 0
+    def buffer_clear_outgoing(state = @buffer_state)
+      state[:outgoing_items] = Hash.new { |h, k| h[k] = [] }
+      state[:outgoing_count] = 0
     end
 
-    def cancel_flush
-      @buffer_state[:pending_mutex].synchronize do
-        @buffer_state[:outgoing_items].each do |group, items|
-          @buffer_state[:pending_items][group].concat items
+    def cancel_flush(state = @buffer_state)
+      state[:pending_mutex].synchronize do
+        state[:outgoing_items].each do |group, items|
+          state[:pending_items][group].concat items
         end
-        @buffer_state[:pending_count] += @buffer_state[:outgoing_count]
+        state[:pending_count] += state[:outgoing_count]
       end
-      buffer_clear_outgoing
+      buffer_clear_outgoing(state)
     end
   end
 end
