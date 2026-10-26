@@ -66,23 +66,27 @@ module LogStashLogger
 
         event = case data
                   when LogStash::Event
-                    data.clone
+                    # A copy of the caller's event (same class and state,
+                    # cancellation included) whose fields are a new Hash with
+                    # String keys. It shares the caller's values, except tags:
+                    # tagged-scope tags are appended to them below, so the
+                    # copy gets its own. Object#dup does not call the
+                    # constructor, unlike LogStash::Event#clone, so subclasses
+                    # with other constructor arguments work too.
+                    fields = string_keys(data.to_hash)
+                    tags = fields['tags'.freeze]
+                    fields['tags'.freeze] = tags.dup if tags.is_a?(Array) || tags.is_a?(String)
+                    data.dup.tap { |copy| copy.instance_variable_set(:@data, fields) }
                   when Hash
                     event_data = { '@timestamp'.freeze => time }
-                    data.each do |key, value|
+                    string_keys(data).each do |key, value|
                       case key
-                      when :message, 'message'
-                        event_data['message'.freeze] = value
-                      when :tags, 'tags'
+                      when 'tags'
                         # Tagged-scope tags are appended to this value below,
                         # so the event gets its own copy and the caller's
                         # object is never modified.
                         event_data['tags'.freeze] = value.dup
-                      when :source, 'source'
-                        event_data['source'.freeze] = value
-                      when :type, 'type'
-                        event_data['type'.freeze] = value
-                      when :'@timestamp', '@timestamp'
+                      when '@timestamp'
                         # Keep the logger time unless the value is a usable time
                         event_data['@timestamp'.freeze] = usable_time(value) || time
                       else
@@ -119,6 +123,18 @@ module LogStashLogger
 
       def format_event(event)
         event
+      end
+
+      # JSON member names are Strings, so a Symbol key and the String key the
+      # logger or LogStash::Event sets for the same field would be written as
+      # two members with one name. Every top-level key becomes a String; when
+      # a message has both forms of a key, the String-keyed value is kept.
+      def string_keys(hash)
+        hash.each_with_object({}) do |(key, value), copy|
+          name = key.is_a?(String) ? key : key.to_s
+          next if !key.is_a?(String) && hash.key?(name)
+          copy[name] = value
+        end
       end
 
       # LogStash::Event runs String timestamps through Time.parse, which raises

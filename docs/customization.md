@@ -56,6 +56,15 @@ You can also customize events on a per-logger basis by passing a callable object
 LogStashLogger.new(customize_event: ->(event){ event['other_field'] = 'other_field' })
 ```
 
+## Field Names
+
+A Hash or `LogStash::Event` message may use Symbol or String keys. Every
+top-level key is converted to a String before the event reaches a
+`customize_event` block, so `logger.info(message: 'm', user: 'u')` is read as
+`event['user']`, and a Symbol key such as `:host` names the same field as
+`'host'`. If a message has both the Symbol and the String form of a key, the
+String-keyed value is used.
+
 ## Logger Silencing
 
 LogStashLogger provides support for Rails-style logger silencing. The

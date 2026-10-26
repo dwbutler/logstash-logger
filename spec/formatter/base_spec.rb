@@ -145,6 +145,44 @@ describe LogStashLogger::Formatter::Base do
           expect(event['message']).to eq("foo")
           expect(event).to_not equal(message)
         end
+
+        it "keeps values that cannot be cloned" do
+          worker = Thread.current
+          event = subject.call(severity, time, progname, LogStash::Event.new('message' => 'foo', 'worker' => worker))
+          expect(event['message']).to eq('foo')
+          expect(event['worker']).to equal(worker)
+        end
+
+        it "leaves the caller's tags unchanged" do
+          logged = LogStash::Event.new('message' => 'foo', 'tags' => ['e'])
+          event = subject.tagged('t') { subject.call(severity, time, progname, logged) }
+          expect(event['tags']).to eq(%w[e t])
+          expect(logged['tags']).to eq(['e'])
+        end
+
+        it "keeps a subclass whose constructor takes other arguments" do
+          klass = Class.new(LogStash::Event) do
+            attr_reader :origin
+
+            def initialize(data, origin)
+              super(data)
+              @origin = origin
+            end
+          end
+          logged = klass.new({ 'message' => 'foo' }, 'importer')
+          event = subject.call(severity, time, progname, logged)
+
+          expect(event).to be_a(klass)
+          expect(event).to_not equal(logged)
+          expect(event.origin).to eq('importer')
+          expect(event['message']).to eq('foo')
+        end
+
+        it "is not written when it was cancelled" do
+          logged = LogStash::Event.new('message' => 'foo')
+          logged.cancel
+          expect(subject.call(severity, time, progname, logged)).to be_nil
+        end
       end
 
       context "fallback" do
