@@ -159,5 +159,63 @@ describe LogStashLogger::Buffer, 'when the buffer is full' do
 
       expect(device.lines).to eq((1..5).map { |i| "queued-#{i}" } + ['after'])
     end
+
+    it 'reports the full buffer once, then how many records were dropped' do
+      (1..7).each { |i| device.write("overflow-#{i}") }
+      device.gate = nil
+      release << true
+      wait_until { device.lines.size == 5 }
+      device.write('after')
+
+      expect(device.error_log.string.scan('Buffer Full').size).to eq(1)
+      expect(device.error_log.string).to include('Dropped 7 records because the buffer was full')
+    end
+  end
+
+  it 'reports the dropped records when a flush makes room, without another log call' do
+    device = RecordingDevice.new(buffer_max_items: 1, buffer_max_interval: 3600)
+    device.fail_connect = true
+    device.write('kept')
+    device.write('dropped')
+    expect(device.error_log.string).not_to include('Dropped')
+
+    device.fail_connect = false
+    device.buffer_flush(force: true)
+    expect(device.error_log.string).to include('Dropped 1 records')
+  end
+
+  it 'reports the dropped records before a reset discards the buffer' do
+    device = RecordingDevice.new(buffer_max_items: 1, buffer_max_interval: 3600)
+    device.fail_connect = true
+    device.write('kept')
+    device.write('dropped')
+    device.reset
+
+    expect(device.error_log.string).to include('Dropped 1 records')
+  end
+
+  context 'with drop_messages_on_full_buffer: false' do
+    it 'waits for room and reports it once' do
+      device = RecordingDevice.new(buffer_max_items: 2, buffer_max_interval: 0.05, drop_messages_on_full_buffer: false)
+      release = Queue.new
+      blocked = Queue.new
+      device.gate = -> { blocked << true; release.pop }
+      # The write that fills the buffer may flush it itself, so write from
+      # another thread
+      filler = Thread.new { device.write('a'); device.write('b') }
+      blocked.pop
+
+      writer = Thread.new { device.write('c') }
+      sleep 0.5
+      expect(writer).to be_alive
+      expect(device.error_log.string.scan('Buffer Full').size).to eq(1)
+
+      device.gate = nil
+      release << true
+      expect(writer.join(5)).not_to be_nil
+      filler.join(5)
+      wait_until { device.lines.include?('c') }
+      expect(device.lines).to eq(%w[a b c])
+    end
   end
 end
