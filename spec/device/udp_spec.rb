@@ -123,6 +123,50 @@ describe LogStashLogger::Device::UDP do
       expect(JSON.parse(received(1).first)).to include('original_size' => 2000)
     end
 
+    it "replaces a record that the host rejects as too large, under max_datagram_size" do
+      dev = device(max_datagram_size: 4000)
+      record = %Q({"severity":"ERROR","details":"#{'secret' * 500}"}\n)
+      allow(dev.to_io).to receive(:write).and_call_original
+      allow(dev.to_io).to receive(:write).with(record).and_raise(Errno::EMSGSIZE)
+      dev.write('before')
+      dev.write(record)
+      dev.write('after')
+
+      before, stub, after = received(3)
+      expect([before, after]).to eq(%w[before after])
+      expect(JSON.parse(stub)).to include('severity' => 'ERROR', 'original_size' => record.bytesize)
+      expect(error_log.string).to include('Errno::EMSGSIZE')
+      expect(error_log.string).not_to include('secret')
+    end
+
+    context "when the host also rejects the replacement" do
+      let(:dev) { device }
+      let(:record) { %Q({"severity":"ERROR","details":"#{'secret' * 500}"}\n) }
+
+      def reject_datagrams_containing(*parts)
+        allow(dev.to_io).to receive(:write).and_wrap_original do |write, data|
+          raise Errno::EMSGSIZE if parts.any? { |part| data.include?(part) }
+          write.call(data)
+        end
+      end
+
+      it "sends the notice alone" do
+        reject_datagrams_containing('secret', '"severity"')
+        dev.write(record)
+        expect(JSON.parse(received(1).first).keys).to eq(%w[message tags original_size])
+        expect(error_log.string.scan('Errno::EMSGSIZE').size).to eq(2)
+      end
+
+      it "drops the record when the notice is rejected too" do
+        reject_datagrams_containing('secret', 'replaced')
+        dev.write(record)
+        dev.write('after')
+        expect(received(1)).to eq(['after'])
+        expect(error_log.string.scan('Errno::EMSGSIZE').size).to eq(3)
+        expect(error_log.string).to include('unrecoverable error, aborting write')
+      end
+    end
+
     it "accepts a String value, as URI query options arrive" do
       dev = LogStashLogger::Device.new(uri: "udp://127.0.0.1:#{receiver_port}?max_datagram_size=1000")
       expect(dev.max_datagram_size).to eq(1000)

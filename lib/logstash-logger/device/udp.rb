@@ -39,22 +39,41 @@ module LogStashLogger
       end
 
       # Each record is sent as one datagram. A record larger than
-      # max_datagram_size is replaced by a small record that says so, so the
-      # collector still sees that something was logged.
+      # max_datagram_size, or one the host rejects as too large for a datagram,
+      # is replaced by a small record that says so, so the collector still sees
+      # that something was logged.
       def write_one(message)
-        super(fit_datagram(message))
+        oversized = message.is_a?(String) && message.bytesize > max_datagram_size
+        with_connection do
+          send_datagram(message, oversized ? :replacement : :record)
+        end
       end
 
       private
 
-      def fit_datagram(message)
-        return message unless message.is_a?(String) && message.bytesize > max_datagram_size
-        replacement_record(message)
+      # Sends the record, its replacement, or the replacement's notice alone,
+      # moving to the next, smaller one each time the host rejects a datagram
+      # as too large (its limit is below max_datagram_size).
+      def send_datagram(message, form)
+        @io.write(datagram(message, form))
+      rescue Errno::EMSGSIZE => e
+        log_error(e)
+        smaller = { record: :replacement, replacement: :notice }[form]
+        return log_warning("unrecoverable error, aborting write") unless smaller
+        send_datagram(message, smaller)
       end
 
-      def replacement_record(record)
+      def datagram(message, form)
+        case form
+        when :record then message
+        when :replacement then replacement_record(message.to_s)
+        else replacement_record(message.to_s, notice_only: true)
+        end
+      end
+
+      def replacement_record(record, notice_only: false)
         size = record.bytesize
-        log_warning("replacing a record of #{size} bytes that does not fit in one datagram (max_datagram_size: #{max_datagram_size})")
+        log_warning("replacing a record of #{size} bytes that does not fit in one datagram (max_datagram_size: #{max_datagram_size})") unless notice_only
         notice = {
           'message' => "Record of #{size} bytes replaced: too large for one UDP datagram",
           'tags' => [RECORD_TOO_LARGE_TAG],
@@ -66,6 +85,7 @@ module LogStashLogger
           log_warning("leaving out the #{header.bytesize}-byte cee header: the replacement would be over max_datagram_size")
           header = ''
         end
+        return "#{header}#{notice.to_json}#{line_end}" if notice_only
         replacement = "#{header}#{kept_fields(body).merge(notice).to_json}#{line_end}"
         # The kept fields can add about 1.5 KB; leave them out under a small limit.
         replacement = "#{header}#{notice.to_json}#{line_end}" if replacement.bytesize > max_datagram_size
