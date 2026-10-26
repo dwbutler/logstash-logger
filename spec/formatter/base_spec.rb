@@ -156,6 +156,33 @@ describe LogStashLogger::Formatter::Base do
       end
     end
 
+    describe "tags from a Hash message" do
+      let(:fields) { { message: 'job', tags: ['worker'] } }
+
+      before do
+        allow(subject).to receive(:error_logger).and_return(Logger.new(IO::NULL))
+      end
+
+      it "gives each record its own tags and leaves the caller's Hash unchanged" do
+        first = subject.tagged('req-1') { subject.call(severity, time, progname, fields) }
+        second = subject.tagged('req-2') { subject.call(severity, time, progname, fields) }
+        untagged = subject.call(severity, time, progname, fields)
+
+        expect(first['tags']).to eq(%w[worker req-1])
+        expect(second['tags']).to eq(%w[worker req-2])
+        expect(untagged['tags']).to eq(%w[worker])
+        expect(fields[:tags]).to eq(%w[worker])
+      end
+
+      it "formats a record whose tags Array is frozen" do
+        frozen = { message: 'job', tags: ['worker'].freeze }
+        event = subject.tagged('req-1') { subject.call(severity, time, progname, frozen) }
+
+        expect(event['message']).to eq('job')
+        expect(event['tags']).to eq(%w[worker req-1])
+      end
+    end
+
     describe "extra fields on the event" do
       it "adds severity" do
         expect(event['severity']).to eq(severity)

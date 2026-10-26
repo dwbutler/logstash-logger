@@ -74,7 +74,10 @@ module LogStashLogger
                       when :message, 'message'
                         event_data['message'.freeze] = value
                       when :tags, 'tags'
-                        event_data['tags'.freeze] = value
+                        # Tagged-scope tags are appended to this value below,
+                        # so the event gets its own copy and the caller's
+                        # object is never modified.
+                        event_data['tags'.freeze] = value.dup
                       when :source, 'source'
                         event_data['source'.freeze] = value
                       when :type, 'type'
