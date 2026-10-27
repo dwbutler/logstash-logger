@@ -30,13 +30,20 @@ describe LogStashLogger do
     end
 
     it "restores the outer level when a nested silence ends" do
-      logger.silence(::Logger::ERROR) do
-        logger.silence(::Logger::WARN) { }
+      written = []
+      allow(logger.device).to receive(:write) { |record| written << record[/"message":"([^"]*)"/, 1] }
 
-        expect(logger.device).to receive(:write).once
-        logger.warn("warning")
-        logger.error("error")
+      logger.silence(::Logger::ERROR) do
+        logger.silence(::Logger::WARN) do
+          logger.info("inner info")      # below WARN: silenced
+          logger.warn("inner warning")   # written
+        end
+        logger.warn("outer warning")     # below ERROR again: silenced
+        logger.error("outer error")      # written
       end
+      logger.info("after both")          # back to the configured level: written
+
+      expect(written).to eq(["inner warning", "outer error", "after both"])
       expect(logger.level).to eq(::Logger::DEBUG)
     end
   end
