@@ -114,6 +114,7 @@ module LogStashLogger
       }
 
       @buffer_shutdown = false
+      @buffer_fork_mutex = Mutex.new
       AT_EXIT_REGISTRY[self] = true if @buffer_config[:flush_at_exit]
 
       reset_buffer
@@ -151,6 +152,8 @@ module LogStashLogger
 
       # events we've accumulated
       buffer_clear_pending
+      # Set last, so another thread never sees the new pid with the old state
+      @buffer_pid = Process.pid
     end
 
     # Determine if +:max_items+ has been reached.
@@ -177,6 +180,7 @@ module LogStashLogger
     def buffer_receive(event, group=nil)
       buffer_initialize if ! @buffer_state
       return if buffer_shutdown?
+      buffer_after_fork
 
       make_room if buffer_full?
 
@@ -242,6 +246,7 @@ module LogStashLogger
     # @return [Fixnum] The number of items successfully passed to +flush+.
     def buffer_flush(options={})
       return 0 if buffer_shutdown?
+      buffer_after_fork
       force = options[:force] || options[:final]
       final = options[:final]
       # Work on the state this flush started with. Connectable#reset or
@@ -383,6 +388,28 @@ module LogStashLogger
           return false
         end
         return true if state[:flush_mutex].try_lock
+      end
+    end
+
+    # A forked process inherits the parent's buffered records, its mutexes and
+    # a timer thread that no longer runs. The records are the parent's to
+    # send, so the first buffer call in a new process starts an empty buffer
+    # with fresh mutexes and its own timer. The exit-time flush therefore
+    # never sends the parent's records again.
+    # Threads that log for the first time at once in the new process build
+    # the new buffer only once.
+    def buffer_after_fork
+      return if @buffer_pid == Process.pid
+      @buffer_fork_mutex.synchronize do
+        return if @buffer_pid == Process.pid
+        @pending_mutex = nil
+        @flush_mutex = nil
+        @flush_timer_thread = nil
+        # The parent's overflow episode is not ours to report. The old state
+        # stays in place until the new one replaces it, so a thread entering
+        # buffer_receive meanwhile never sees no state at all.
+        @buffer_state[:full_reported] = false if @buffer_state
+        reset_buffer
       end
     end
 

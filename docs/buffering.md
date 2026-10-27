@@ -88,6 +88,12 @@ dropped instead of reopening the connection. Records the final flush could not
 send are dropped too, and a blocked log call (with `drop_messages_on_full_buffer:
 false`) returns. `reset` (for example after forking) keeps the logger usable.
 
+## Forking
+
+A forked process starts with an empty buffer and its own flush thread. Records
+buffered before the fork belong to the parent, which sends them; the child never
+sends them, including from its exit-time flush.
+
 ## Sync Mode
 
 All logger outputs support a `sync` setting. This is analogous to the "sync mode" setting on Ruby IO

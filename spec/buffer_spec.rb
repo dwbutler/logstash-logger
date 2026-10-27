@@ -446,3 +446,56 @@ describe LogStashLogger::Buffer, 'exit-time flush' do
     end
   end
 end
+
+describe LogStashLogger::Buffer, 'in a forked process' do
+  # Process.pid is stubbed so this runs on every Ruby, JRuby included, which
+  # cannot fork. spec/fork_spec.rb covers a real fork.
+  def as_child
+    # Block form: the timer thread may call Process.pid while the stub is set up
+    child_pid = Process.pid + 1
+    allow(Process).to receive(:pid) { child_pid }
+  end
+
+  it "leaves the parent's buffered records to the parent" do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.write('parent')
+    as_child
+    device.write('child')
+    device.buffer_flush(force: true)
+
+    expect(device.lines).to eq(['child'])
+  end
+
+  it 'starts its own flush timer' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.write('parent')
+    parent_timer = device.timer
+    as_child
+    device.write('child')
+
+    expect(device.timer).not_to equal(parent_timer)
+    expect(device.timer).to be_alive
+  end
+
+  it 'keeps every record when several threads log first at once' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.write('parent')
+    as_child
+    start = Queue.new
+    threads = Array.new(8) { |i| Thread.new { start.pop; device.write("child-#{i}") } }
+    8.times { start << true }
+    threads.each(&:join)
+    device.buffer_flush(force: true)
+
+    expect(device.lines).to match_array(Array.new(8) { |i| "child-#{i}" })
+  end
+
+  it "does not send the parent's records from the exit-time flush" do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.write('parent')
+    as_child
+
+    expect(device.buffer_flush(final: true)).to eq(0)
+    expect(device.lines).to be_empty
+  end
+end
