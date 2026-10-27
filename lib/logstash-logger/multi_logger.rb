@@ -88,6 +88,12 @@ module LogStashLogger
       end
     end
 
+    # Callers such as ActiveSupport::BroadcastLogger check respond_to? before
+    # forwarding a method, so report the methods method_missing passes on.
+    def respond_to_missing?(name, include_private = false)
+      @loggers.any? { |logger| logger.respond_to?(name) } || super
+    end
+
     #
     # === Synopsis
     #

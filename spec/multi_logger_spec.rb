@@ -84,6 +84,14 @@ describe LogStashLogger::MultiLogger do
     subject.reset
   end
 
+  it "can be reset through ActiveSupport::BroadcastLogger" do
+    subject.loggers.each do |logger|
+      expect(logger).to receive(:reset)
+    end
+
+    ActiveSupport::BroadcastLogger.new(subject).reset
+  end
+
   it "delegates #log to loggers" do
     subject.loggers.each do |logger|
       expect(logger).to receive(:add).with(::Logger::DEBUG, "test", nil)
