@@ -17,6 +17,9 @@ You can configure buffering behavior by passing the following options to LogStas
 * `:drop_messages_on_full_buffer` - Drop messages when the buffer is full. Defaults to true.
 * `:sync` - Flush buffer every time a message is received (blocking). Defaults to false.
 * `:buffer_flush_at_exit` - Flush messages when exiting the program. Defaults to true.
+* `:final_flush_timeout` - How long, in seconds, the flush at exit or `close` waits for a flush
+  that is already running, for example one stuck on an unresponsive collector. Defaults to 5;
+  `nil` waits forever. When it gives up, the records still in the buffer are not sent.
 * `:buffer_logger` - Logger to write buffer debug/error messages to. Defaults to none.
 * `:max_record_bytes` - Drop any single formatted record larger than this many bytes, with a warning that gives its size. Off by default.
 

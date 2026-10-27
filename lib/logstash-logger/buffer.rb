@@ -109,7 +109,8 @@ module LogStashLogger
         :has_on_full_buffer_receive => self.class.method_defined?(:on_full_buffer_receive),
         :drop_messages_on_flush_error => options.fetch(:drop_messages_on_flush_error, false),
         :drop_messages_on_full_buffer => options.fetch(:drop_messages_on_full_buffer, false),
-        :flush_at_exit => options.fetch(:flush_at_exit, false)
+        :flush_at_exit => options.fetch(:flush_at_exit, false),
+        :final_flush_timeout => options.fetch(:final_flush_timeout, nil)
       }
 
       @buffer_shutdown = false
@@ -250,7 +251,7 @@ module LogStashLogger
 
       # final flush will wait for lock, so we are sure to flush out all buffered events
       if options[:final]
-        state[:flush_mutex].lock
+        return 0 unless lock_for_final_flush(state)
         # A reset while this flush waited replaced the state; flush what the
         # buffer holds now. The lock is the same object in the new state.
         state = @buffer_state
@@ -363,6 +364,27 @@ module LogStashLogger
     end
 
     private
+
+    # A final flush waits for a flush that is already running, but for no
+    # longer than final_flush_timeout seconds (nil waits forever), so a flush
+    # stuck on an unresponsive output cannot keep the process from exiting.
+    def lock_for_final_flush(state)
+      timeout = @buffer_config[:final_flush_timeout]
+      return state[:flush_mutex].lock if timeout.nil?
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+      return true if state[:flush_mutex].try_lock
+      loop do
+        sleep 0.01
+        # Checked before trying the lock, so a lock freed only after the
+        # deadline does not start a flush that could block again
+        if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+          unsent = [state, @buffer_state].uniq(&:object_id).sum { |s| s[:pending_count] + s[:outgoing_count] }
+          on_final_flush_timeout(unsent) if respond_to?(:on_final_flush_timeout)
+          return false
+        end
+        return true if state[:flush_mutex].try_lock
+      end
+    end
 
     def pending_mutex
       @pending_mutex ||= Mutex.new
