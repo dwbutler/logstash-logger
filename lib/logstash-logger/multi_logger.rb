@@ -40,6 +40,19 @@ module LogStashLogger
       silence_loggers(temporary_level, silenceable_loggers, &block)
     end
 
+    # ActiveSupport::BroadcastLogger silences the loggers it wraps through
+    # local_level=, so pass it on to each logger that supports it.
+    def local_level=(level)
+      @loggers.each do |logger|
+        logger.local_level = level if logger.respond_to?(:local_level=)
+      end
+    end
+
+    def local_level
+      logger = @loggers.find { |l| l.respond_to?(:local_level) }
+      logger && logger.local_level
+    end
+
     def silence_loggers(temporary_level = ::Logger::ERROR, silenceable_loggers, &block)
       return yield(self) if silenceable_loggers.empty?
 

@@ -72,7 +72,8 @@ The logger also implements `local_level` and `local_level=`, the interface
 `ActiveSupport::BroadcastLogger` uses to silence the loggers it wraps. In Rails,
 `Rails.logger` is a `BroadcastLogger`, so `Rails.logger.silence`,
 `Rails::Rack::SilenceRequest` (`config.silence_healthcheck_path`) and
-`benchmark(..., silence: true)` silence LogStashLogger output too.
+`benchmark(..., silence: true)` silence LogStashLogger output too, including
+every output of a `multi_logger`.
 
 ## Custom Logger Class
 

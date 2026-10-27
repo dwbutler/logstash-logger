@@ -1,4 +1,6 @@
 require 'logstash-logger'
+require 'active_support'
+require 'stringio'
 
 describe LogStashLogger::MultiLogger do
   include_context 'device'
@@ -40,6 +42,23 @@ describe LogStashLogger::MultiLogger do
       expect(logger).to eq(subject)
       logger.info 'info'
       logger.warn 'warning'
+    end
+  end
+
+  it "is silenced through ActiveSupport::BroadcastLogger" do
+    ios = [StringIO.new, StringIO.new]
+    multi = LogStashLogger.new(type: :multi_logger, outputs: ios.map { |io| { type: :io, io: io } })
+    broadcast = ActiveSupport::BroadcastLogger.new(multi)
+
+    broadcast.silence do
+      broadcast.info("silenced info")
+      broadcast.error("kept error")
+    end
+    broadcast.info("after silence")
+
+    ios.each do |io|
+      expect(io.string).not_to include("silenced")
+      expect(io.string).to include("kept error", "after silence")
     end
   end
 
