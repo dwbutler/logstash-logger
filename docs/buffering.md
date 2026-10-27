@@ -77,6 +77,14 @@ records, and log their size and the reason, never their content:
 * HTTP: records the collector rejects with 400, 413, 415 or 422. The rest of the batch is sent
   one record at a time. Other error statuses, such as 401, 429 or 5xx, are retried.
 
+## Closing a logger
+
+`logger.close` flushes the buffer one last time and then stops it for good: the
+background flush thread exits, and anything logged to that logger afterwards is
+dropped instead of reopening the connection. Records the final flush could not
+send are dropped too, and a blocked log call (with `drop_messages_on_full_buffer:
+false`) returns. `reset` (for example after forking) keeps the logger usable.
+
 ## Sync Mode
 
 All logger outputs support a `sync` setting. This is analogous to the "sync mode" setting on Ruby IO
