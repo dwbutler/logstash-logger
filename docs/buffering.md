@@ -94,6 +94,10 @@ A forked process starts with an empty buffer and its own flush thread. Records
 buffered before the fork belong to the parent, which sends them; the child never
 sends them, including from its exit-time flush.
 
+A forked process also opens its own connection the first time it logs. It never
+writes to the connection it inherited and never closes it in a way the server
+sees, such as ending a TLS session, so the parent's connection keeps working.
+
 ## Sync Mode
 
 All logger outputs support a `sync` setting. This is analogous to the "sync mode" setting on Ruby IO
