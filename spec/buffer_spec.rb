@@ -67,3 +67,22 @@ describe LogStashLogger::Buffer do
     end
   end
 end
+
+describe LogStashLogger::Buffer, 'when the buffer is full' do
+  it 'flushes from the log call that reaches buffer_max_items' do
+    device = RecordingDevice.new(buffer_max_items: 3, buffer_max_interval: 3600)
+    %w[r1 r2 r3].each { |r| device.write(r) }
+
+    expect(device.lines).to eq(%w[r1 r2 r3])
+  end
+
+  it 'flushes a burst larger than buffer_max_items instead of discarding it' do
+    device = RecordingDevice.new(buffer_max_items: 50, buffer_max_interval: 3600)
+    records = (1..60).map { |i| "r#{i}" }
+    records.each { |r| device.write(r) }
+    device.buffer_flush(force: true)
+
+    expect(device.lines).to eq(records)
+    expect(device.error_log.string).not_to include('Buffer Full')
+  end
+end
