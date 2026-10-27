@@ -21,6 +21,21 @@ read the [Logstash docs](https://www.elastic.co/guide/en/logstash/current/plugin
 
 See the [samples](https://github.com/dwbutler/logstash-logger/tree/master/samples) directory for more configuration samples.
 
+## Timeouts
+
+A TCP output gives up connecting after `connect_timeout` seconds (default 5),
+so an unreachable collector cannot hold up the thread that is logging.
+On MRI the same limit also applies to looking up the host name; JRuby has no
+timeout for that step. Set it to `nil` to wait as long as the operating system
+does.
+
+```ruby
+LogStashLogger.new(type: :tcp, host: 'logstash.example.com', port: 5228, connect_timeout: 2)
+```
+
+A connection that times out is handled like any other connection error: the
+records stay in the buffer and the next flush tries again.
+
 ## HTTP
 
 Supports rudimentary writes (buffered, non-persistent connections) to the [Logstash HTTP Input](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-http.html):
