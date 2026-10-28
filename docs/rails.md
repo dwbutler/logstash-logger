@@ -271,7 +271,8 @@ config.logstash.outputs = [
 # Required
 config.logstash.type = :multi_logger
 
-# Required. Each logger may have its own formatter.
+# Required. Each logger may have its own formatter. Loggers without one
+# use config.logstash.formatter.
 config.logstash.outputs = [
   {
     type: :file,
@@ -319,7 +320,9 @@ end
 
 If your application forks (as is common with many web servers) you will need to
 manage cleaning up resources on your LogStashLogger instances. The instance method
-`#reset` is available for this purpose. Here is sample configuration for
+`#reset` is available for this purpose. Network outputs drop their connection
+and reconnect on the next write, file outputs reopen their file, and IO outputs
+leave the IO you passed in open. Here is sample configuration for
 several common web servers used with Rails:
 
 ### Passenger

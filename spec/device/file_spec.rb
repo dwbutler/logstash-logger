@@ -7,6 +7,25 @@ describe LogStashLogger::Device::File do
     expect(file_device.to_io).to be_a ::File
   end
 
+  describe "#reset" do
+    it "reopens the file so later writes are kept" do
+      file_device.write("before\n")
+      file_device.reset
+      file_device.write("after\n")
+      file_device.flush
+
+      expect(::File.read(file.path)).to eq("before\nafter\n")
+    end
+
+    it "reopens the file on the next write after close" do
+      file_device.close
+      file_device.write("after\n")
+      file_device.flush
+
+      expect(::File.read(file.path)).to eq("after\n")
+    end
+  end
+
   context "with shift options" do
     let(:shift_file) do
       temp = Tempfile.new('logstash_shift')
@@ -61,6 +80,15 @@ describe LogStashLogger::Device::File do
       shift_device.close
 
       expect(::File.exist?("#{shift_file.path}.0")).to be(true)
+    end
+
+    it "reopens the rotating file on #reset" do
+      period_device.write("before\n")
+      period_device.reset
+      period_device.write("after\n")
+      period_device.close
+
+      expect(::File.read(period_file.path)).to end_with("before\nafter\n")
     end
 
     it "uses shift_period_suffix for time-based rotation" do

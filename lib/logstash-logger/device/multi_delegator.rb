@@ -9,9 +9,10 @@ module LogStashLogger
       attr_reader :devices
 
       def initialize(opts)
+        super
         @io = self
         @devices = create_devices(opts)
-        self.class.delegate(:write, :close, :close!, :flush)
+        self.class.delegate(:write, :close, :close!, :flush, :reset)
       end
 
       private
@@ -24,11 +25,31 @@ module LogStashLogger
         end
       end
 
+      # Each output is an independent delivery path: an error from one output
+      # is reported through error_logger and the remaining outputs still
+      # receive the call.
       def self.delegate(*methods)
         methods.each do |m|
           define_method(m) do |*args|
-            @devices.each { |device| device.send(m, *args) }
+            @devices.each do |device|
+              begin
+                device.send(m, *args)
+              rescue => e
+                log_device_error(device, e)
+              end
+            end
           end
+        end
+      end
+
+      # Reports an output's error. An error_logger that raises must not stop
+      # delivery to the other outputs, so the report goes to stderr instead.
+      def log_device_error(device, e)
+        message = "[#{self.class}] #{device.class} - #{e.class} - #{e.message}"
+        begin
+          error_logger.error message
+        rescue => logger_error
+          warn("#{message} (error_logger failed: #{logger_error.class})") rescue nil
         end
       end
     end

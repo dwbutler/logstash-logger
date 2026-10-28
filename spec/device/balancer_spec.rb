@@ -18,8 +18,99 @@ describe LogStashLogger::Device::Balancer do
     end
   end
 
-  describe '#flush, #close' do
-    [:flush, :close].each do |method_name|
+  context "when an output raises" do
+    let(:error_io) { StringIO.new }
+    let(:error_logger) { ::Logger.new(error_io) }
+    let(:failing_io) { StringIO.new }
+    let(:device) do
+      LogStashLogger::Device.new(
+        type: :balancer,
+        error_logger: error_logger,
+        outputs: [
+          { type: :io, io: failing_io },
+          { type: :io, io: io }
+        ]
+      )
+    end
+
+    it "fails over to another output and reports the error" do
+      allow(failing_io).to receive(:write).and_raise(Errno::ENOSPC)
+      allow(device.devices).to receive(:sample) { device.devices.first }
+
+      expect { 3.times { device.write("test") } }.not_to raise_error
+
+      expect(io.string).to eq("test" * 3)
+      expect(error_io.string.scan("Errno::ENOSPC").size).to eq(3)
+    end
+
+    it "still flushes the other outputs and reports the error" do
+      allow(failing_io).to receive(:flush).and_raise(Errno::ENOSPC)
+      expect(io).to receive(:flush).once
+
+      expect { device.flush }.not_to raise_error
+
+      expect(error_io.string.scan("Errno::ENOSPC").size).to eq(1)
+    end
+
+    it "still fails over when the error_logger raises" do
+      allow(failing_io).to receive(:write).and_raise(Errno::ENOSPC)
+      allow(error_logger).to receive(:error).and_raise(IOError, "closed stream")
+      allow(device.devices).to receive(:sample) { device.devices.first }
+
+      expect { device.write("test") }.to output(/Errno::ENOSPC/).to_stderr
+
+      expect(io.string).to eq("test")
+    end
+  end
+
+  describe "#reset" do
+    it "leaves each output writable" do
+      subject.reset
+
+      expect(io).not_to be_closed
+      allow(subject.devices).to receive(:sample) { subject.devices.last }
+      subject.write("after reset")
+      expect(io.string).to eq("after reset")
+    end
+  end
+
+  describe ".new" do
+    it "merges top level configuration to each output" do
+      error_logger = ::Logger.new(StringIO.new)
+      balancer = described_class.new(
+        port: 1234,
+        ssl_enable: true,
+        sync: true,
+        error_logger: error_logger,
+        outputs: [
+          { type: :tcp, host: '127.0.0.1' },
+          { type: :tcp, host: '127.0.0.1' }
+        ]
+      )
+
+      balancer.devices.each do |device|
+        expect(device.port).to eq(1234)
+        expect(device.use_ssl?).to eq(true)
+        expect(device.sync).to eq(true)
+        expect(device.error_logger).to be(error_logger)
+      end
+    end
+
+    it "lets an output override top level configuration" do
+      balancer = described_class.new(
+        port: 1234,
+        outputs: [
+          { type: :udp, port: 4321 },
+          { type: :udp }
+        ]
+      )
+
+      expect(balancer.devices.map(&:port)).to eq([4321, 1234])
+    end
+  end
+
+  describe '#flush, #close, #reset' do
+    [:flush, :close, :reset].each do |method_name|
       it "call on all devices" do
         subject.devices.each do |device|
           expect(device).to receive(method_name).once
