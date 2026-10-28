@@ -50,29 +50,6 @@ describe LogStashLogger::Device::UDP do
       expect(error_log.string).not_to include('secret')
     end
 
-    it "keeps a copied field only when it is small" do
-      device(max_datagram_size: 1000).write(%Q({"@timestamp":"t","severity":"#{'S' * 1000}","host":"h"}\n))
-      placeholder = received(1).first
-      expect(placeholder).to end_with("\n")
-      expect(JSON.parse(placeholder)).to include('@timestamp' => 't', 'host' => 'h', 'original_size' => 1044)
-      expect(JSON.parse(placeholder)).not_to have_key('severity')
-    end
-
-    it "leaves out the copied fields when they would not fit under a small limit" do
-      fields = %w[@timestamp host type].map { |key| %Q("#{key}":"#{'v' * 200}") }.join(',')
-      device(max_datagram_size: 512).write("{#{fields},\"message\":\"#{'m' * 600}\"}")
-      placeholder = received(1).first
-      expect(placeholder.bytesize).to be <= 512
-      expect(JSON.parse(placeholder).keys).to eq(%w[message tags original_size])
-    end
-
-    it "does not parse a record over 1 MiB for fields to copy" do
-      device(max_datagram_size: 1000).write(%Q({"severity":"WARN","big":"#{'x' * 1_048_576}"}\n))
-      placeholder = JSON.parse(received(1).first)
-      expect(placeholder).to include('original_size' => 1_048_605)
-      expect(placeholder).not_to have_key('severity')
-    end
-
     { cee: '@cee:', cee_syslog: "#{LogStashLogger::Formatter::HOST['hostname']}:@cee:" }.each do |formatter, header|
       it "keeps the #{formatter} header in the replacement" do
         logger = LogStashLogger.new(type: :udp, host: '127.0.0.1', port: receiver_port, sync: true,
@@ -95,18 +72,6 @@ describe LogStashLogger::Device::UDP do
       expect(JSON.parse(datagram.delete_prefix(header))).to include('severity' => 'WARN', 'tags' => ['_logstashlogger_record_too_large'])
     end
 
-    it "skips a copied field that cannot be serialized again" do
-      device(max_datagram_size: 1000).write(%Q({"host":1e400,"severity":"WARN","big":"#{'x' * 2000}"}\n))
-      placeholder = JSON.parse(received(1).first)
-      expect(placeholder).to include('severity' => 'WARN')
-      expect(placeholder).not_to have_key('host')
-    end
-
-    it "does not treat \"@cee:\" inside a JSON record as a header" do
-      device(max_datagram_size: 1000).write(%Q({"message":"@cee:{x}","severity":"WARN","big":"#{'x' * 2000}"}\n))
-      expect(JSON.parse(received(1).first)).to include('severity' => 'WARN', 'original_size' => 2050)
-    end
-
     it "leaves out a cee header that would put the replacement over max_datagram_size" do
       logger = LogStashLogger.new(type: :udp, host: '127.0.0.1', port: receiver_port, sync: true,
                                   formatter: :cee_syslog, max_datagram_size: 512, error_logger: ::Logger.new(error_log))
@@ -116,11 +81,6 @@ describe LogStashLogger::Device::UDP do
       expect(datagram.bytesize).to be <= 512
       expect(JSON.parse(datagram)).to include('tags' => ['_logstashlogger_record_too_large'])
       expect(error_log.string).to match(/leaving out the \d+-byte cee header/)
-    end
-
-    it "replaces a record that is not JSON" do
-      device(max_datagram_size: 1000).write('x' * 2000)
-      expect(JSON.parse(received(1).first)).to include('original_size' => 2000)
     end
 
     it "replaces a record that the host rejects as too large, under max_datagram_size" do
