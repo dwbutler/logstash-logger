@@ -67,8 +67,10 @@ formatters, the placeholder keeps the record's header up to `@cee:`, unless
 the header would put it over `max_datagram_size`. If the host also rejects the
 placeholder, the notice is sent once more without the copied fields before the
 record is dropped. The error logger gets the size, never the content. If your
-host or collector accepts smaller datagrams, set `max_datagram_size` (at least
-512) to its limit, so oversized records are replaced before they are sent:
+host or collector accepts smaller datagrams, set `max_datagram_size` to its
+limit, so oversized records are replaced before they are sent. It must be from
+512 to 65,507 bytes, the IPv4 limit (65,535 minus the 20-byte IPv4 and 8-byte
+UDP headers):
 
 ```ruby
 logger = LogStashLogger.new(type: :udp, host: 'localhost', port: 5228, max_datagram_size: 9216)

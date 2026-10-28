@@ -3,9 +3,10 @@ require 'json'
 module LogStashLogger
   module Device
     class UDP < Socket
-      # Largest payload of one IPv4 UDP datagram. Hosts or collectors with a
-      # smaller limit (macOS allows 9216 bytes by default) need a lower
-      # :max_datagram_size.
+      # Largest payload of one IPv4 UDP datagram, and the largest allowed value:
+      # 65,535 (IPv4 packet) - 20 (IPv4 header) - 8 (UDP header). The device's
+      # UDPSocket is IPv4. Hosts or collectors with a smaller limit (macOS
+      # allows 9216 bytes by default) need a lower :max_datagram_size.
       DEFAULT_MAX_DATAGRAM_SIZE = 65_507
       MIN_MAX_DATAGRAM_SIZE = 512
       RECORD_TOO_LARGE_TAG = '_logstashlogger_record_too_large'
@@ -124,8 +125,8 @@ module LogStashLogger
 
       def parse_max_datagram_size(value)
         bytes = Integer(value)
-        return bytes if bytes >= MIN_MAX_DATAGRAM_SIZE
-        raise ArgumentError, "max_datagram_size must be at least #{MIN_MAX_DATAGRAM_SIZE} bytes: #{value.inspect}"
+        return bytes if (MIN_MAX_DATAGRAM_SIZE..DEFAULT_MAX_DATAGRAM_SIZE).cover?(bytes)
+        raise ArgumentError, "max_datagram_size must be #{MIN_MAX_DATAGRAM_SIZE}..#{DEFAULT_MAX_DATAGRAM_SIZE} bytes: #{value.inspect}"
       rescue TypeError
         raise ArgumentError, "max_datagram_size must be a number of bytes: #{value.inspect}"
       end

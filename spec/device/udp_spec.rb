@@ -175,7 +175,12 @@ describe LogStashLogger::Device::UDP do
     it "rejects a value that is not a number of bytes, or is below 512" do
       expect { device(max_datagram_size: 'lots') }.to raise_error(ArgumentError)
       expect { device(max_datagram_size: nil) }.to raise_error(ArgumentError)
-      expect { device(max_datagram_size: 100) }.to raise_error(ArgumentError, /at least 512/)
+      expect { device(max_datagram_size: 100) }.to raise_error(ArgumentError, /512\.\.65507/)
+    end
+
+    it "rejects a value above the IPv4 UDP payload limit" do
+      expect(device(max_datagram_size: 65_507).max_datagram_size).to eq(65_507)
+      expect { device(max_datagram_size: 65_508) }.to raise_error(ArgumentError, /512\.\.65507/)
     end
 
     it "rejects an invalid value before starting the buffer" do
