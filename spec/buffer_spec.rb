@@ -219,3 +219,61 @@ describe LogStashLogger::Buffer, 'when the buffer is full' do
     end
   end
 end
+
+describe 'recovering from a failed write' do
+  it 'keeps buffering, and reconnects on the next flush' do
+    device = RecordingDevice.new(buffer_max_interval: 0.05)
+    device.fail_connect = true
+    device.write('first')
+    wait_until { device.connects >= 1 }
+    timer = device.timer
+    device.fail_connect = false
+    wait_until { device.lines.include?('first') }
+
+    expect(timer).to be_alive
+    expect(device.lines).to eq(['first'])
+  end
+
+  it 'leaves #reset usable' do
+    device = RecordingDevice.new(buffer_max_interval: 0.05)
+    device.reset
+    device.write('after reset')
+    wait_until { device.lines.include?('after reset') }
+    expect(device.timer).to be_alive
+  end
+
+  it 'keeps the Redis flush timer running after a transient error' do
+    redis = double('redis')
+    calls = 0
+    allow(redis).to receive(:rpush) { calls += 1; raise ::Redis::CannotConnectError, 'down' if calls == 1 }
+    allow(redis).to receive(:quit)
+    allow(::Redis).to receive(:new).and_return(redis)
+    device = LogStashLogger::Device.new(type: :redis, buffer_max_interval: 0.05, buffer_flush_at_exit: false,
+                                        error_logger: ::Logger.new(StringIO.new))
+    timer = device.instance_variable_get(:@flush_timer_thread)
+    device.write('a')
+    wait_until { calls >= 2 }
+
+    expect(timer).to be_alive
+    expect(calls).to be >= 2
+  end
+
+  it 'keeps the Kinesis flush timer running after a transient error' do
+    client = double('kinesis')
+    calls = 0
+    allow(client).to receive(:put_records) do |params|
+      calls += 1
+      raise Seahorse::Client::NetworkingError.new(StandardError.new('reset')) if calls == 1
+      Aws::Kinesis::Types::PutRecordsOutput.new(failed_record_count: 0, records: params[:records].map { Aws::Kinesis::Types::PutRecordsResultEntry.new })
+    end
+    allow(Aws::Kinesis::Client).to receive(:new).and_return(client)
+    device = LogStashLogger::Device.new(type: :kinesis, aws_region: 'us-east-1', buffer_max_interval: 0.05,
+                                        buffer_flush_at_exit: false, error_logger: ::Logger.new(StringIO.new))
+    timer = device.instance_variable_get(:@flush_timer_thread)
+    device.write('a')
+    wait_until { calls >= 2 }
+
+    expect(timer).to be_alive
+    expect(calls).to be >= 2
+  end
+end
