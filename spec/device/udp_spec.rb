@@ -38,39 +38,39 @@ describe LogStashLogger::Device::UDP do
       logger.warn(%Q({"message":"short","details":"#{'secret' * 12_000}"}))
       logger.info('after')
 
-      before, stub, after = received(3).map { |datagram| JSON.parse(datagram) }
+      before, placeholder, after = received(3).map { |datagram| JSON.parse(datagram) }
       expect([before['message'], after['message']]).to eq(%w[before after])
-      expect(stub['message']).to match(/\ARecord of \d+ bytes replaced: too large for one UDP datagram\z/)
-      expect(stub['original_size']).to be > 72_000
-      expect(stub['tags']).to eq(['_logstashlogger_record_too_large'])
-      expect(stub['severity']).to eq('WARN')
-      expect(stub['@timestamp']).to be_a(String)
-      expect(stub).not_to have_key('details')
+      expect(placeholder['message']).to match(/\ARecord of \d+ bytes replaced: too large for one UDP datagram\z/)
+      expect(placeholder['original_size']).to be > 72_000
+      expect(placeholder['tags']).to eq(['_logstashlogger_record_too_large'])
+      expect(placeholder['severity']).to eq('WARN')
+      expect(placeholder['@timestamp']).to be_a(String)
+      expect(placeholder).not_to have_key('details')
       expect(error_log.string).to match(/replacing a record of \d+ bytes that does not fit in one datagram \(max_datagram_size: 4000\)/)
       expect(error_log.string).not_to include('secret')
     end
 
     it "keeps a copied field only when it is small" do
       device(max_datagram_size: 1000).write(%Q({"@timestamp":"t","severity":"#{'S' * 1000}","host":"h"}\n))
-      stub = received(1).first
-      expect(stub).to end_with("\n")
-      expect(JSON.parse(stub)).to include('@timestamp' => 't', 'host' => 'h', 'original_size' => 1044)
-      expect(JSON.parse(stub)).not_to have_key('severity')
+      placeholder = received(1).first
+      expect(placeholder).to end_with("\n")
+      expect(JSON.parse(placeholder)).to include('@timestamp' => 't', 'host' => 'h', 'original_size' => 1044)
+      expect(JSON.parse(placeholder)).not_to have_key('severity')
     end
 
     it "leaves out the copied fields when they would not fit under a small limit" do
       fields = %w[@timestamp host type].map { |key| %Q("#{key}":"#{'v' * 200}") }.join(',')
       device(max_datagram_size: 512).write("{#{fields},\"message\":\"#{'m' * 600}\"}")
-      stub = received(1).first
-      expect(stub.bytesize).to be <= 512
-      expect(JSON.parse(stub).keys).to eq(%w[message tags original_size])
+      placeholder = received(1).first
+      expect(placeholder.bytesize).to be <= 512
+      expect(JSON.parse(placeholder).keys).to eq(%w[message tags original_size])
     end
 
     it "does not parse a record over 1 MiB for fields to copy" do
       device(max_datagram_size: 1000).write(%Q({"severity":"WARN","big":"#{'x' * 1_048_576}"}\n))
-      stub = JSON.parse(received(1).first)
-      expect(stub).to include('original_size' => 1_048_605)
-      expect(stub).not_to have_key('severity')
+      placeholder = JSON.parse(received(1).first)
+      expect(placeholder).to include('original_size' => 1_048_605)
+      expect(placeholder).not_to have_key('severity')
     end
 
     { cee: '@cee:', cee_syslog: "#{LogStashLogger::Formatter::HOST['hostname']}:@cee:" }.each do |formatter, header|
@@ -97,9 +97,9 @@ describe LogStashLogger::Device::UDP do
 
     it "skips a copied field that cannot be serialized again" do
       device(max_datagram_size: 1000).write(%Q({"host":1e400,"severity":"WARN","big":"#{'x' * 2000}"}\n))
-      stub = JSON.parse(received(1).first)
-      expect(stub).to include('severity' => 'WARN')
-      expect(stub).not_to have_key('host')
+      placeholder = JSON.parse(received(1).first)
+      expect(placeholder).to include('severity' => 'WARN')
+      expect(placeholder).not_to have_key('host')
     end
 
     it "does not treat \"@cee:\" inside a JSON record as a header" do
@@ -132,9 +132,9 @@ describe LogStashLogger::Device::UDP do
       dev.write(record)
       dev.write('after')
 
-      before, stub, after = received(3)
+      before, placeholder, after = received(3)
       expect([before, after]).to eq(%w[before after])
-      expect(JSON.parse(stub)).to include('severity' => 'ERROR', 'original_size' => record.bytesize)
+      expect(JSON.parse(placeholder)).to include('severity' => 'ERROR', 'original_size' => record.bytesize)
       expect(error_log.string).to include('Errno::EMSGSIZE')
       expect(error_log.string).not_to include('secret')
     end
