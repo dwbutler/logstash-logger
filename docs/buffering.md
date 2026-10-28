@@ -70,6 +70,10 @@ records, and log their size and the reason, never their content:
 * HTTP: records the collector rejects with 400, 413, 415 or 422. The rest of the batch is sent
   one record at a time. Other error statuses, such as 401, 429 or 5xx, are retried.
 
+The UDP output replaces a record that does not fit in one datagram with a small placeholder record
+that says so and gives its size, so the collector still sees it. See
+[Errno::EMSGSIZE](troubleshooting.md#errnoemsgsize---message-too-long).
+
 ## Sync Mode
 
 All logger outputs support a `sync` setting. This is analogous to the "sync mode" setting on Ruby IO
