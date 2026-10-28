@@ -45,7 +45,9 @@ The buffer is full when it holds `buffer_max_items` messages, counting a batch t
 still being sent. When a log call finds it full, it first tries to flush the buffer
 itself, unless a flush is already running or the last flush failed within the past
 `buffer_max_interval` seconds. If there is still no room, the new message is discarded
-by default. Messages already in the buffer are kept.
+by default. Messages already in the buffer are kept. A warning is written to the error
+logger when the buffer first fills, and another one reports how many messages were
+discarded once there is room again.
 
 This can happen if the output source is down for too long or log messages are being
 received too quickly. If your application suddenly terminates (for example, by SIGKILL

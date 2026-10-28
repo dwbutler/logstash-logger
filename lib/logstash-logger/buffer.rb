@@ -107,6 +107,8 @@ module LogStashLogger
 
     def reset_buffer
       reset_flush_timer_thread
+      # The new state starts with no count, so report the old one first
+      report_dropped_records if @buffer_state
 
       @buffer_state = {
         # items accepted from including class
@@ -126,7 +128,11 @@ module LogStashLogger
         # data for timed flushes
         :last_flush =>     Time.now,
         :last_flush_error => nil,
-        :timer =>          flush_timer_thread
+        :timer =>          flush_timer_thread,
+
+        # records dropped because the buffer was full, reported once per episode
+        :dropped_count =>  0,
+        :full_reported =>  false
       }
 
       # events we've accumulated
@@ -159,20 +165,15 @@ module LogStashLogger
 
       make_room if buffer_full?
 
-      # block if we've accumulated too many events
       while buffer_full? do
-        on_full_buffer_receive(
-          :pending => @buffer_state[:pending_count],
-          :outgoing => @buffer_state[:outgoing_count]
-        ) if @buffer_config[:has_on_full_buffer_receive]
-
-        if @buffer_config[:drop_messages_on_full_buffer]
-          # Drop this record, not the ones already queued
-          return
-        end
+        dropping = @buffer_config[:drop_messages_on_full_buffer]
+        report_full_buffer(dropping)
+        # Drop this record, not the ones already queued
+        return if dropping
         sleep 0.1
         make_room
       end
+      report_dropped_records
 
       @buffer_state[:pending_mutex].synchronize do
         @buffer_state[:pending_items][group] << event
@@ -311,6 +312,9 @@ module LogStashLogger
         state[:flush_mutex].unlock
       end
 
+      # Report the records dropped while the buffer was full as soon as a
+      # flush makes room, not only on the next log call
+      report_dropped_records if items_flushed > 0 && !buffer_full?
       return items_flushed
     end
 
@@ -352,6 +356,33 @@ module LogStashLogger
       last_error = @buffer_state[:last_flush_error]
       return if last_error && (Time.now - last_error) < @buffer_config[:max_interval]
       buffer_flush(force: true)
+    end
+
+    # Counts a dropped record in the same step that opens the episode, so a
+    # writer that finds room meanwhile cannot report the episode without it.
+    def report_full_buffer(dropping = false)
+      opened = @buffer_state[:pending_mutex].synchronize do
+        @buffer_state[:dropped_count] += 1 if dropping
+        first = !@buffer_state[:full_reported]
+        @buffer_state[:full_reported] = true
+        first
+      end
+      return unless opened
+      on_full_buffer_receive(
+        :pending => @buffer_state[:pending_count],
+        :outgoing => @buffer_state[:outgoing_count]
+      ) if @buffer_config[:has_on_full_buffer_receive]
+    end
+
+    def report_dropped_records
+      return unless @buffer_state[:full_reported]
+      dropped = @buffer_state[:pending_mutex].synchronize do
+        count = @buffer_state[:dropped_count]
+        @buffer_state[:dropped_count] = 0
+        @buffer_state[:full_reported] = false
+        count
+      end
+      on_buffer_drops(dropped) if dropped > 0 && respond_to?(:on_buffer_drops, true)
     end
 
     def buffer_clear_pending(state = @buffer_state)
