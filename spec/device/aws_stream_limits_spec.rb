@@ -186,7 +186,8 @@ describe LogStashLogger::Device::Kinesis, 'when records are throttled' do
     timer = dev.instance_variable_get(:@flush_timer_thread)
     records.each { |r| dev.write(r) }
 
-    wait_until { client.delivered.size == records.size }
+    # Records are delivered before the flush updates its counts
+    wait_until { client.delivered.size == records.size && dev.instance_variable_get(:@buffer_state)[:outgoing_count] == 0 }
 
     expect(client.delivered).to match_array(records)
     expect(dev.instance_variable_get(:@buffer_state)[:pending_count]).to eq(0)
