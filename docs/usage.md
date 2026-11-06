@@ -56,6 +56,8 @@ ruby_default_formatter_logger = LogStashLogger.new(
 ```ruby
 # Send messages to multiple outputs. Each output will have the same format.
 # Syslog cannot be an output because it requires a separate logger.
+# If one output raises an error, the error is reported to the error_logger
+# and the other outputs still receive the message.
 multi_delegating_logger = LogStashLogger.new(
   type: :multi_delegator,
   outputs: [
@@ -65,6 +67,11 @@ multi_delegating_logger = LogStashLogger.new(
 
 # Balance messages between several outputs.
 # Works the same as multi delegator, but randomly chooses an output to send each message.
+# If handing the message to the chosen output raises an error, the error is reported
+# to the error_logger and the message is sent to another output instead. This covers
+# sync outputs, file and IO outputs, and buffered outputs whose buffer refuses the
+# message. Buffered network outputs accept the message into their own buffer and
+# retry delivery from there instead of failing over.
 balancer_logger = LogStashLogger.new(
   type: :balancer,
   outputs: [
@@ -83,6 +90,11 @@ multi_logger = LogStashLogger.new(
   ])
 ```
 
+Options given at the top level, such as `sync`, `error_logger`, `buffer_max_items` or
+`ssl_enable`, apply to every output of a `multi_delegator`, `balancer` or `multi_logger`.
+For a `multi_logger` this includes `formatter` and `customize_event`.
+An option set on an output overrides the top-level value for that output.
+
 ## Logging Messages
 
 ```ruby
@@ -94,6 +106,9 @@ logger.info 'test'
 logger.error '{"message": "error"}'
 # {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","host":"[hostname]"}
 
+logger.error '{"message": "error", "severity": "DEBUG"}'
+# {"message":"error","@timestamp":"2014-05-22T10:10:55.877-07:00","@version":"1","severity":"ERROR","message_fields":{"severity":"DEBUG"},"host":"[hostname]"}
+
 logger.debug message: 'test', foo: 'bar'
 # {"message":"test","foo":"bar","@timestamp":"2014-05-22T09:43:24.004-07:00","@version":"1","severity":"DEBUG","host":"[hostname]"}
 
@@ -104,6 +119,9 @@ logger.warn LogStash::Event.new(message: 'test', foo: 'bar')
 logger.tagged('foo') { logger.fatal('bar') }
 # {"message":"bar","@timestamp":"2014-05-26T20:35:14.685-07:00","@version":"1","severity":"FATAL","host":"[hostname]","tags":["foo"]}
 ```
+
+A JSON or Hash message cannot change the fields that describe the log call,
+such as `severity`. See [Fields Set by the Log Call](customization.md#fields-set-by-the-log-call).
 
 ## URI Configuration
 
