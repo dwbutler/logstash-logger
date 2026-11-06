@@ -23,10 +23,10 @@ See the [samples](https://github.com/dwbutler/logstash-logger/tree/master/sample
 
 ## Timeouts
 
-A TCP output gives up connecting after `connect_timeout` seconds (default 5),
-and gives up writing a record after `write_timeout` seconds (default 5), so an
-unreachable collector, or one that stops reading, cannot hold up the thread
-that is logging. `write_timeout` applies with and without TLS, and a Unix
+A TCP output gives up connecting, including the TLS handshake, after
+`connect_timeout` seconds (default 5), and gives up writing a record after
+`write_timeout` seconds (default 5), so an unreachable collector, or one that
+stops reading, cannot hold up the thread that is logging. `write_timeout` applies with and without TLS, and a Unix
 socket output has the same `write_timeout`. On MRI, `connect_timeout` also
 applies to looking up the host name; JRuby has no timeout for that step. Set
 either to `nil` to wait as long as the operating system does.

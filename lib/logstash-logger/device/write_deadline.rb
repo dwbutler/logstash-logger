@@ -17,9 +17,9 @@ module LogStashLogger
         deadline = monotonic_now + @write_timeout
         until data.empty?
           case (written = @io.write_nonblock(data, exception: false))
-          when :wait_writable then wait_for_socket(deadline, nil, [@io])
+          when :wait_writable then wait_for_socket(deadline, :write, "write", @write_timeout)
           # A TLS socket can need to read before it can write
-          when :wait_readable then wait_for_socket(deadline, [@io], nil)
+          when :wait_readable then wait_for_socket(deadline, :read, "write", @write_timeout)
           else
             data = data.byteslice(written..-1)
             # Partial writes that keep succeeding are bounded too
@@ -30,10 +30,13 @@ module LogStashLogger
         end
       end
 
-      def wait_for_socket(deadline, read, write)
+      def wait_for_socket(deadline, direction, operation, timeout)
         remaining = deadline - monotonic_now
-        return if remaining > 0 && ::IO.select(read, write, nil, remaining)
-        raise ::IO::TimeoutError, "write timed out after #{@write_timeout} seconds"
+        if remaining > 0
+          ready = direction == :read ? ::IO.select([@io], nil, nil, remaining) : ::IO.select(nil, [@io], nil, remaining)
+          return if ready
+        end
+        raise ::IO::TimeoutError, "#{operation} timed out after #{timeout} seconds"
       end
 
       def monotonic_now

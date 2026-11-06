@@ -38,7 +38,7 @@ module LogStashLogger
 
       def connect
         if use_ssl?
-          io.connect
+          ssl_handshake
           verify_hostname!
         end
         io
@@ -53,6 +53,23 @@ module LogStashLogger
       end
 
       protected
+
+      # The TLS handshake is bounded by connect_timeout, so a server that
+      # accepts the TCP connection but never answers cannot hold the thread.
+      # One deadline covers both the TCP connect, which io makes, and the
+      # handshake.
+      def ssl_handshake
+        return io.connect unless @connect_timeout
+        deadline = monotonic_now + @connect_timeout
+        ssl = io
+        loop do
+          case ssl.connect_nonblock(exception: false)
+          when :wait_readable then wait_for_socket(deadline, :read, "TLS handshake", @connect_timeout)
+          when :wait_writable then wait_for_socket(deadline, :write, "TLS handshake", @connect_timeout)
+          else return
+          end
+        end
+      end
 
       def tcp_io
         TCPSocket.new(@host, @port, **tcp_timeouts).tap do |socket|

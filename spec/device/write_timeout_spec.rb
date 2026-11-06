@@ -32,11 +32,11 @@ describe 'Socket outputs with a peer that stops reading' do
     )
   end
 
-  # Runs the write in a thread so that a write with no deadline fails the
+  # Runs the call in a thread so that a call with no deadline fails the
   # example instead of hanging the suite.
-  def expect_write_to_time_out(dev)
+  def expect_to_time_out(dev, &call)
     writer = Thread.new do
-      dev.write_one(big_record)
+      call.call
     rescue IO::TimeoutError => e
       e
     end
@@ -44,6 +44,10 @@ describe 'Socket outputs with a peer that stops reading' do
     writer.kill unless finished
     expect(finished && writer.value).to be_a(IO::TimeoutError)
     expect(dev).not_to be_connected
+  end
+
+  def expect_write_to_time_out(dev)
+    expect_to_time_out(dev) { dev.write_one(big_record) }
   end
 
   it 'gives up on a TCP write after write_timeout' do
@@ -68,5 +72,13 @@ describe 'Socket outputs with a peer that stops reading' do
     held << peer
     allow(UNIXSocket).to receive(:new).and_return(client)
     expect_write_to_time_out(device(type: :unix, path: '/nonexistent/logstash.sock'))
+  end
+
+  it 'gives up on a TLS handshake that the server never answers after connect_timeout' do
+    start_server(TCPServer.new('127.0.0.1', 0))
+    ctx = OpenSSL::SSL::SSLContext.new
+    ctx.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    dev = device(port: @server.addr[1], ssl_context: ctx, verify_hostname: false, connect_timeout: 0.5)
+    expect_to_time_out(dev) { dev.write_one("hello\n") }
   end
 end
