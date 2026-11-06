@@ -67,12 +67,31 @@ describe LogStashLogger::Formatter::Base do
       end
     end
 
-    context "when logged content carries a valid @timestamp" do
-      let(:message) { '{"message":"hello","@timestamp":"2001-01-01T00:00:00Z"}' }
+    context "when logged content carries a valid @timestamp and @version" do
+      let(:message) { '{"message":"hello","@timestamp":"2001-01-01T00:00:00Z","@version":"9"}' }
 
-      it "keeps it" do
+      it "uses the logger time and version and keeps the logged values aside" do
         event = subject.call(severity, time, progname, message)
-        expect(event['@timestamp']).to start_with('2001-01-01T00:00:00')
+        expect(event['@timestamp']).to eq(time.iso8601(3))
+        expect(event['@version']).to eq('1')
+        expect(event['message_fields']).to eq('@timestamp' => '2001-01-01T00:00:00Z', '@version' => '9')
+      end
+
+      it "does the same for a Hash message with Symbol keys" do
+        event = subject.call(severity, time, progname, { message: 'hello', :@timestamp => 12345, :@version => '9' })
+        expect(event['@timestamp']).to eq(time.iso8601(3))
+        expect(event['@version']).to eq('1')
+        expect(event['message_fields']).to eq('@timestamp' => 12345, '@version' => '9')
+      end
+
+      context "when trust_message_fields is set" do
+        before { LogStashLogger.configure { |config| config.trust_message_fields = true } }
+
+        it "keeps them" do
+          event = subject.call(severity, time, progname, message)
+          expect(event['@timestamp']).to start_with('2001-01-01T00:00:00')
+          expect(event['@version']).to eq('9')
+        end
       end
     end
   end
@@ -103,6 +122,46 @@ describe LogStashLogger::Formatter::Base do
         updated_event_data = event.instance_variable_get(:@data)
         expect(updated_event_data['message'].encoding.name).to eq('UTF-8')
       end
+    end
+  end
+
+  describe '#force_utf8_encoding with invalid bytes outside the message' do
+    let(:event) do
+      LogStash::Event.new(
+        'message' => 'ok',
+        'tags' => ["evil-\xFF".b],
+        'user' => { 'agent' => "x\xFFy".dup.force_encoding(Encoding::UTF_8) },
+        "k\xFF".b => 'v'
+      )
+    end
+
+    it 'repairs every String in the event, nested ones and keys included' do
+      subject.send(:force_utf8_encoding, event)
+      data = event.to_hash
+
+      expect(data['message']).to eq('ok')
+      expect(data['tags']).to eq(["evil-\uFFFD"])
+      expect(data['user']).to eq('agent' => "x\uFFFDy")
+      expect(data["k\uFFFD"]).to eq('v')
+      expect(JSON.parse(event.to_json)['tags']).to eq(["evil-\uFFFD"])
+    end
+
+    it 'keeps both values when two keys repair to the same String' do
+      event = LogStash::Event.new('message' => 'ok', 'fields' => { "a\xFF".b => 1, "a\xFE".b => 2 })
+
+      subject.send(:force_utf8_encoding, event)
+      expect(event.to_hash['fields']).to eq("a\uFFFD" => 1, "a\uFFFD_2" => 2)
+    end
+
+    it 'repairs a Hash that contains itself without recursing forever' do
+      cyclic = { 'agent' => "x\xFF".b }
+      cyclic['self'] = cyclic
+      event = LogStash::Event.new('message' => 'ok', 'fields' => cyclic)
+
+      subject.send(:force_utf8_encoding, event)
+      fields = event.to_hash['fields']
+      expect(fields['agent']).to eq("x\uFFFD")
+      expect(fields['self']).to equal(fields)
     end
   end
 
@@ -145,6 +204,44 @@ describe LogStashLogger::Formatter::Base do
           expect(event['message']).to eq("foo")
           expect(event).to_not equal(message)
         end
+
+        it "keeps values that cannot be cloned" do
+          worker = Thread.current
+          event = subject.call(severity, time, progname, LogStash::Event.new('message' => 'foo', 'worker' => worker))
+          expect(event['message']).to eq('foo')
+          expect(event['worker']).to equal(worker)
+        end
+
+        it "leaves the caller's tags unchanged" do
+          logged = LogStash::Event.new('message' => 'foo', 'tags' => ['e'])
+          event = subject.tagged('t') { subject.call(severity, time, progname, logged) }
+          expect(event['tags']).to eq(%w[e t])
+          expect(logged['tags']).to eq(['e'])
+        end
+
+        it "keeps a subclass whose constructor takes other arguments" do
+          klass = Class.new(LogStash::Event) do
+            attr_reader :origin
+
+            def initialize(data, origin)
+              super(data)
+              @origin = origin
+            end
+          end
+          logged = klass.new({ 'message' => 'foo' }, 'importer')
+          event = subject.call(severity, time, progname, logged)
+
+          expect(event).to be_a(klass)
+          expect(event).to_not equal(logged)
+          expect(event.origin).to eq('importer')
+          expect(event['message']).to eq('foo')
+        end
+
+        it "is not written when it was cancelled" do
+          logged = LogStash::Event.new('message' => 'foo')
+          logged.cancel
+          expect(subject.call(severity, time, progname, logged)).to be_nil
+        end
       end
 
       context "fallback" do
@@ -152,6 +249,86 @@ describe LogStashLogger::Formatter::Base do
 
         it "calls inspect" do
           expect(event['message']).to eq(message.inspect)
+        end
+      end
+    end
+
+    describe "tags from a Hash message" do
+      let(:fields) { { message: 'job', tags: ['worker'] } }
+
+      before do
+        allow(subject).to receive(:error_logger).and_return(Logger.new(IO::NULL))
+      end
+
+      it "gives each record its own tags and leaves the caller's Hash unchanged" do
+        first = subject.tagged('req-1') { subject.call(severity, time, progname, fields) }
+        second = subject.tagged('req-2') { subject.call(severity, time, progname, fields) }
+        untagged = subject.call(severity, time, progname, fields)
+
+        expect(first['tags']).to eq(%w[worker req-1])
+        expect(second['tags']).to eq(%w[worker req-2])
+        expect(untagged['tags']).to eq(%w[worker])
+        expect(fields[:tags]).to eq(%w[worker])
+      end
+
+      it "formats a record whose tags Array is frozen" do
+        frozen = { message: 'job', tags: ['worker'].freeze }
+        event = subject.tagged('req-1') { subject.call(severity, time, progname, frozen) }
+
+        expect(event['message']).to eq('job')
+        expect(event['tags']).to eq(%w[worker req-1])
+      end
+
+      it "keeps a single tag value as an element of the tags Array" do
+        single = { message: 'job', tags: 'worker'.dup.freeze }
+        event = subject.tagged('req-1') { subject.call(severity, time, progname, single) }
+
+        expect(event['message']).to eq('job')
+        expect(event['tags']).to eq(%w[worker req-1])
+        expect(single[:tags]).to eq('worker')
+      end
+
+      it "does the same for a JSON message" do
+        event = subject.tagged('req-1') { subject.call(severity, time, progname, '{"message":"job","tags":"worker"}') }
+        expect(event['tags']).to eq(%w[worker req-1])
+      end
+    end
+
+    describe "fields the log call sets" do
+      let(:severity) { 'ERROR' }
+
+      [
+        '{"message":"m","severity":"DEBUG"}',
+        { 'message' => 'm', 'severity' => 'DEBUG' },
+        { message: 'm', severity: 'DEBUG' }
+      ].each do |logged|
+        it "uses the call-site severity for #{logged.inspect} and keeps the logged value aside" do
+          event = subject.call(severity, time, progname, logged)
+          expect(event['severity']).to eq('ERROR')
+          expect(event['message']).to eq('m')
+          expect(event['message_fields']).to eq('severity' => 'DEBUG')
+        end
+      end
+
+      it "merges the logged value into the message's own message_fields Hash, whose keys win" do
+        logged = { 'message' => 'm', 'severity' => 'DEBUG', 'message_fields' => { 'a' => 1, severity: 'own' } }
+        event = subject.call(severity, time, progname, logged)
+        expect(event['message_fields']).to eq('a' => 1, 'severity' => 'own')
+        expect(logged['message_fields']).to eq('a' => 1, severity: 'own')
+      end
+
+      it "keeps a message_fields value that is not a Hash under its own name" do
+        event = subject.call(severity, time, progname, '{"message":"m","severity":"DEBUG","message_fields":"x"}')
+        expect(event['message_fields']).to eq('severity' => 'DEBUG', 'message_fields' => 'x')
+      end
+
+      context "when trust_message_fields is set" do
+        before { LogStashLogger.configure { |config| config.trust_message_fields = true } }
+
+        it "keeps the logged severity" do
+          event = subject.call(severity, time, progname, '{"message":"m","severity":"DEBUG"}')
+          expect(event['severity']).to eq('DEBUG')
+          expect(event['message_fields']).to be_nil
         end
       end
     end

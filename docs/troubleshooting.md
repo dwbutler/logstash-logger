@@ -12,8 +12,13 @@ immediately, your only recourse is to set the `sync: true` option.
 ## JSON::GeneratorError
 
 Your application is probably attempting to log data that is not encoded in a valid way. When this happens, Ruby's
-standard JSON library will raise an exception. You may be able to overcome this by swapping out a different JSON encoder
-such as Oj. Use the [oj_mimic_json](https://github.com/ohler55/oj_mimic_json) gem to use Oj for JSON generation.
+standard JSON library will raise an exception. The `json` and `json_lines` formatters report the error to the error
+logger, convert every String in the record (message, tags and any other field, at any depth) to valid UTF-8, replacing
+invalid bytes with `U+FFFD`, and write the repaired record. If two keys of the same Hash repair to the same String, the
+later one gets a numeric suffix (`"a\uFFFD"`, then `"a\uFFFD_2"`), so no value is lost. A record that needs repair is
+rebuilt from plain Hashes and Arrays, so custom Hash or Array subclasses in it are converted to plain ones. If the
+error has another cause, a placeholder record is written instead (see below). You may also be able to overcome this by
+swapping out a different JSON encoder such as Oj. Use the [oj_mimic_json](https://github.com/ohler55/oj_mimic_json) gem to use Oj for JSON generation.
 
 ## Records tagged `_logstashlogger_format_failure`
 
@@ -53,8 +58,31 @@ for more information.
 
 ## Errno::EMSGSIZE - Message too long
 
-A known drawback of using TCP or UDP is the 65535 byte limit on total message size. To workaround
-this issue, you will have to truncate the message by setting the max message size:
+The UDP output sends each record as one datagram, and a datagram has a size
+limit: 65,507 bytes for IPv4, and less on some hosts (macOS allows 9,216 bytes
+by default). The UDP output replaces any formatted record larger than
+`max_datagram_size` (65,507 bytes by default), or that the host rejects with
+`Errno::EMSGSIZE`, with a small placeholder record that has the message
+`Record of N bytes replaced: too large for one UDP datagram`, the tag
+`_logstashlogger_record_too_large`, an `original_size` field, and the original
+`@timestamp`, `@version`, `severity`, `host` and `type` when each is small
+(and they fit under `max_datagram_size`). Records over 1 MiB are not parsed, so
+their placeholder has no copied fields. With the `cee` and `cee_syslog`
+formatters, the placeholder keeps the record's header up to `@cee:`, unless
+the header would put it over `max_datagram_size`. If the host also rejects the
+placeholder, the notice is sent once more without the copied fields before the
+record is dropped. The error logger gets the size, never the content. If your
+host or collector accepts smaller datagrams, set `max_datagram_size` to its
+limit, so oversized records are replaced before they are sent. It must be from
+512 to 65,507 bytes, the IPv4 limit (65,535 minus the 20-byte IPv4 and 8-byte
+UDP headers):
+
+```ruby
+logger = LogStashLogger.new(type: :udp, host: 'localhost', port: 5228, max_datagram_size: 9216)
+```
+
+`max_message_size` truncates only the `message` field, so it cannot keep a
+record under the datagram limit on its own:
 
 ```ruby
 LogStashLogger.configure do |config|
@@ -62,9 +90,15 @@ LogStashLogger.configure do |config|
 end
 ```
 
-This will truncate only the `message` field of the LogStash Event. So make sure
-you set the max message size significantly less than 65535 bytes to make room
-for other fields.
+Other fields are never truncated. A logged Hash can carry fields of any size,
+and a logged String that starts with `{` is parsed as JSON into fields, so text
+that your application logs as is (such as a request body) can put a large value
+in a field other than `message`. If records must arrive whole, use the TCP
+output, which has no per-record limit.
+
+The opt-in `max_record_bytes` option (see [Buffering](buffering.md)) is checked
+first, when a record is logged, and drops a record over it without a
+replacement.
 
 # Breaking changes
 
