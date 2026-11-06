@@ -279,23 +279,64 @@ describe 'recovering from a failed write' do
 end
 
 describe LogStashLogger::Device::Connectable, '#close' do
-  it 'drops a batch whose flush fails after the device was closed' do
+  it 'reconnects and restarts the flush timer on the next write' do
     device = RecordingDevice.new(buffer_max_interval: 3600)
-    release = Queue.new
-    blocked = Queue.new
-    device.gate = -> { blocked << true; release.pop; raise IOError, 'closed stream' }
-    device.write('a')
-    flusher = Thread.new { device.buffer_flush(force: true) }
-    blocked.pop
-    device.close(flush: false)
-    release << true
-    flusher.join(5)
+    device.write('before')
+    device.close
+    expect(device.timer).to be_nil
+    expect(device).not_to be_connected
 
-    expect(device.state[:pending_count]).to eq(0)
-    expect(device.state[:outgoing_count]).to eq(0)
+    device.write('after')
+    expect(device.timer).to be_alive
+    device.buffer_flush(force: true)
+    expect(device.lines).to eq(['before', 'after'])
   end
 
-  it 'shuts down even when the final flush raises' do
+  it 'keeps the records the final flush could not send, without retrying them while closed' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.fail_connect = true
+    device.write('left over')
+    device.close
+
+    expect(device.state[:pending_count]).to eq(1)
+    expect(device.timer).to be_nil
+
+    device.fail_connect = false
+    device.buffer_flush(force: true)
+    expect(device.lines).to eq(['left over'])
+  end
+
+  # A send that fails while the device is being closed puts its batch back,
+  # as any failed send does. The closed device does not retry it on a timer;
+  # the next flush sends it.
+  it 'keeps a batch whose send fails during close for the next flush' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    send_in_progress = Queue.new
+    fail_the_send = Queue.new
+    # Runs inside the socket write: pause there until told to fail. Only the
+    # first send fails.
+    device.gate = lambda do
+      device.gate = nil
+      send_in_progress << true
+      fail_the_send.pop
+      raise IOError, 'closed stream'
+    end
+
+    device.write('a')
+    flusher = Thread.new { device.buffer_flush(force: true) }
+    send_in_progress.pop # 'a' has left the pending queue and is being sent
+    device.close(flush: false)
+    fail_the_send << true
+    expect(flusher.join(5)).to be_truthy
+
+    expect(device.state[:pending_count]).to eq(1)
+    expect(device.timer).to be_nil
+
+    device.buffer_flush(force: true)
+    expect(device.lines).to eq(['a'])
+  end
+
+  it 'stops the timer and closes the connection even when the final flush raises' do
     hook_raises = Class.new(RecordingDevice) do
       def on_flush_error(_e)
         raise 'hook failed'
@@ -306,38 +347,8 @@ describe LogStashLogger::Device::Connectable, '#close' do
     device.write('a')
 
     expect { device.close }.not_to raise_error
-    expect(device).to be_buffer_shutdown
     expect(device.timer).to be_nil
-  end
-
-  it 'releases a log call blocked on a full buffer' do
-    device = RecordingDevice.new(buffer_max_items: 1, buffer_max_interval: 3600, drop_messages_on_full_buffer: false)
-    device.fail_connect = true
-    device.write('a')
-    writer = Thread.new { device.write('b') }
-    wait_until { writer.status == 'sleep' }
-    device.close
-
-    expect(writer.join(2)).to be_truthy
-  end
-
-  it 'drops the records the final flush could not send' do
-    device = RecordingDevice.new(buffer_max_interval: 3600)
-    device.fail_connect = true
-    device.write('a')
-    device.close
-
-    expect(device.state[:pending_count]).to eq(0)
-  end
-
-  it 'ignores direct write_batch calls afterwards' do
-    device = RecordingDevice.new(buffer_max_interval: 3600)
-    device.close
-    connects = device.connects
-    device.write_batch(['direct'])
-
-    expect(device.lines).to be_empty
-    expect(device.connects).to eq(connects)
+    expect(device).not_to be_connected
   end
 
   it 'stops the flush timer of every closed device' do
@@ -348,29 +359,16 @@ describe LogStashLogger::Device::Connectable, '#close' do
     expect(timers).to all(satisfy { |t| !t.alive? })
   end
 
-  it 'flushes pending records, then ignores later writes without reconnecting' do
-    device = RecordingDevice.new(buffer_max_interval: 3600, buffer_max_items: 3)
-    device.write('before')
-    device.close
-    connects = device.connects
-
-    5.times { |i| device.write("after-#{i}") }
-    device.buffer_flush(force: true)
-    expect(device.lines).to eq(['before'])
-    expect(device.connects).to eq(connects)
-    expect(device.timer).to be_nil
-  end
-
-  it 'does not reconnect to send records left over from a failed final flush' do
+  it 'starts a single timer when several threads write after close' do
     device = RecordingDevice.new(buffer_max_interval: 3600)
-    device.fail_connect = true
-    device.write('left over')
     device.close
-    device.fail_connect = false
+    threads_before = Thread.list.size
 
-    device.flush
-    expect(device.to_io).to be_nil
-    expect(device.lines).to be_empty
+    writers = Array.new(10) { |i| Thread.new { device.write("after-#{i}") } }
+    writers.each(&:join)
+
+    expect(Thread.list.size).to eq(threads_before + 1)
+    expect(device.timer).to be_alive
   end
 
   it 'completes when called from inside a timed flush' do
