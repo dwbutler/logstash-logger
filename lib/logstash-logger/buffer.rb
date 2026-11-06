@@ -65,14 +65,13 @@ module LogStashLogger
   # during a teardown/shutdown routine (after the last call to buffer_receive)
   # to ensure that all accumulated messages are flushed.
   module Buffer
-    # Buffers to flush when the process exits. Weak keys, so a closed or
-    # unreachable device can be garbage-collected; closed devices are marked
-    # false, since ObjectSpace::WeakMap has no delete.
+    # Buffers to flush when the process exits. Weak keys, so an unreachable
+    # device can be garbage-collected. A closed device stays registered: it can
+    # be used again, and may still hold records its final flush could not send.
     AT_EXIT_REGISTRY = ObjectSpace::WeakMap.new
 
     at_exit do
-      AT_EXIT_REGISTRY.each do |buffer, live|
-        next unless live
+      AT_EXIT_REGISTRY.each do |buffer, _|
         begin
           buffer.buffer_flush(final: true)
         rescue StandardError
