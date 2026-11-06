@@ -36,14 +36,17 @@ module LogStashLogger
   end
 
   def self.build_logger(opts)
-    formatter = Formatter.new(opts.delete(:formatter),
-                              customize_event: opts.delete(:customize_event),
+    formatter_type = opts.delete(:formatter)
+    customize_event = opts.delete(:customize_event)
+    formatter = Formatter.new(formatter_type,
+                              customize_event: customize_event,
                               error_logger: opts.fetch(:error_logger, LogStashLogger.configuration.default_error_logger))
 
     logger_type = opts[:type].to_s.to_sym
     logger = case logger_type
     when :multi_logger
-      build_multi_logger(opts)
+      inherited = { formatter: formatter_type, customize_event: customize_event }.compact
+      build_multi_logger(opts, inherited)
     when :syslog
       build_syslog_logger(opts)
     else
@@ -64,10 +67,12 @@ module LogStashLogger
     end
   end
 
-  def self.build_multi_logger(opts)
+  # Each child logger gets the top-level options, including the top-level
+  # formatter and customize_event; an output's own options win.
+  def self.build_multi_logger(opts, inherited = {})
     output_configurations = opts.delete(:outputs) || []
     loggers = output_configurations.map do |config|
-      logger_opts = opts.merge(config)
+      logger_opts = inherited.merge(opts).merge(config)
       build_logger(logger_opts)
     end
     MultiLogger.new(loggers)
