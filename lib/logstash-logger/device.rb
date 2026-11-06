@@ -7,6 +7,7 @@ module LogStashLogger
     autoload :Base, 'logstash-logger/device/base'
     autoload :Connectable, 'logstash-logger/device/connectable'
     autoload :Socket, 'logstash-logger/device/socket'
+    autoload :WriteDeadline, 'logstash-logger/device/write_deadline'
     autoload :UDP, 'logstash-logger/device/udp'
     autoload :TCP, 'logstash-logger/device/tcp'
     autoload :Unix, 'logstash-logger/device/unix'

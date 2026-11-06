@@ -22,8 +22,23 @@ describe LogStashLogger::Device::TCP do
 
   context "when not using SSL" do
     it "writes to a TCP socket" do
-      expect(tcp_socket).to receive(:write)
+      expect(tcp_socket).to receive(:write_nonblock).with('test', exception: false).and_return(4)
       tcp_device.write('test')
+    end
+
+    it "gives up after write_timeout even while partial writes keep succeeding" do
+      device = LogStashLogger::Device.new(type: :tcp, port: port, sync: true, write_timeout: 0.2)
+      allow(tcp_socket).to receive(:write_nonblock) { sleep 0.05; 1 }
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      expect { device.write_one('x' * 100) }.to raise_error(IO::TimeoutError)
+      expect(Process.clock_gettime(Process::CLOCK_MONOTONIC) - started).to be < 1
+    end
+
+    it "writes with a plain blocking write when write_timeout is nil" do
+      device = LogStashLogger::Device.new(type: :tcp, port: port, sync: true, write_timeout: nil)
+      expect(tcp_socket).to receive(:write).with('test')
+      device.write('test')
     end
 
     it "returns false for #use_ssl?" do
@@ -37,7 +52,7 @@ describe LogStashLogger::Device::TCP do
 
   context "when using SSL" do
     it "writes to an SSL TCP socket" do
-      expect(ssl_socket).to receive(:write)
+      expect(ssl_socket).to receive(:write_nonblock).with('test', exception: false).and_return(4)
       ssl_tcp_device.write('test')
     end
 
