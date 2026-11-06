@@ -166,6 +166,9 @@ describe LogStashLogger::Buffer, 'when the buffer is full' do
       release << true
       wait_until { device.lines.size == 5 }
       device.write('after')
+      # The timer's flush may be the one that reports the drops, and it logs
+      # after writing its last record
+      wait_until { device.error_log.string.include?('Dropped 7 records') }
 
       expect(device.error_log.string.scan('Buffer Full').size).to eq(1)
       expect(device.error_log.string).to include('Dropped 7 records because the buffer was full')
@@ -478,6 +481,18 @@ describe LogStashLogger::Buffer, 'in a forked process' do
     device.buffer_flush(force: true)
 
     expect(device.lines).to match_array(Array.new(8) { |i| "child-#{i}" })
+  end
+
+  it 'sets up its own buffer when its first call closes the device' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.write('parent')
+    as_child
+    device.close(flush: false)
+
+    expect(device.state[:pending_count]).to eq(0)
+    expect(device.timer).to be_nil
+    device.write('child')
+    expect(device.timer).to be_alive
   end
 
   it "does not send the parent's records from the exit-time flush" do
