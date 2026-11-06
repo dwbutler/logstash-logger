@@ -7,8 +7,8 @@ module LogStashLogger
         # Proactively check for encoding issues to handle cross-platform differences.
         # Some Ruby implementations (e.g., JRuby) may not raise exceptions during
         # JSON encoding but produce malformed output instead.
-        if message_has_encoding_issue?(event)
-          log_error(Encoding::InvalidByteSequenceError.new("Invalid encoding in message"))
+        if event_has_encoding_issue?(event)
+          log_error(Encoding::InvalidByteSequenceError.new("Invalid encoding in event"))
           return "#{force_utf8_encoding(event).to_json}\n"
         end
 

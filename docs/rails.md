@@ -10,6 +10,10 @@ For minimal, more-structured logstash events, try one of the following gems:
 * [yarder](https://github.com/rurounijones/yarder)
 
 Currently these gems output a JSON string, which LogStashLogger then parses.
+LogStashLogger uses the time of the log call for `@timestamp` and moves any
+`@timestamp` or `@version` in that JSON under `message_fields`. To keep the
+values these gems write, set `trust_message_fields` (see
+[Fields Set by the Log Call](customization.md#fields-set-by-the-log-call)).
 Future versions of these gems could potentially have deeper integration with LogStashLogger
 (e.g. by directly writing `LogStash::Event` objects).
 
@@ -271,7 +275,8 @@ config.logstash.outputs = [
 # Required
 config.logstash.type = :multi_logger
 
-# Required. Each logger may have its own formatter.
+# Required. Each logger may have its own formatter. Loggers without one
+# use config.logstash.formatter.
 config.logstash.outputs = [
   {
     type: :file,
@@ -321,7 +326,9 @@ If your application forks (as is common with many web servers), each worker
 process opens its own connection and starts its own buffer the first time it
 logs, so workers never write to the connection they inherited. Calling `#reset`
 after forking is no longer required, but it is still safe, and it releases the
-inherited connection right away instead of on the first log call.
+inherited connection right away instead of on the first log call. On `reset`,
+network outputs drop their connection and reconnect on the next write, file
+outputs reopen their file, and IO outputs leave the IO you passed in open.
 
 Kinesis and Firehose outputs rely on the AWS SDK emptying its connection pool,
 which is broken in aws-sdk-core 3.194.2 to 3.196.0. On those releases they log a
