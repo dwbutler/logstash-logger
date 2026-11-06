@@ -387,6 +387,7 @@ module LogStashLogger
         return if @buffer_pid == Process.pid
         @pending_mutex = nil
         @flush_mutex = nil
+        @flush_timer_mutex = nil
         @flush_timer_thread = nil
         # The parent's overflow episode is not ours to report. The old state
         # stays in place until the new one replaces it, so a thread entering
