@@ -45,7 +45,6 @@ module LogStashLogger
       end
 
       def write_batch(messages, _group = nil)
-        return if buffer_shutdown?
         messages = messages.map(&:to_s)
         resp = post(messages)
         return if resp.is_a?(Net::HTTPSuccess)
