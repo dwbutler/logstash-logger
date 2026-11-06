@@ -86,11 +86,11 @@ that says so and gives its size, so the collector still sees it. See
 
 ## Closing a logger
 
-`logger.close` flushes the buffer one last time and then stops it for good: the
-background flush thread exits, and anything logged to that logger afterwards is
-dropped instead of reopening the connection. Records the final flush could not
-send are dropped too, and a blocked log call (with `drop_messages_on_full_buffer:
-false`) returns. `reset` (for example after forking) keeps the logger usable.
+`logger.close` flushes the buffer one last time, stops the background flush
+thread and closes the connection. A closed logger can still be used: the next log
+call reconnects and starts the flush thread again. Records the final flush could
+not send stay in the buffer and are sent with the next flush; they are not
+retried while the logger is closed.
 
 ## Forking
 
