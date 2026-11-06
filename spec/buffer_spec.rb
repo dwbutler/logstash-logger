@@ -362,12 +362,14 @@ describe LogStashLogger::Device::Connectable, '#close' do
   it 'starts a single timer when several threads write after close' do
     device = RecordingDevice.new(buffer_max_interval: 3600)
     device.close
-    threads_before = Thread.list.size
-
-    writers = Array.new(10) { |i| Thread.new { device.write("after-#{i}") } }
+    go = Queue.new
+    writers = Array.new(10) { |i| Thread.new { go.pop; device.write("after-#{i}") } }
+    # Counts only the threads the writes start, not the writers themselves
+    allow(Thread).to receive(:new).and_call_original
+    writers.size.times { go << true }
     writers.each(&:join)
 
-    expect(Thread.list.size).to eq(threads_before + 1)
+    expect(Thread).to have_received(:new).once
     expect(device.timer).to be_alive
   end
 
