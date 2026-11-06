@@ -166,6 +166,9 @@ describe LogStashLogger::Buffer, 'when the buffer is full' do
       release << true
       wait_until { device.lines.size == 5 }
       device.write('after')
+      # The timer's flush may be the one that reports the drops, and it logs
+      # after writing its last record
+      wait_until { device.error_log.string.include?('Dropped 7 records') }
 
       expect(device.error_log.string.scan('Buffer Full').size).to eq(1)
       expect(device.error_log.string).to include('Dropped 7 records because the buffer was full')
