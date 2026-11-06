@@ -72,7 +72,7 @@ module LogStashLogger
         yield
       rescue => e
         log_error(e)
-        close(flush: false)
+        disconnect
         raise
       end
 
