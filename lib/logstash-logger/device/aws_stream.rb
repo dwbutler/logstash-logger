@@ -68,7 +68,6 @@ module LogStashLogger
       end
 
       def with_connection
-        return if buffer_shutdown?
         connect unless connected?
         yield
       rescue => e
