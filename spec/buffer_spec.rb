@@ -367,12 +367,17 @@ describe LogStashLogger::Device::Connectable, '#close' do
     device.close
     go = Queue.new
     writers = Array.new(10) { |i| Thread.new { go.pop; device.write("after-#{i}") } }
-    # Counts only the threads the writes start, not the writers themselves
-    allow(Thread).to receive(:new).and_call_original
+    # Counts only the threads the writers start: threads left over from
+    # other examples may start threads of their own meanwhile
+    started = Queue.new
+    allow(Thread).to receive(:new).and_wrap_original do |original, *args, &block|
+      started << true if writers.include?(Thread.current)
+      original.call(*args, &block)
+    end
     writers.size.times { go << true }
     writers.each(&:join)
 
-    expect(Thread).to have_received(:new).once
+    expect(started.size).to eq(1)
     expect(device.timer).to be_alive
   end
 
