@@ -81,6 +81,14 @@ The UDP output replaces a record that does not fit in one datagram with a small 
 that says so and gives its size, so the collector still sees it. See
 [Errno::EMSGSIZE](troubleshooting.md#errnoemsgsize---message-too-long).
 
+## Closing a logger
+
+`logger.close` flushes the buffer one last time, stops the background flush
+thread and closes the connection. A closed logger can still be used: the next log
+call reconnects and starts the flush thread again. Records the final flush could
+not send stay in the buffer and are sent with the next flush; they are not
+retried while the logger is closed.
+
 ## Sync Mode
 
 All logger outputs support a `sync` setting. This is analogous to the "sync mode" setting on Ruby IO

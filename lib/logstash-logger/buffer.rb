@@ -102,6 +102,10 @@ module LogStashLogger
         at_exit { buffer_flush(final: true) }
       end
 
+      # Created here, before other threads can use the buffer, so they never
+      # race to create it
+      @flush_timer_mutex = Mutex.new
+
       reset_buffer
     end
 
@@ -179,6 +183,9 @@ module LogStashLogger
         @buffer_state[:pending_items][group] << event
         @buffer_state[:pending_count] += 1
       end
+      # Restarts the timer that buffer_stop_timer stopped when the device was
+      # closed
+      flush_timer_thread unless @flush_timer_thread
 
       if @buffer_config[:autoflush]
         buffer_flush(force: true)
@@ -318,6 +325,19 @@ module LogStashLogger
       return items_flushed
     end
 
+    # Stops the flush timer, so a closed device keeps no thread running and
+    # does not retry records left over from its final flush. The next
+    # buffer_receive starts it again. Never kills the current thread, so it
+    # also completes when called from inside a timed flush; that timer exits
+    # once the flush returns.
+    def buffer_stop_timer
+      timer = @flush_timer_mutex.synchronize do
+        current, @flush_timer_thread = @flush_timer_thread, nil
+        current
+      end
+      timer.kill if timer && timer != Thread.current
+    end
+
     private
 
     def pending_mutex
@@ -329,24 +349,36 @@ module LogStashLogger
     end
 
     def flush_timer_thread
-      @flush_timer_thread ||=
-        Thread.new do
-          loop do
-            sleep(@buffer_config[:max_interval])
-            begin
-              buffer_flush(:force => true)
-            rescue
+      @flush_timer_mutex.synchronize do
+        @flush_timer_thread ||=
+          Thread.new do
+            loop do
+              break unless flush_timer_current?
+              sleep(@buffer_config[:max_interval])
+              break unless flush_timer_current?
+              begin
+                buffer_flush(:force => true)
+              rescue
+              end
             end
           end
-        end
+      end
+    end
+
+    # A timer that was stopped or replaced exits. Checked under the lock it
+    # was started with, so a new timer sees its own assignment.
+    def flush_timer_current?
+      @flush_timer_mutex.synchronize { @flush_timer_thread.equal?(Thread.current) }
     end
 
     # Never kills the timer from inside itself: called on the timer thread,
     # this keeps the running timer, and reset_buffer reuses it.
     def reset_flush_timer_thread
-      return if @flush_timer_thread.nil? || @flush_timer_thread == Thread.current
-      @flush_timer_thread.kill
-      @flush_timer_thread = nil
+      @flush_timer_mutex.synchronize do
+        return if @flush_timer_thread.nil? || @flush_timer_thread == Thread.current
+        @flush_timer_thread.kill
+        @flush_timer_thread = nil
+      end
     end
 
     # A writer that finds the buffer full flushes it itself, unless a flush is
