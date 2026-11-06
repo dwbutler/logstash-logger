@@ -206,4 +206,41 @@ describe LogStashLogger::Device::TCP do
     end
   end
 
+  context 'connect timeout' do
+    it 'gives up connecting after 5 seconds by default' do
+      expect(TCPSocket).to receive(:new).with(anything, port, hash_including(connect_timeout: 5)) { tcp_socket }
+      tcp_device.connect
+    end
+
+    it 'uses the connect_timeout option' do
+      device = LogStashLogger::Device.new(type: :tcp, port: port, sync: true, connect_timeout: 0.5)
+      expect(TCPSocket).to receive(:new).with(anything, port, hash_including(connect_timeout: 0.5)) { tcp_socket }
+      device.connect
+    end
+
+    it 'waits for the operating system when connect_timeout is nil' do
+      device = LogStashLogger::Device.new(type: :tcp, port: port, sync: true, connect_timeout: nil)
+      expect(TCPSocket).to receive(:new).with(anything, port, hash_including(connect_timeout: nil)) { tcp_socket }
+      device.connect
+    end
+
+    it 'also bounds name resolution on MRI' do
+      skip 'JRuby has no resolv_timeout' unless RUBY_ENGINE == 'ruby'
+      expect(TCPSocket).to receive(:new).with(anything, port, connect_timeout: 5, resolv_timeout: 5) { tcp_socket }
+      tcp_device.connect
+    end
+
+    it 'accepts a number given as a string, as in a URI query' do
+      device = LogStashLogger::Device.new(uri: "tcp://localhost:#{port}?connect_timeout=2.5")
+      expect(device.connect_timeout).to eq(2.5)
+    end
+
+    it 'rejects a timeout that is not a positive number' do
+      ['soon', 0, -1, true].each do |value|
+        expect {
+          LogStashLogger::Device.new(type: :tcp, port: port, connect_timeout: value)
+        }.to raise_error(ArgumentError, /connect_timeout must be a positive number of seconds/)
+      end
+    end
+  end
 end
