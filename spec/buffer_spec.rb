@@ -480,6 +480,18 @@ describe LogStashLogger::Buffer, 'in a forked process' do
     expect(device.lines).to match_array(Array.new(8) { |i| "child-#{i}" })
   end
 
+  it 'sets up its own buffer when its first call closes the device' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.write('parent')
+    as_child
+    device.close(flush: false)
+
+    expect(device.state[:pending_count]).to eq(0)
+    expect(device.timer).to be_nil
+    device.write('child')
+    expect(device.timer).to be_alive
+  end
+
   it "does not send the parent's records from the exit-time flush" do
     device = RecordingDevice.new(buffer_max_interval: 3600)
     device.write('parent')
