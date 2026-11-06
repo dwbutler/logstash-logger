@@ -65,14 +65,13 @@ module LogStashLogger
   # during a teardown/shutdown routine (after the last call to buffer_receive)
   # to ensure that all accumulated messages are flushed.
   module Buffer
-    # Buffers to flush when the process exits. Weak keys, so a closed or
-    # unreachable device can be garbage-collected; closed devices are marked
-    # false, since ObjectSpace::WeakMap has no delete.
+    # Buffers to flush when the process exits. Weak keys, so an unreachable
+    # device can be garbage-collected. A closed device stays registered: it can
+    # be used again, and may still hold records its final flush could not send.
     AT_EXIT_REGISTRY = ObjectSpace::WeakMap.new
 
     at_exit do
-      AT_EXIT_REGISTRY.each do |buffer, live|
-        next unless live
+      AT_EXIT_REGISTRY.each do |buffer, _|
         begin
           buffer.buffer_flush(final: true)
         rescue StandardError
@@ -113,7 +112,6 @@ module LogStashLogger
         :final_flush_timeout => options.fetch(:final_flush_timeout, nil)
       }
 
-      @buffer_shutdown = false
       @buffer_fork_mutex = Mutex.new
       AT_EXIT_REGISTRY[self] = true if @buffer_config[:flush_at_exit]
 
@@ -179,7 +177,6 @@ module LogStashLogger
     #              passed to +flush+ together, along with the grouping key itself.
     def buffer_receive(event, group=nil)
       buffer_initialize if ! @buffer_state
-      return if buffer_shutdown?
       buffer_after_fork
 
       make_room if buffer_full?
@@ -190,18 +187,17 @@ module LogStashLogger
         # Drop this record, not the ones already queued
         return if dropping
         sleep 0.1
-        return if buffer_shutdown?
         make_room
       end
       report_dropped_records
 
       @buffer_state[:pending_mutex].synchronize do
-        # Checked under the lock buffer_shutdown clears the buffer with, so a
-        # record is never added after the shutdown
-        return if buffer_shutdown?
         @buffer_state[:pending_items][group] << event
         @buffer_state[:pending_count] += 1
       end
+      # Restarts the timer that buffer_stop_timer stopped when the device was
+      # closed
+      flush_timer_thread unless @flush_timer_thread
 
       if @buffer_config[:autoflush]
         buffer_flush(force: true)
@@ -214,10 +210,8 @@ module LogStashLogger
     # Put items back into the pending queue for the next flush, without
     # applying the full-buffer policy. Safe to call from inside a flush.
     def buffer_requeue(items, group=nil)
-      return if items.empty? || buffer_shutdown?
+      return if items.empty?
       @buffer_state[:pending_mutex].synchronize do
-        # Checked again under the lock buffer_shutdown clears the buffer with
-        return if buffer_shutdown?
         @buffer_state[:pending_items][group].concat(items)
         @buffer_state[:pending_count] += items.size
       end
@@ -245,7 +239,6 @@ module LogStashLogger
     # @param [Hash] options Optional. May be <code>{:force => true}</code> or <code>{:final => true}</code>.
     # @return [Fixnum] The number of items successfully passed to +flush+.
     def buffer_flush(options={})
-      return 0 if buffer_shutdown?
       buffer_after_fork
       force = options[:force] || options[:final]
       final = options[:final]
@@ -345,27 +338,17 @@ module LogStashLogger
       return items_flushed
     end
 
-    # Stops the buffer for good: no timer, no flushes, and records written
-    # afterwards are dropped. Called once from Connectable#close, after the
-    # final flush. Never kills the current thread, so it also completes when
-    # called from inside a timed flush.
-    def buffer_shutdown
-      @buffer_shutdown = true
-      AT_EXIT_REGISTRY[self] = false if AT_EXIT_REGISTRY.key?(self)
-      timer, @flush_timer_thread = @flush_timer_thread, nil
-      timer.kill if timer && timer != Thread.current
-      # Nothing can flush these any more, including records the final flush
-      # could not send or still holds
-      if @buffer_state
-        @buffer_state[:pending_mutex].synchronize do
-          buffer_clear_pending
-          buffer_clear_outgoing
-        end
+    # Stops the flush timer, so a closed device keeps no thread running and
+    # does not retry records left over from its final flush. The next
+    # buffer_receive starts it again. Never kills the current thread, so it
+    # also completes when called from inside a timed flush; that timer exits
+    # once the flush returns.
+    def buffer_stop_timer
+      timer = flush_timer_mutex.synchronize do
+        current, @flush_timer_thread = @flush_timer_thread, nil
+        current
       end
-    end
-
-    def buffer_shutdown?
-      @buffer_shutdown == true
+      timer.kill if timer && timer != Thread.current
     end
 
     private
@@ -404,6 +387,7 @@ module LogStashLogger
         return if @buffer_pid == Process.pid
         @pending_mutex = nil
         @flush_mutex = nil
+        @flush_timer_mutex = nil
         @flush_timer_thread = nil
         # The parent's overflow episode is not ours to report. The old state
         # stays in place until the new one replaces it, so a thread entering
@@ -421,30 +405,41 @@ module LogStashLogger
       @flush_mutex ||= Mutex.new
     end
 
+    def flush_timer_mutex
+      @flush_timer_mutex ||= Mutex.new
+    end
+
     def flush_timer_thread
-      return nil if buffer_shutdown?
-      @flush_timer_thread ||=
-        Thread.new do
-          loop do
-            # Also checked before sleeping, for a close made from inside the
-            # previous timed flush
-            break if buffer_shutdown?
-            sleep(@buffer_config[:max_interval])
-            break if buffer_shutdown?
-            begin
-              buffer_flush(:force => true)
-            rescue
+      flush_timer_mutex.synchronize do
+        @flush_timer_thread ||=
+          Thread.new do
+            loop do
+              break unless flush_timer_current?
+              sleep(@buffer_config[:max_interval])
+              break unless flush_timer_current?
+              begin
+                buffer_flush(:force => true)
+              rescue
+              end
             end
           end
-        end
+      end
+    end
+
+    # A timer that was stopped or replaced exits. Checked under the lock it
+    # was started with, so a new timer sees its own assignment.
+    def flush_timer_current?
+      flush_timer_mutex.synchronize { @flush_timer_thread.equal?(Thread.current) }
     end
 
     # Never kills the timer from inside itself: called on the timer thread,
     # this keeps the running timer, and reset_buffer reuses it.
     def reset_flush_timer_thread
-      return if @flush_timer_thread.nil? || @flush_timer_thread == Thread.current
-      @flush_timer_thread.kill
-      @flush_timer_thread = nil
+      flush_timer_mutex.synchronize do
+        return if @flush_timer_thread.nil? || @flush_timer_thread == Thread.current
+        @flush_timer_thread.kill
+        @flush_timer_thread = nil
+      end
     end
 
     # A writer that finds the buffer full flushes it itself, unless a flush is
@@ -494,8 +489,6 @@ module LogStashLogger
     end
 
     def cancel_flush(state = @buffer_state)
-      # After shutdown nothing could send them again
-      return buffer_clear_outgoing(state) if buffer_shutdown?
       state[:pending_mutex].synchronize do
         state[:outgoing_items].each do |group, items|
           state[:pending_items][group].concat items
