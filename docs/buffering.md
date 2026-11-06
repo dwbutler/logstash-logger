@@ -92,6 +92,12 @@ call reconnects and starts the flush thread again. Records the final flush could
 not send stay in the buffer and are sent with the next flush; they are not
 retried while the logger is closed.
 
+## Forking
+
+A forked process starts with an empty buffer and its own flush thread. Records
+buffered before the fork belong to the parent, which sends them; the child never
+sends them, including from its exit-time flush.
+
 ## Sync Mode
 
 All logger outputs support a `sync` setting. This is analogous to the "sync mode" setting on Ruby IO
