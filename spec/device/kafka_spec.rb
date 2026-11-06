@@ -242,6 +242,43 @@ describe LogStashLogger::Device::Kafka do
     end
   end
 
+  describe "in a forked process" do
+    it "builds its own client and leaves the parent's producer untouched" do
+      parent_producer = double('parent producer', produce: true, deliver_messages: true)
+      child_producer = double('child producer', produce: true, deliver_messages: true)
+      allow(::Kafka).to receive(:new).and_return(
+        double('parent client', producer: parent_producer),
+        double('child client', producer: child_producer)
+      )
+      instance = described_class.new(opts)
+      instance.write_one('parent')
+
+      # Block form: the timer thread may call Process.pid while the stub is set up
+
+      child_pid = Process.pid + 1
+
+      allow(Process).to receive(:pid) { child_pid }
+      instance.write_one('child')
+
+      expect(parent_producer).to have_received(:produce).once
+      expect(child_producer).to have_received(:produce).with('child', topic: anything)
+      expect(::Kafka).to have_received(:new).twice
+    end
+
+    it "hands out a new client from #connection" do
+      allow(::Kafka).to receive(:new).and_return(double('parent client'), double('child client'))
+      instance = described_class.new(opts)
+      parent_client = instance.connection
+
+      # Block form: the timer thread may call Process.pid while the stub is set up
+
+      child_pid = Process.pid + 1
+
+      allow(Process).to receive(:pid) { child_pid }
+      expect(instance.connection).not_to equal(parent_client)
+    end
+  end
+
   describe "error handling" do
     it "clears the producer and connection when an error occurs" do
       producer = double('producer')
