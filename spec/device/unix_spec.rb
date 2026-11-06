@@ -11,7 +11,7 @@ describe LogStashLogger::Device::Unix do
   end
 
   it "writes to a local unix socket" do
-    expect(unix_socket).to receive(:write)
+    expect(unix_socket).to receive(:write_nonblock).with('foo', exception: false).and_return(3)
     unix_device.write('foo')
   end
 
