@@ -12,10 +12,12 @@ module LogStashLogger
     attr_accessor :customize_event_block
     attr_accessor :max_message_size
     attr_accessor :default_error_logger
+    attr_accessor :trust_message_fields
 
     def initialize(*_args)
       @customize_event_block = nil
       @default_error_logger = Logger.new($stderr)
+      @trust_message_fields = false
 
       yield self if block_given?
     end
