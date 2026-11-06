@@ -348,6 +348,9 @@ module LogStashLogger
     # also completes when called from inside a timed flush; that timer exits
     # once the flush returns.
     def buffer_stop_timer
+      # Like every other entry point, so a close in a new process uses that
+      # process's timer lock
+      buffer_after_fork
       timer = @flush_timer_mutex.synchronize do
         current, @flush_timer_thread = @flush_timer_thread, nil
         current
@@ -391,7 +394,9 @@ module LogStashLogger
         return if @buffer_pid == Process.pid
         @pending_mutex = nil
         @flush_mutex = nil
-        @flush_timer_mutex = nil
+        # Replaced, not cleared: the timer code uses it directly, and a thread
+        # reading it meanwhile gets a lock either way
+        @flush_timer_mutex = Mutex.new
         @flush_timer_thread = nil
         # The parent's overflow episode is not ours to report. The old state
         # stays in place until the new one replaces it, so a thread entering
