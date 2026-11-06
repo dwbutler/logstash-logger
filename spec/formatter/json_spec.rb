@@ -31,6 +31,25 @@ describe LogStashLogger::Formatter::Json do
     end
   end
 
+  context 'when a tag or another field has invalid bytes' do
+    before do
+      allow(subject).to receive(:error_logger).and_return(Logger.new(IO::NULL))
+    end
+
+    it 'writes the record with every String repaired' do
+      fields = { 'message' => 'hello', 'agent' => "x\xFFy".b, 'nested' => { 'a' => "z\xFF".b } }
+      output = subject.tagged("evil-\xFF".b, "caf\xC3\xA9".b) do
+        subject.call(severity, time, progname, fields)
+      end
+
+      data = JSON.parse(output)
+      expect(data['message']).to eq('hello')
+      expect(data['tags']).to eq(["evil-\uFFFD", "caf\u00E9"])
+      expect(data['agent']).to eq("x\uFFFDy")
+      expect(data['nested']).to eq('a' => "z\uFFFD")
+    end
+  end
+
   context "timestamp ordering" do
     let(:message) { { message: 'test', foo: 'bar' } }
 
