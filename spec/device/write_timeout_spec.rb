@@ -11,8 +11,8 @@ describe 'Socket outputs with a peer that stops reading' do
 
   after do
     @server.close rescue nil
-    @server_thread.kill
-    @server_thread.join(1)
+    @server_thread&.kill
+    @server_thread&.join(1)
     held.size.times { held.pop.close rescue nil }
   end
 
@@ -61,5 +61,12 @@ describe 'Socket outputs with a peer that stops reading' do
     client_ctx = OpenSSL::SSL::SSLContext.new
     client_ctx.verify_mode = OpenSSL::SSL::VERIFY_NONE
     expect_write_to_time_out(device(port: tcp.addr[1], ssl_context: client_ctx, verify_hostname: false))
+  end
+
+  it 'gives up on a Unix socket write after write_timeout' do
+    client, peer = UNIXSocket.pair
+    held << peer
+    allow(UNIXSocket).to receive(:new).and_return(client)
+    expect_write_to_time_out(device(type: :unix, path: '/nonexistent/logstash.sock'))
   end
 end
