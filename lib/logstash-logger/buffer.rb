@@ -112,6 +112,7 @@ module LogStashLogger
         :final_flush_timeout => options.fetch(:final_flush_timeout, nil)
       }
 
+      @buffer_fork_mutex = Mutex.new
       AT_EXIT_REGISTRY[self] = true if @buffer_config[:flush_at_exit]
 
       # Created here, before other threads can use the buffer, so they never
@@ -153,6 +154,8 @@ module LogStashLogger
 
       # events we've accumulated
       buffer_clear_pending
+      # Set last, so another thread never sees the new pid with the old state
+      @buffer_pid = Process.pid
     end
 
     # Determine if +:max_items+ has been reached.
@@ -178,6 +181,7 @@ module LogStashLogger
     #              passed to +flush+ together, along with the grouping key itself.
     def buffer_receive(event, group=nil)
       buffer_initialize if ! @buffer_state
+      buffer_after_fork
 
       make_room if buffer_full?
 
@@ -239,6 +243,7 @@ module LogStashLogger
     # @param [Hash] options Optional. May be <code>{:force => true}</code> or <code>{:final => true}</code>.
     # @return [Fixnum] The number of items successfully passed to +flush+.
     def buffer_flush(options={})
+      buffer_after_fork
       force = options[:force] || options[:final]
       final = options[:final]
       # Work on the state this flush started with. Connectable#reset or
@@ -343,6 +348,9 @@ module LogStashLogger
     # also completes when called from inside a timed flush; that timer exits
     # once the flush returns.
     def buffer_stop_timer
+      # Like every other entry point, so a close in a new process uses that
+      # process's timer lock
+      buffer_after_fork
       timer = @flush_timer_mutex.synchronize do
         current, @flush_timer_thread = @flush_timer_thread, nil
         current
@@ -370,6 +378,31 @@ module LogStashLogger
           return false
         end
         return true if state[:flush_mutex].try_lock
+      end
+    end
+
+    # A forked process inherits the parent's buffered records, its mutexes and
+    # a timer thread that no longer runs. The records are the parent's to
+    # send, so the first buffer call in a new process starts an empty buffer
+    # with fresh mutexes and its own timer. The exit-time flush therefore
+    # never sends the parent's records again.
+    # Threads that log for the first time at once in the new process build
+    # the new buffer only once.
+    def buffer_after_fork
+      return if @buffer_pid == Process.pid
+      @buffer_fork_mutex.synchronize do
+        return if @buffer_pid == Process.pid
+        @pending_mutex = nil
+        @flush_mutex = nil
+        # Replaced, not cleared: the timer code uses it directly, and a thread
+        # reading it meanwhile gets a lock either way
+        @flush_timer_mutex = Mutex.new
+        @flush_timer_thread = nil
+        # The parent's overflow episode is not ours to report. The old state
+        # stays in place until the new one replaces it, so a thread entering
+        # buffer_receive meanwhile never sees no state at all.
+        @buffer_state[:full_reported] = false if @buffer_state
+        reset_buffer
       end
     end
 
