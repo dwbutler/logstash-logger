@@ -66,6 +66,7 @@ module LogStashLogger
       end
 
       def connection
+        forget_connection_after_fork
         @io ||= ::Kafka.new(**kafka_client_connection_hash)
       end
 
@@ -133,6 +134,13 @@ module LogStashLogger
           @producer = nil
           super
         end
+      end
+
+      # The client and its producer hold the parent's broker connections, and
+      # sharing them would mix the two processes' requests and responses. Drop
+      # both without shutting them down, so this process builds its own.
+      def release_inherited_connection(_client)
+        @producer = nil
       end
 
       def kafka_client_connection_hash
