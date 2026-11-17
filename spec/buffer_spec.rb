@@ -280,3 +280,116 @@ describe 'recovering from a failed write' do
     expect(calls).to be >= 2
   end
 end
+
+describe LogStashLogger::Device::Connectable, '#close' do
+  it 'reconnects and restarts the flush timer on the next write' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.write('before')
+    device.close
+    expect(device.timer).to be_nil
+    expect(device).not_to be_connected
+
+    device.write('after')
+    expect(device.timer).to be_alive
+    device.buffer_flush(force: true)
+    expect(device.lines).to eq(['before', 'after'])
+  end
+
+  it 'keeps the records the final flush could not send, without retrying them while closed' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.fail_connect = true
+    device.write('left over')
+    device.close
+
+    expect(device.state[:pending_count]).to eq(1)
+    expect(device.timer).to be_nil
+
+    device.fail_connect = false
+    device.buffer_flush(force: true)
+    expect(device.lines).to eq(['left over'])
+  end
+
+  # A send that fails while the device is being closed puts its batch back,
+  # as any failed send does. The closed device does not retry it on a timer;
+  # the next flush sends it.
+  it 'keeps a batch whose send fails during close for the next flush' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    send_in_progress = Queue.new
+    fail_the_send = Queue.new
+    # Runs inside the socket write: pause there until told to fail. Only the
+    # first send fails.
+    device.gate = lambda do
+      device.gate = nil
+      send_in_progress << true
+      fail_the_send.pop
+      raise IOError, 'closed stream'
+    end
+
+    device.write('a')
+    flusher = Thread.new { device.buffer_flush(force: true) }
+    send_in_progress.pop # 'a' has left the pending queue and is being sent
+    device.close(flush: false)
+    fail_the_send << true
+    expect(flusher.join(5)).to be_truthy
+
+    expect(device.state[:pending_count]).to eq(1)
+    expect(device.timer).to be_nil
+
+    device.buffer_flush(force: true)
+    expect(device.lines).to eq(['a'])
+  end
+
+  it 'stops the timer and closes the connection even when the final flush raises' do
+    hook_raises = Class.new(RecordingDevice) do
+      def on_flush_error(_e)
+        raise 'hook failed'
+      end
+    end
+    device = hook_raises.new(buffer_max_interval: 3600)
+    device.fail_connect = true
+    device.write('a')
+
+    expect { device.close }.not_to raise_error
+    expect(device.timer).to be_nil
+    expect(device).not_to be_connected
+  end
+
+  it 'stops the flush timer of every closed device' do
+    devices = Array.new(10) { RecordingDevice.new(buffer_max_interval: 3600) }
+    timers = devices.map(&:timer)
+    devices.each(&:close)
+    timers.each { |t| t.join(2) }
+    expect(timers).to all(satisfy { |t| !t.alive? })
+  end
+
+  it 'starts a single timer when several threads write after close' do
+    device = RecordingDevice.new(buffer_max_interval: 3600)
+    device.close
+    go = Queue.new
+    writers = Array.new(10) { |i| Thread.new { go.pop; device.write("after-#{i}") } }
+    # Counts only the threads the writers start: threads left over from
+    # other examples may start threads of their own meanwhile
+    started = Queue.new
+    allow(Thread).to receive(:new).and_wrap_original do |original, *args, &block|
+      started << true if writers.include?(Thread.current)
+      original.call(*args, &block)
+    end
+    writers.size.times { go << true }
+    writers.each(&:join)
+
+    expect(started.size).to eq(1)
+    expect(device.timer).to be_alive
+  end
+
+  it 'completes when called from inside a timed flush' do
+    device = RecordingDevice.new(buffer_max_interval: 0.05)
+    closed = Queue.new
+    device.gate = -> { device.gate = nil; device.close(flush: false); closed << Thread.current }
+    device.write('a')
+    timer = closed.pop
+    timer.join(2)
+
+    expect(timer).not_to be_alive
+    expect(device.timer).to be_nil
+  end
+end

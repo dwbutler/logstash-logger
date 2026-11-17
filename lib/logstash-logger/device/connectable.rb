@@ -81,10 +81,21 @@ module LogStashLogger
         log_warning("Dropped #{count} records because the buffer was full")
       end
 
+      # After the optional final flush, stops the flush timer and closes the
+      # connection. A closed device can be used again: the next write
+      # reconnects and restarts the timer. Records the final flush could not
+      # send stay in the buffer for the next flush.
       def close(opts = {})
         if opts.fetch(:flush, true)
-          buffer_flush(final: true)
+          begin
+            buffer_flush(final: true)
+          rescue => e
+            # A raising on_flush_error hook or buffer logger must not keep
+            # the timer running or the connection open
+            log_error(e)
+          end
         end
+        buffer_stop_timer
 
         super
       end
@@ -129,7 +140,7 @@ module LogStashLogger
       private
 
       # Drops the connection but keeps the buffer running, so the next flush
-      # reconnects. Used to recover from errors.
+      # reconnects. Used to recover from errors; #close also stops the timer.
       def disconnect
         close!
       rescue => e
