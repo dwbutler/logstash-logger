@@ -77,6 +77,10 @@ module LogStashLogger
         log_warning("Buffer Full - #{data}")
       end
 
+      def on_buffer_drops(count)
+        log_warning("Dropped #{count} records because the buffer was full")
+      end
+
       def close(opts = {})
         if opts.fetch(:flush, true)
           buffer_flush(final: true)
