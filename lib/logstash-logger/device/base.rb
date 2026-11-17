@@ -19,7 +19,7 @@ module LogStashLogger
       end
 
       def write_one(message)
-        @io.write(message)
+        write_to_io(message)
       rescue => e
         if unrecoverable_error?(e)
           log_error(e)
@@ -60,6 +60,10 @@ module LogStashLogger
       end
 
       private
+
+      def write_to_io(message)
+        @io.write(message)
+      end
 
       def log_error(e)
         error_logger.error "[#{self.class}] #{e.class} - #{e.message}"
