@@ -125,6 +125,7 @@ module LogStashLogger
 
         # data for timed flushes
         :last_flush =>     Time.now,
+        :last_flush_error => nil,
         :timer =>          flush_timer_thread
       }
 
@@ -156,6 +157,8 @@ module LogStashLogger
     def buffer_receive(event, group=nil)
       buffer_initialize if ! @buffer_state
 
+      make_room if buffer_full?
+
       # block if we've accumulated too many events
       while buffer_full? do
         on_full_buffer_receive(
@@ -177,6 +180,9 @@ module LogStashLogger
 
       if @buffer_config[:autoflush]
         buffer_flush(force: true)
+      elsif buffer_full?
+        # The record that fills the buffer flushes it
+        make_room
       end
     end
 
@@ -267,8 +273,10 @@ module LogStashLogger
             state[:outgoing_count] -= events_size
             items_flushed += events_size
             state[:last_flush] = Time.now
+            state[:last_flush_error] = nil
 
           rescue => e
+            state[:last_flush_error] = Time.now
 
             @buffer_config[:logger].warn do
               warn_output = {
@@ -328,6 +336,15 @@ module LogStashLogger
       return if @flush_timer_thread.nil? || @flush_timer_thread == Thread.current
       @flush_timer_thread.kill
       @flush_timer_thread = nil
+    end
+
+    # A writer that finds the buffer full flushes it itself, unless a flush is
+    # already running or the last one failed recently (so a down collector does
+    # not turn every log call into a connection attempt).
+    def make_room
+      last_error = @buffer_state[:last_flush_error]
+      return if last_error && (Time.now - last_error) < @buffer_config[:max_interval]
+      buffer_flush(force: true)
     end
 
     def buffer_clear_pending(state = @buffer_state)
