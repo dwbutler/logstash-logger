@@ -167,10 +167,11 @@ module LogStashLogger
         ) if @buffer_config[:has_on_full_buffer_receive]
 
         if @buffer_config[:drop_messages_on_full_buffer]
-          reset_buffer
-        else
-          sleep 0.1
+          # Drop this record, not the ones already queued
+          return
         end
+        sleep 0.1
+        make_room
       end
 
       @buffer_state[:pending_mutex].synchronize do
@@ -194,6 +195,9 @@ module LogStashLogger
         @buffer_state[:pending_items][group].concat(items)
         @buffer_state[:pending_count] += items.size
       end
+      # Belongs to the running flush, not to whichever state is current: a
+      # reset during the flush must not carry it into the next one
+      @flush_requeued = true
     end
 
     # Try to flush events.
@@ -233,6 +237,7 @@ module LogStashLogger
       end
 
       items_flushed = 0
+      @flush_requeued = false
 
       begin
         time_since_last_flush = (Time.now - state[:last_flush])
@@ -273,7 +278,9 @@ module LogStashLogger
             state[:outgoing_count] -= events_size
             items_flushed += events_size
             state[:last_flush] = Time.now
-            state[:last_flush_error] = nil
+            # Records the output put back to retry count as a failed flush,
+            # so writers wait buffer_max_interval before trying again.
+            state[:last_flush_error] = @flush_requeued ? Time.now : nil
 
           rescue => e
             state[:last_flush_error] = Time.now
